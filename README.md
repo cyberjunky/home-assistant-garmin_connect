@@ -129,7 +129,7 @@ Metabolic Age
 
 ## Screenshots
 
-![alt text](https://github.com/cyberjunky/home-assistant-garmin_connect/blob/master/screenshots/garmin_connect.png?raw=true "Screenshot Garmin Connect")
+![screenshot](https://github.com/cyberjunky/home-assistant-garmin_connect/blob/master/screenshots/garmin_connect.png?raw=true "Screenshot Garmin Connect")
 
 ## Debugging
 
