@@ -15,12 +15,12 @@ The Garmin Connect integration allows you to expose data from Garmin Connect to 
 
 ### Manual
 - Copy directory `custom_components/garmin_connect` to your `<config dir>/custom_components` directory.
-- Configure with config below.
 - Restart Home-Assistant.
+- Follow configuration steps below.
 
 ## Configuration
 
-Adding Garmin Connect to your Home Assistant instance can be done via the user interface,
+Adding Garmin Connect to your Home Assistant instance can be done via the integrations user interface.
 
 - Browse to your Home Assistant instance.
 - In the sidebar click on Configuration.
