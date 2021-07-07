@@ -2,7 +2,7 @@
   "domain": "garmin_connect",
   "name": "Garmin Connect",
   "documentation": "https://github.com/cyberjunky/home-assistant-garmin_connect",
-  "requirements": ["garminconnect_ha==0.1.10"],
+  "requirements": ["garminconnect_ha==0.1.12"],
   "codeowners": ["@cyberjunky"],
   "config_flow": true,
   "iot_class": "cloud_polling",
