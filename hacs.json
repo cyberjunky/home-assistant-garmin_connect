@@ -1,0 +1,7 @@
+{
+    "name": "Garmin Connect",
+    "country": "NL",
+    "render_readme": true,
+    "domains": ["sensor"]
+  }
+  
