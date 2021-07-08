@@ -25,38 +25,11 @@ PLATFORMS = ["sensor"]
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Garmin Connect from a config entry."""
 
-    username: str = entry.data[CONF_USERNAME]
-    password: str = entry.data[CONF_PASSWORD]
+    coordinator = GarminConnectDataUpdateCoordinator(hass, entry=entry)
 
-    api = Garmin(username, password)
-    try:
-        await hass.async_add_executor_job(api.login)
-    except (
-        GarminConnectAuthenticationError,
-        GarminConnectTooManyRequestsError,
-    ) as err:
-        _LOGGER.error("Error occurred during Garmin Connect login request: %s", err)
-        return False
-    except (GarminConnectConnectionError) as err:
-        _LOGGER.error(
-            "Connection error occurred during Garmin Connect login request: %s", err
-        )
-        raise ConfigEntryNotReady from err
-    except Exception:  # pylint: disable=broad-except
-        _LOGGER.exception("Unknown error occurred during Garmin Connect login request")
+    if not await coordinator.async_login():
         return False
 
-    async def async_update_data():
-        _LOGGER.debug("Updating data for %s", username)
-        return await async_update_garmin_data(hass, api)
-
-    coordinator = DataUpdateCoordinator(
-        hass,
-        _LOGGER,
-        name=username,
-        update_method=async_update_data,
-        update_interval=DEFAULT_UPDATE_INTERVAL,
-    )
     await coordinator.async_config_entry_first_refresh()
 
     hass.data.setdefault(DOMAIN, {})
@@ -77,25 +50,65 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
     return unload_ok
 
 
-async def async_update_garmin_data(hass, api):
-    """Fetch data from API endpoint."""
-    try:
-        summary = await hass.async_add_executor_job(
-            api.get_user_summary, date.today().isoformat()
-        )
-        body = await hass.async_add_executor_job(
-            api.get_body_composition, date.today().isoformat()
-        )
-        alarms = await hass.async_add_executor_job(api.get_device_alarms)
-    except (
-        GarminConnectAuthenticationError,
-        GarminConnectTooManyRequestsError,
-        GarminConnectConnectionError,
-    ) as error:
-        raise UpdateFailed(error) from error
+class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
+    """Garmin Connect Data Update Coordinator."""
 
-    return {
-        **summary,
-        **body["totalAverage"],
-        "nextAlarm": alarms,
-    }
+    def __init__(self, hass: HomeAssistant, entry: ConfigEntry) -> None:
+        """Initialize the Garmin Connect hub."""
+        self.entry = entry
+        self.hass = hass
+
+        self._api = Garmin(entry.data[CONF_USERNAME], entry.data[CONF_PASSWORD])
+
+        super().__init__(
+            hass, _LOGGER, name=DOMAIN, update_interval=DEFAULT_UPDATE_INTERVAL
+        )
+
+    async def async_login(self) -> bool:
+        """Login to Garmin Connect."""
+        try:
+            await self.hass.async_add_executor_job(self._api.login)
+        except (
+            GarminConnectAuthenticationError,
+            GarminConnectTooManyRequestsError,
+        ) as err:
+            _LOGGER.error("Error occurred during Garmin Connect login request: %s", err)
+            return False
+        except (GarminConnectConnectionError) as err:
+            _LOGGER.error(
+                "Connection error occurred during Garmin Connect login request: %s", err
+            )
+            raise ConfigEntryNotReady from err
+        except Exception:  # pylint: disable=broad-except
+            _LOGGER.exception(
+                "Unknown error occurred during Garmin Connect login request"
+            )
+            return False
+
+        return True
+
+    async def _async_update_data(self) -> dict:
+        """Fetch data from Garmin Connect."""
+        try:
+            summary = await self.hass.async_add_executor_job(
+                self._api.get_user_summary, date.today().isoformat()
+            )
+            body = await self.hass.async_add_executor_job(
+                self._api.get_body_composition, date.today().isoformat()
+            )
+            alarms = await self.hass.async_add_executor_job(self._api.get_device_alarms)
+        except (
+            GarminConnectAuthenticationError,
+            GarminConnectTooManyRequestsError,
+            GarminConnectConnectionError,
+        ) as error:
+            _LOGGER.debug("Trying to relogin to Garmin Connect")
+            if not await self.async_login():
+                raise UpdateFailed(error) from error
+            return {}
+
+        return {
+            **summary,
+            **body["totalAverage"],
+            "nextAlarm": alarms,
+        }
