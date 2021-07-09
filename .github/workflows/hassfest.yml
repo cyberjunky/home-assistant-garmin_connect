@@ -1,18 +1,21 @@
-name: Test hassfest
+name: Cron actions
 
 on:
-  pull_request:
-    branches: ["main"]
-  push:
-    branches: ["main"]
+  schedule:
+    - cron:  '0 0 * * *'
 
 jobs:
-  hassfest:
-    runs-on: ubuntu-latest
-    name: hassfest
+  validate:
+    runs-on: "ubuntu-latest"
+    name: Validate
     steps:
-      - name: Check out the repository
-        uses: actions/checkout@v2
-      
-      - name: Test hassfest
-        uses: ./hassfest
+        - uses: "actions/checkout@v2"
+
+        - name: HACS validation
+          uses: "hacs/action@main"
+          with:
+            category: "integration"
+            ignore: brands
+
+        - name: Hassfest validation
+          uses: "home-assistant/actions/hassfest@master"
