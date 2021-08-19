@@ -8,6 +8,7 @@ The Garmin Connect integration allows you to expose data from Garmin Connect to 
 
 ### HACS - Recommended
 - Have [HACS](https://hacs.xyz) installed, this will allow you to easily manage and track updates.
+- Add https://github.com/cyberjunky/home-assistant-garmin_connect to custom repositories in HACS 
 - Search for 'Garmin Connect'.
 - Click Install below the found integration.
 - Restart Home-Assistant.
