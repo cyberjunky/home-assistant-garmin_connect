@@ -116,6 +116,8 @@ class GarminConnectSensor(CoordinatorEntity, SensorEntity):
             )
             if active_alarms:
                 value = active_alarms[0]
+            else:
+                value = None
 
         if self._device_class == DEVICE_CLASS_TIMESTAMP:
             return value
