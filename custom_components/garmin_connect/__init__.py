@@ -2,7 +2,7 @@
 from datetime import date
 import logging
 
-from garminconnect_ha import (
+from garminconnect import (
     Garmin,
     GarminConnectAuthenticationError,
     GarminConnectConnectionError,
