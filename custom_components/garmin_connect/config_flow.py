@@ -1,7 +1,7 @@
 """Config flow for Garmin Connect integration."""
 import logging
 
-from garminconnect_ha import (
+from garminconnect import (
     Garmin,
     GarminConnectAuthenticationError,
     GarminConnectConnectionError,
