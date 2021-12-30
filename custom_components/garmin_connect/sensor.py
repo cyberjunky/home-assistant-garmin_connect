@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import logging
 
-from homeassistant.components.sensor import SensorEntity
+from homeassistant.components.sensor import SensorEntity, SensorStateClass
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import ATTR_ATTRIBUTION, CONF_ID, DEVICE_CLASS_TIMESTAMP
 from homeassistant.core import HomeAssistant
@@ -15,7 +15,6 @@ from homeassistant.helpers.update_coordinator import (
 
 from .alarm_util import calculate_next_active_alarms
 from .const import (
-    ATTRIBUTION,
     DATA_COORDINATOR,
     DOMAIN as GARMIN_DOMAIN,
     GARMIN_ENTITY_LIST,
@@ -83,24 +82,18 @@ class GarminConnectSensor(CoordinatorEntity, SensorEntity):
 
         self._unique_id = unique_id
         self._type = sensor_type
-        self._name = name
-        self._unit = unit
-        self._icon = icon
         self._device_class = device_class
         self._enabled_default = enabled_default
 
-    @property
-    def name(self):
-        """Return the name of the sensor."""
-        return self._name
+        self._attr_name = name
+        self._attr_device_class = self._device_class
+        self._attr_icon = icon
+        self._attr_unit_of_measurement = unit
+        self._attr_unique_id = f"{self._unique_id}_{self._type}"
+        self._attr_state_class = SensorStateClass.TOTAL
 
     @property
-    def icon(self):
-        """Return the icon to use in the frontend."""
-        return self._icon
-
-    @property
-    def state(self):
+    def native_value(self):
         """Return the state of the sensor."""
         if not self.coordinator.data or not self.coordinator.data[self._type]:
             return None
@@ -125,25 +118,13 @@ class GarminConnectSensor(CoordinatorEntity, SensorEntity):
         return round(value, 2)
 
     @property
-    def unique_id(self) -> str:
-        """Return the unique ID for this sensor."""
-        return f"{self._unique_id}_{self._type}"
-
-    @property
-    def unit_of_measurement(self):
-        """Return the unit of measurement."""
-        return self._unit
-
-    @property
     def extra_state_attributes(self):
         """Return attributes for sensor."""
         if not self.coordinator.data:
             return {}
 
         attributes = {
-            "source": self.coordinator.data["source"],
             "last_synced": self.coordinator.data["lastSyncTimestampGMT"],
-            ATTR_ATTRIBUTION: ATTRIBUTION,
         }
         if self._type == "nextAlarm":
             attributes["next_alarms"] = calculate_next_active_alarms(
@@ -174,8 +155,3 @@ class GarminConnectSensor(CoordinatorEntity, SensorEntity):
             and self.coordinator.data
             and self._type in self.coordinator.data
         )
-
-    @property
-    def device_class(self):
-        """Return the device class of the sensor."""
-        return self._device_class
