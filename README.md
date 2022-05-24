@@ -10,9 +10,10 @@ The change of adding support for it is unlikely since the Garmin Connect API is 
 
 ### HACS - Recommended
 - Have [HACS](https://hacs.xyz) installed, this will allow you to easily manage and track updates.
-- Add https://github.com/cyberjunky/home-assistant-garmin_connect to custom repositories in HACS 
+- Inside HACS click 'Explore & download repositories'
 - Search for 'Garmin Connect'.
-- Click Install below the found integration.
+- Click on found integration.
+- Click Download this repository with HACS.
 - Restart Home-Assistant.
 - Follow configuration steps below.
 
