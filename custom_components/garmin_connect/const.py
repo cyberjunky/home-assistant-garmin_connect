@@ -36,7 +36,7 @@ GARMIN_ENTITY_LIST = {
         None,
         False,
     ],
-    "netCalorieGoal": ["Net Calorie Goal", "cal", "mdi:food", None, False],
+    "netCalorieGoal": ["Net Calorie Goal", "kcal", "mdi:food", None, False],
     "totalDistanceMeters": [
         "Total Distance Mtr",
         LENGTH_METERS,
