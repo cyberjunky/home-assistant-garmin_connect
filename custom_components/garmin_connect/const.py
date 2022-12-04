@@ -354,3 +354,10 @@ GARMIN_ENTITY_LIST = {
     "metabolicAge": ["Metabolic Age", TIME_YEARS, "mdi:calendar-heart", None, False],
     "nextAlarm": ["Next Alarm Time", None, "mdi:alarm", None, True],
 }
+
+GEAR_ICONS = {
+    "Shoes": "mdi:shoe-sneaker",
+    "Bike": "mdi:bike",
+    "Other": "mdi:basketball",
+    "Golf Clubs": "mdi:golf",
+}

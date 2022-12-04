@@ -1,6 +1,8 @@
 """The Garmin Connect integration."""
 from datetime import date
 import logging
+import asyncio
+from collections.abc import Awaitable
 
 from garminconnect import (
     Garmin,
@@ -97,6 +99,16 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
                 self._api.get_body_composition, date.today().isoformat()
             )
             alarms = await self.hass.async_add_executor_job(self._api.get_device_alarms)
+            gear = await self.hass.async_add_executor_job(
+                self._api.get_gear, summary["userProfileId"]
+            )
+            tasks: list[Awaitable] = [
+                self.hass.async_add_executor_job(
+                    self._api.get_gear_stats, gear_item["uuid"]
+                )
+                for gear_item in gear
+            ]
+            gear_stats = await asyncio.gather(*tasks)
         except (
             GarminConnectAuthenticationError,
             GarminConnectTooManyRequestsError,
@@ -111,4 +123,6 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
             **summary,
             **body["totalAverage"],
             "nextAlarm": alarms,
+            "gear": gear,
+            "gear_stats": gear_stats,
         }
