@@ -2,12 +2,11 @@
 from __future__ import annotations
 
 import logging
-from operator import itemgetter
+from numbers import Number
 
 from homeassistant.components.sensor import SensorEntity, SensorStateClass
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
-    ATTR_ATTRIBUTION,
     CONF_ID,
     DEVICE_CLASS_TIMESTAMP,
     LENGTH_KILOMETERS,
@@ -135,7 +134,7 @@ class GarminConnectSensor(CoordinatorEntity, SensorEntity):
         if self._device_class == DEVICE_CLASS_TIMESTAMP:
             return value
 
-        return round(value, 2)
+        return round(value, 2) if isinstance(value, Number) else value
 
     @property
     def extra_state_attributes(self):
