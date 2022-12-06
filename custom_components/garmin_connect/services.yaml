@@ -1,0 +1,39 @@
+set_active_gear:
+  name: Set active gear for activity
+  # target:
+  #   entity:
+  #     integration: "garmin_connect"
+  fields:
+    activity_type:
+      required: true
+      name: activity type
+      description: garmin activity type
+      example: running
+      default: running
+      selector:
+        select:
+          options:
+            - running
+            - cycling
+            - hiking
+            - other
+            - walking
+            - swimming
+    setting:
+      required: true
+      name: setting
+      description: gear setting to apply
+      default: set this as default, unset others
+      selector:
+        select:
+          options:
+            - set this as default, unset others
+            - set as default
+            - unset default
+    entity_id:
+      description: entity
+      required: true
+      selector:
+        entity:
+          integration: garmin_connect
+          device_class: Gear

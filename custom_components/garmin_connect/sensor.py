@@ -2,27 +2,33 @@
 from __future__ import annotations
 
 import logging
+import voluptuous as vol
 from numbers import Number
+
 
 from homeassistant.components.sensor import SensorEntity, SensorStateClass
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
+    ATTR_ENTITY_ID,
     CONF_ID,
     DEVICE_CLASS_TIMESTAMP,
     LENGTH_KILOMETERS,
 )
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import entity_platform
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.update_coordinator import (
     CoordinatorEntity,
     DataUpdateCoordinator,
 )
 
+
 from .alarm_util import calculate_next_active_alarms
 from .const import (
     DATA_COORDINATOR,
     DOMAIN as GARMIN_DOMAIN,
     GARMIN_ENTITY_LIST,
+    GEAR,
     GEAR_ICONS,
 )
 
@@ -65,21 +71,35 @@ async def async_setup_entry(
                 enabled_by_default,
             )
         )
-
-    for gear_item in coordinator.data["gear"]:
-        entities.append(
-            GarminConnectGearSensor(
-                coordinator,
-                unique_id,
-                gear_item["uuid"],
-                gear_item["gearTypeName"],
-                gear_item["displayName"],
-                None,
-                True,
+    if "gear" in coordinator.data:
+        for gear_item in coordinator.data["gear"]:
+            entities.append(
+                GarminConnectGearSensor(
+                    coordinator,
+                    unique_id,
+                    gear_item[GEAR.UUID],
+                    gear_item["gearTypeName"],
+                    gear_item["displayName"],
+                    None,
+                    True,
+                )
             )
-        )
 
     async_add_entities(entities)
+    platform = entity_platform.async_get_current_platform()
+
+    platform.async_register_entity_service(
+        "set_active_gear", ENTITY_SERVICE_SCHEMA, coordinator.set_active_gear
+    )
+
+
+ENTITY_SERVICE_SCHEMA = vol.Schema(
+    {
+        vol.Required(ATTR_ENTITY_ID): str,
+        vol.Required("activity_type"): str,
+        vol.Required("setting"): str,
+    }
+)
 
 
 class GarminConnectSensor(CoordinatorEntity, SensorEntity):
@@ -204,6 +224,12 @@ class GarminConnectGearSensor(CoordinatorEntity, SensorEntity):
         self._attr_native_unit_of_measurement = LENGTH_KILOMETERS
         self._attr_unique_id = f"{self._unique_id}_{self._uuid}"
         self._attr_state_class = SensorStateClass.TOTAL
+        self._attr_device_class = "Gear"
+
+    @property
+    def uuid(self):
+        """Return the entity uuid"""
+        return self._uuid
 
     @property
     def native_value(self):
@@ -255,19 +281,16 @@ class GarminConnectGearSensor(CoordinatorEntity, SensorEntity):
     @property
     def available(self) -> bool:
         """Return True if entity is available."""
-        return (
-            super().available
-            and self.coordinator.data
-            and self.get_gear()
-            # and any(g["uuid"] == self._uuid for g in self.coordinator.data["gear"])
-        )
+        return super().available and self.coordinator.data and self.get_gear()
 
     def get_stats(self):
+        """Get gear statistics from garmin"""
         for gear_stats_item in self.coordinator.data["gear_stats"]:
-            if gear_stats_item["uuid"] == self._uuid:
+            if gear_stats_item[GEAR.UUID] == self._uuid:
                 return gear_stats_item
 
     def get_gear(self):
+        """Get gear from garmin"""
         for gear_item in self.coordinator.data["gear"]:
-            if gear_item["uuid"] == self._uuid:
+            if gear_item[GEAR.UUID] == self._uuid:
                 return gear_item
