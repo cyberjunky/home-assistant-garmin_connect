@@ -224,7 +224,7 @@ class GarminConnectGearSensor(CoordinatorEntity, SensorEntity):
         self._attr_native_unit_of_measurement = LENGTH_KILOMETERS
         self._attr_unique_id = f"{self._unique_id}_{self._uuid}"
         self._attr_state_class = SensorStateClass.TOTAL
-        self._attr_device_class = "Gear"
+        self._attr_device_class = "garmin_gear"
 
     @property
     def uuid(self):
@@ -234,17 +234,22 @@ class GarminConnectGearSensor(CoordinatorEntity, SensorEntity):
     @property
     def native_value(self):
         """Return the state of the sensor."""
-        if not self.coordinator.data or not self.get_stats():
+        if not self.coordinator.data or not self._stats():
             return None
 
-        value = self.get_stats()["totalDistance"]
+        value = self._stats()["totalDistance"]
         return round(value / 1000, 2)
 
     @property
     def extra_state_attributes(self):
         """Return attributes for sensor."""
-        gear = self.get_gear()
-        stats = self.get_stats()
+        gear = self._gear()
+        stats = self._stats()
+        gear_defaults = self._gear_defaults()
+        activity_types = self.coordinator.data["activity_types"]
+        default_for_activity = self._activity_names_for_gear_defaults(
+            gear_defaults, activity_types
+        )
 
         if not self.coordinator.data or not gear or not stats:
             return {}
@@ -262,7 +267,24 @@ class GarminConnectGearSensor(CoordinatorEntity, SensorEntity):
             "custom_make_model": gear["customMakeModel"],
             "maximum_meters": gear["maximumMeters"],
         }
+
+        attributes["default_for_activity"] = (
+            ", ".join(default_for_activity) if default_for_activity else "None"
+        )
+
         return attributes
+
+    def _activity_names_for_gear_defaults(self, gear_defaults, activity_types):
+        return list(
+            map(
+                lambda b: b["typeKey"],
+                filter(
+                    lambda a: a["typeId"]
+                    in map(lambda d: d["activityTypePk"], gear_defaults),
+                    activity_types,
+                ),
+            )
+        )
 
     @property
     def device_info(self) -> DeviceInfo:
@@ -281,16 +303,25 @@ class GarminConnectGearSensor(CoordinatorEntity, SensorEntity):
     @property
     def available(self) -> bool:
         """Return True if entity is available."""
-        return super().available and self.coordinator.data and self.get_gear()
+        return super().available and self.coordinator.data and self._gear()
 
-    def get_stats(self):
+    def _stats(self):
         """Get gear statistics from garmin"""
         for gear_stats_item in self.coordinator.data["gear_stats"]:
             if gear_stats_item[GEAR.UUID] == self._uuid:
                 return gear_stats_item
 
-    def get_gear(self):
+    def _gear(self):
         """Get gear from garmin"""
         for gear_item in self.coordinator.data["gear"]:
             if gear_item[GEAR.UUID] == self._uuid:
                 return gear_item
+
+    def _gear_defaults(self):
+        """Get gear defaults"""
+        return list(
+            filter(
+                lambda d: d[GEAR.UUID] == self.uuid and d["defaultGear"] is True,
+                self.coordinator.data["gear_defaults"],
+            )
+        )

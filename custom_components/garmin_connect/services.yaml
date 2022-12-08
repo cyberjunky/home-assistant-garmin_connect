@@ -36,4 +36,4 @@ set_active_gear:
       selector:
         entity:
           integration: garmin_connect
-          device_class: Gear
+          device_class: garmin_gear

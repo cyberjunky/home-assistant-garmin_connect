@@ -115,6 +115,9 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
             activity_types = await self.hass.async_add_executor_job(
                 self._api.get_activity_types
             )
+            gear_defaults = await self.hass.async_add_executor_job(
+                self._api.get_gear_defaults, summary[GEAR.USERPROFILE_ID]
+            )
         except (
             GarminConnectAuthenticationError,
             GarminConnectTooManyRequestsError,
@@ -132,6 +135,7 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
             "gear": gear,
             "gear_stats": gear_stats,
             "activity_types": activity_types,
+            "gear_defaults": gear_defaults,
         }
 
     async def set_active_gear(self, entity, service_data):
@@ -149,8 +153,11 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
             )
         )[GEAR.TYPE_ID]
         if setting != SERVICE_SETTING.ONLY_THIS_AS_DEFAULT:
-            await self._api.set_gear_default(
-                activity_type_id, entity.uuid, setting == SERVICE_SETTING.DEFAULT
+            await self.hass.async_add_executor_job(
+                self._api.set_gear_default,
+                activity_type_id,
+                entity.uuid,
+                setting == SERVICE_SETTING.DEFAULT,
             )
         else:
             old_default_state = await self.hass.async_add_executor_job(
