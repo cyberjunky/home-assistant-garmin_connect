@@ -3,9 +3,13 @@ from __future__ import annotations
 
 import logging
 
-from homeassistant.components.sensor import SensorEntity, SensorStateClass
+from homeassistant.components.sensor import (
+    SensorEntity, 
+    SensorStateClass,
+    SensorDeviceClass,
+)
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import ATTR_ATTRIBUTION, CONF_ID, DEVICE_CLASS_TIMESTAMP
+from homeassistant.const import ATTR_ATTRIBUTION, CONF_ID
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.update_coordinator import (
@@ -112,7 +116,7 @@ class GarminConnectSensor(CoordinatorEntity, SensorEntity):
             else:
                 return None
 
-        if self._device_class == DEVICE_CLASS_TIMESTAMP:
+        if self._device_class == SensorDeviceClass.TIMESTAMP:
             return value
 
         return round(value, 2)
