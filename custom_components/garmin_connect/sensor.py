@@ -114,7 +114,10 @@ class GarminConnectSensor(CoordinatorEntity, SensorEntity):
                 self.coordinator.data[self._type]
             )
             if active_alarms:
-                return active_alarms[0]
+                date_time_obj = datetime.datetime.strptime(active_alarms[0], "%Y-%m-%dT%H:%M:%S")
+                timezone = pytz.timezone('UTC')
+                timezone_date_time_obj = timezone.localize(date_time_obj)
+                return timezone_date_time_obj
             else:
                 return None
 
