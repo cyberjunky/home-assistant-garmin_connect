@@ -2,13 +2,13 @@
 from datetime import timedelta
 
 from homeassistant.const import (
-    DEVICE_CLASS_TIMESTAMP,
     LENGTH_METERS,
     MASS_KILOGRAMS,
     PERCENTAGE,
     TIME_MINUTES,
     TIME_YEARS,
 )
+from homeassistant.components.sensor import SensorDeviceClass
 
 DOMAIN = "garmin_connect"
 DATA_COORDINATOR = "coordinator"
@@ -48,14 +48,14 @@ GARMIN_ENTITY_LIST = {
         "Wellness Start Time",
         None,
         "mdi:clock",
-        DEVICE_CLASS_TIMESTAMP,
+        SensorDeviceClass.TIMESTAMP,
         False,
     ],
     "wellnessEndTimeLocal": [
         "Wellness End Time",
         None,
         "mdi:clock",
-        DEVICE_CLASS_TIMESTAMP,
+        SensorDeviceClass.TIMESTAMP,
         False,
     ],
     "wellnessDescription": ["Wellness Description", "", "mdi:clock", None, False],
@@ -305,7 +305,7 @@ GARMIN_ENTITY_LIST = {
         "Latest SPO2 Time",
         None,
         "mdi:diabetes",
-        DEVICE_CLASS_TIMESTAMP,
+        SensorDeviceClass.TIMESTAMP,
         False,
     ],
     "averageMonitoringEnvironmentAltitude": [
@@ -340,7 +340,7 @@ GARMIN_ENTITY_LIST = {
         "Latest Respiration Update",
         None,
         "mdi:progress-clock",
-        DEVICE_CLASS_TIMESTAMP,
+        SensorDeviceClass.TIMESTAMP,
         False,
     ],
     "weight": ["Weight", MASS_KILOGRAMS, "mdi:weight-kilogram", None, False],
