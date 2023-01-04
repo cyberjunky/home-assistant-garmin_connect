@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 import logging
+import datetime
+import pytz
 
 from homeassistant.components.sensor import (
     SensorEntity, 
@@ -117,7 +119,10 @@ class GarminConnectSensor(CoordinatorEntity, SensorEntity):
                 return None
 
         if self._device_class == SensorDeviceClass.TIMESTAMP:
-            return value
+            date_time_obj = datetime.datetime.strptime(value, "%Y-%m-%dT%H:%M:%S.%f")
+            timezone = pytz.timezone('UTC')
+            timezone_date_time_obj = timezone.localize(date_time_obj)
+            return timezone_date_time_obj
 
         return round(value, 2)
 
