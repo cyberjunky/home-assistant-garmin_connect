@@ -120,6 +120,8 @@ class GarminConnectSensor(CoordinatorEntity, SensorEntity):
                 return timezone_date_time_obj
             else:
                 return None
+        elif self._type == "stressQualifier":
+                return value
 
         if self._device_class == SensorDeviceClass.TIMESTAMP:
             date_time_obj = datetime.datetime.strptime(value, "%Y-%m-%dT%H:%M:%S.%f")
