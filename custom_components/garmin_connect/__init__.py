@@ -93,10 +93,13 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
             summary = await self.hass.async_add_executor_job(
                 self._api.get_user_summary, date.today().isoformat()
             )
+            _LOGGER.debug(summary)
             body = await self.hass.async_add_executor_job(
                 self._api.get_body_composition, date.today().isoformat()
             )
+            _LOGGER.debug(body)
             alarms = await self.hass.async_add_executor_job(self._api.get_device_alarms)
+            _LOGGER.debug(alarms)
         except (
             GarminConnectAuthenticationError,
             GarminConnectTooManyRequestsError,
