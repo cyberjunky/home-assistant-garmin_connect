@@ -347,7 +347,7 @@ GARMIN_ENTITY_LIST = {
     "bmi": ["BMI", "bmi", "mdi:food", None, False],
     "bodyFat": ["Body Fat", PERCENTAGE, "mdi:food", SensorDeviceClass.BATTERY, False],
     "bodyWater": ["Body Water", PERCENTAGE, "mdi:water-percent", SensorDeviceClass.BATTERY, False],
-    "boneMass": ["Bone Mass", MASS_KILOGRAMS, "mdi:bone", SensorDeviceClass.BATTERY, False],
+    "boneMass": ["Bone Mass", MASS_KILOGRAMS, "mdi:bone", SensorDeviceClass.WEIGHT, False],
     "muscleMass": ["Muscle Mass", MASS_KILOGRAMS, "mdi:dumbbell", SensorDeviceClass.WEIGHT, False],
     "physiqueRating": ["Physique Rating", None, "mdi:numeric", None, False],
     "visceralFat": ["Visceral Fat", PERCENTAGE, "mdi:food", SensorDeviceClass.BATTERY, False],
