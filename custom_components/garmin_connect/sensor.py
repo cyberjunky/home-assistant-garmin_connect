@@ -6,8 +6,7 @@ import datetime
 import pytz
 
 from homeassistant.components.sensor import (
-    SensorEntity, 
-    SensorStateClass,
+    SensorEntity,
     SensorDeviceClass,
 )
 from homeassistant.config_entries import ConfigEntry
@@ -41,16 +40,17 @@ async def async_setup_entry(
     entities = []
     for (
         sensor_type,
-        (name, unit, icon, device_class, enabled_by_default),
+        (name, unit, icon, device_class, state_class, enabled_by_default),
     ) in GARMIN_ENTITY_LIST.items():
 
         _LOGGER.debug(
-            "Registering entity: %s, %s, %s, %s, %s, %s",
+            "Registering entity: %s, %s, %s, %s, %s, %s, %s",
             sensor_type,
             name,
             unit,
             icon,
             device_class,
+            state_class,
             enabled_by_default,
         )
         entities.append(
@@ -62,6 +62,7 @@ async def async_setup_entry(
                 unit,
                 icon,
                 device_class,
+                state_class,
                 enabled_by_default,
             )
         )
@@ -81,6 +82,7 @@ class GarminConnectSensor(CoordinatorEntity, SensorEntity):
         unit,
         icon,
         device_class,
+        state_class,
         enabled_default: bool = True,
     ):
         """Initialize a Garmin Connect sensor."""
@@ -89,6 +91,7 @@ class GarminConnectSensor(CoordinatorEntity, SensorEntity):
         self._unique_id = unique_id
         self._type = sensor_type
         self._device_class = device_class
+        self._state_class = state_class
         self._enabled_default = enabled_default
 
         self._attr_name = name
@@ -96,7 +99,7 @@ class GarminConnectSensor(CoordinatorEntity, SensorEntity):
         self._attr_icon = icon
         self._attr_native_unit_of_measurement = unit
         self._attr_unique_id = f"{self._unique_id}_{self._type}"
-        self._attr_state_class = SensorStateClass.TOTAL
+        self._attr_state_class = state_class
 
     @property
     def native_value(self):
