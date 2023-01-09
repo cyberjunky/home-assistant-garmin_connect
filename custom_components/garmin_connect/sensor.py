@@ -4,6 +4,7 @@ from __future__ import annotations
 import logging
 import datetime
 import pytz
+from tzlocal import get_localzone
 
 from homeassistant.components.sensor import (
     SensorEntity,
@@ -118,7 +119,8 @@ class GarminConnectSensor(CoordinatorEntity, SensorEntity):
             )
             if active_alarms:
                 date_time_obj = datetime.datetime.strptime(active_alarms[0], "%Y-%m-%dT%H:%M:%S")
-                timezone = pytz.timezone('UTC')
+                tz = get_localzone()
+                timezone = pytz.timezone(tz.zone)
                 timezone_date_time_obj = timezone.localize(date_time_obj)
                 return timezone_date_time_obj
             else:
@@ -128,7 +130,8 @@ class GarminConnectSensor(CoordinatorEntity, SensorEntity):
 
         if self._device_class == SensorDeviceClass.TIMESTAMP:
             date_time_obj = datetime.datetime.strptime(value, "%Y-%m-%dT%H:%M:%S.%f")
-            timezone = pytz.timezone('UTC')
+            tz = get_localzone()
+            timezone = pytz.timezone(tz.zone)
             timezone_date_time_obj = timezone.localize(date_time_obj)
             return timezone_date_time_obj
 
