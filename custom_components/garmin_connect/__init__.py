@@ -43,7 +43,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN][entry.entry_id] = {DATA_COORDINATOR: coordinator}
 
-    hass.config_entries.async_setup_platforms(entry, PLATFORMS)
+    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+
     return True
 
 
@@ -62,8 +63,13 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
         """Initialize the Garmin Connect hub."""
         self.entry = entry
         self.hass = hass
+        self.in_china = False
 
-        self._api = Garmin(entry.data[CONF_USERNAME], entry.data[CONF_PASSWORD])
+        country = self.hass.config.country
+        if country == "CN":
+            self.in_china = True
+
+        self._api = Garmin(entry.data[CONF_USERNAME], entry.data[CONF_PASSWORD], self.in_china)
 
         super().__init__(
             hass, _LOGGER, name=DOMAIN, update_interval=DEFAULT_UPDATE_INTERVAL
@@ -98,10 +104,13 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
             summary = await self.hass.async_add_executor_job(
                 self._api.get_user_summary, date.today().isoformat()
             )
+            _LOGGER.debug(summary)
             body = await self.hass.async_add_executor_job(
                 self._api.get_body_composition, date.today().isoformat()
             )
+            _LOGGER.debug(body)
             alarms = await self.hass.async_add_executor_job(self._api.get_device_alarms)
+            _LOGGER.debug(alarms)
             gear = await self.hass.async_add_executor_job(
                 self._api.get_gear, summary[GEAR.USERPROFILE_ID]
             )
@@ -118,6 +127,7 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
             gear_defaults = await self.hass.async_add_executor_job(
                 self._api.get_gear_defaults, summary[GEAR.USERPROFILE_ID]
             )
+
         except (
             GarminConnectAuthenticationError,
             GarminConnectTooManyRequestsError,

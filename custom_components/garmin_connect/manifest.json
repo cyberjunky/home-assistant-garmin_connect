@@ -1,13 +1,11 @@
 {
   "domain": "garmin_connect",
   "name": "Garmin Connect",
-  "documentation": "https://github.com/cyberjunky/home-assistant-garmin_connect",
-  "issue_tracker": "https://github.com/cyberjunky/home-assistant-garmin_connect/issues",
-  "requirements": [
-    "git+https://github.com/ray0711/python-garminconnect.git#garminconnect==0.1.50"
-  ],
   "codeowners": ["@cyberjunky"],
   "config_flow": true,
+  "documentation": "https://github.com/cyberjunky/home-assistant-garmin_connect",
+  "issue_tracker": "https://github.com/cyberjunky/home-assistant-garmin_connect/issues",
   "iot_class": "cloud_polling",
-  "version": "0.1.8"
+  "requirements": ["garminconnect==0.1.55"],
+  "version": "0.2.15"
 }

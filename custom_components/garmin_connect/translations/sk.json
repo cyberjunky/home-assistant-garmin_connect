@@ -1,0 +1,23 @@
+{
+    "config": {
+        "abort": {
+            "already_configured": "Účet je už nakonfigurovaný"
+        },
+        "error": {
+            "cannot_connect": "Nepodarilo sa pripojiť",
+            "invalid_auth": "Neplatné overenie",
+            "too_many_requests": "Príliš veľa žiadostí, skúste to neskôr.",
+            "unknown": "Neočakávaná chyba"
+        },
+        "step": {
+            "user": {
+                "data": {
+                    "password": "Heslo",
+                    "username": "Užívateľské meno"
+                },
+                "description": "Zadajte svoje poverenia.",
+                "title": "Garmin Connect"
+            }
+        }
+    }
+}
