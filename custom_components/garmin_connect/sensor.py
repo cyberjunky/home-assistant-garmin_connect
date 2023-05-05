@@ -105,6 +105,10 @@ class GarminConnectSensor(CoordinatorEntity, SensorEntity):
     @property
     def native_value(self):
         """Return the state of the sensor."""
+
+        if self._type == "lastActivities":
+            return len(self.coordinator.data[self._type])
+
         if not self.coordinator.data or not self.coordinator.data[self._type]:
             return None
 
@@ -146,6 +150,10 @@ class GarminConnectSensor(CoordinatorEntity, SensorEntity):
         attributes = {
             "last_synced": self.coordinator.data["lastSyncTimestampGMT"],
         }
+
+        if self._type == "lastActivities":
+            attributes["last_Activities"] = self.coordinator.data[self._type]
+
         if self._type == "nextAlarm":
             attributes["next_alarms"] = calculate_next_active_alarms(
                 self.coordinator.data[self._type]
