@@ -1,5 +1,7 @@
 """Constants for the Garmin Connect integration."""
 from datetime import timedelta
+from enum import Enum
+from typing import NamedTuple
 
 from homeassistant.const import (
     LENGTH_METERS,
@@ -402,3 +404,26 @@ GARMIN_ENTITY_LIST = {
     "lastActivities": ["Last Activities", None, "mdi:numeric", SensorStateClass.TOTAL, None, False]
 
 }
+
+GEAR_ICONS = {
+    "Shoes": "mdi:shoe-sneaker",
+    "Bike": "mdi:bike",
+    "Other": "mdi:basketball",
+    "Golf Clubs": "mdi:golf",
+}
+
+
+class SERVICE_SETTING(NamedTuple):
+    """Options for the service settings, see services.yaml"""
+
+    ONLY_THIS_AS_DEFAULT = "set this as default, unset others"
+    DEFAULT = "set as default"
+    UNSET_DEFAULT = "unset default"
+
+
+class GEAR(NamedTuple):
+    UUID = "uuid"
+    TYPE_KEY = "typeKey"
+    TYPE_ID = "typeId"
+    USERPROFILE_ID = "userProfileId"
+    ACTIVITY_TYPE_PK = "activityTypePk"
