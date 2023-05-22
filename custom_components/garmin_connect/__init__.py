@@ -1,5 +1,6 @@
 """The Garmin Connect integration."""
 from datetime import date
+from datetime import timedelta
 import logging
 
 from garminconnect import (
@@ -102,6 +103,11 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
             body = await self.hass.async_add_executor_job(
                 self._api.get_body_composition, date.today().isoformat()
             )
+            activities = await self.hass.async_add_executor_job(
+                self._api.get_activities_by_date, (date.today()-timedelta(days=7)).isoformat(), (date.today()+timedelta(days=1)).isoformat()
+            )
+
+
             _LOGGER.debug(body)
             alarms = await self.hass.async_add_executor_job(self._api.get_device_alarms)
             _LOGGER.debug(alarms)
@@ -114,6 +120,8 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
             if not await self.async_login():
                 raise UpdateFailed(error) from error
             return {}
+
+        summary['lastActivities'] = activities
 
         return {
             **summary,
