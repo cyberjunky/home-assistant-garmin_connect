@@ -7,5 +7,5 @@
   "issue_tracker": "https://github.com/cyberjunky/home-assistant-garmin_connect/issues",
   "iot_class": "cloud_polling",
   "requirements": ["garminconnect==0.1.55", "tzlocal"],
-  "version": "0.2.15"
+  "version": "0.2.16"
 }
