@@ -401,7 +401,15 @@ GARMIN_ENTITY_LIST = {
     "visceralFat": ["Visceral Fat", PERCENTAGE, "mdi:food", None, SensorStateClass.TOTAL, False],
     "metabolicAge": ["Metabolic Age", TIME_YEARS, "mdi:calendar-heart", None, SensorStateClass.TOTAL, False],
     "nextAlarm": ["Next Alarm Time", None, "mdi:alarm", SensorDeviceClass.TIMESTAMP, None, True],
-    "lastActivities": ["Last Activities", None, "mdi:numeric", SensorStateClass.TOTAL, None, False]
+    "lastActivities": ["Last Activities", None, "mdi:numeric", SensorStateClass.TOTAL, None, False],
+    "sleepScore": [
+        "Sleeep Score",
+        None,
+        "mdi:sleep",
+        SensorStateClass.TOTAL,
+        SensorStateClass.MEASUREMENT,
+        True,
+    ]
 
 }
 
