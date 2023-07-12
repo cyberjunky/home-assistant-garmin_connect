@@ -133,6 +133,8 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
             gear_defaults = await self.hass.async_add_executor_job(
                 self._api.get_gear_defaults, summary[GEAR.USERPROFILE_ID]
             )
+            sleep_data = await self.hass.async_add_executor_job(
+                self._api.get_sleep_data, date.today().isoformat())
 
         except (
             GarminConnectAuthenticationError,
@@ -144,6 +146,11 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
                 raise UpdateFailed(error) from error
             return {}
 
+        sleep_score = None
+        try:
+            sleep_score = sleep_data["dailySleepDTO"]["sleepScores"]["overall"]["value"]
+        except KeyError:
+            _LOGGER.debug("sleepScore was absent")
         summary['lastActivities'] = activities
 
         return {
@@ -154,6 +161,7 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
             "gear_stats": gear_stats,
             "activity_types": activity_types,
             "gear_defaults": gear_defaults,
+            "sleepScore": sleep_score,
         }
 
     async def set_active_gear(self, entity, service_data):
