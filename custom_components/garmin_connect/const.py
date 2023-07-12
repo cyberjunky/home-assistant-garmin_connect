@@ -403,7 +403,7 @@ GARMIN_ENTITY_LIST = {
     "nextAlarm": ["Next Alarm Time", None, "mdi:alarm", SensorDeviceClass.TIMESTAMP, None, True],
     "lastActivities": ["Last Activities", None, "mdi:numeric", SensorStateClass.TOTAL, None, False],
     "sleepScore": [
-        "Sleeep Score",
+        "Sleep Score",
         None,
         "mdi:sleep",
         SensorStateClass.TOTAL,
