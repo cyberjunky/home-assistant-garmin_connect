@@ -120,12 +120,12 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
             gear = await self.hass.async_add_executor_job(
                 self._api.get_gear, summary[GEAR.USERPROFILE_ID]
             )
-            tasks: list[Awaitable] = [
-                self.hass.async_add_executor_job(
-                    self._api.get_gear_stats, gear_item[GEAR.UUID]
-                )
-                for gear_item in gear
-            ]
+#WA            tasks: list[Awaitable] = [
+#WA                self.hass.async_add_executor_job(
+#WA                    self._api.get_gear_stats, gear_item[GEAR.UUID]
+#WA                )
+#WA                for gear_item in gear
+#WA            ]
             gear_stats = await asyncio.gather(*tasks)
             activity_types = await self.hass.async_add_executor_job(
                 self._api.get_activity_types
