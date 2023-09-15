@@ -3,7 +3,7 @@
 # Garmin Connect
 The Garmin Connect integration allows you to expose data from Garmin Connect to Home Assistant.
 
-NOTE: This integration doesn't support 2FA on Garmin Connect, so if you have enabled it -and want to keep it- this integration doesn't work, it will try to login repeatedly and generate lots of 2FA codes via email.
+NOTE: This integration doesn't support 2FA on Garmin Connect yet (support is coming), so if you have enabled it -and want to keep it- this integration doesn't work, it will try to login repeatedly and generate lots of 2FA codes via email.
 The change of adding support for it is unlikely since the Garmin Connect API is closed source, and will not be open for open-sourced projects.
 
 ## Installation
