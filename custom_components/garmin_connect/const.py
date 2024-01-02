@@ -4,11 +4,10 @@ from enum import Enum
 from typing import NamedTuple
 
 from homeassistant.const import (
-    LENGTH_METERS,
-    MASS_KILOGRAMS,
+    UnitOfMass,
+    UnitOfTime,
+    UnitOfLength,
     PERCENTAGE,
-    TIME_MINUTES,
-    TIME_YEARS,
 )
 from homeassistant.components.sensor import (
     SensorDeviceClass,
@@ -46,7 +45,7 @@ GARMIN_ENTITY_LIST = {
     "netCalorieGoal": ["Net Calorie Goal", "kcal", "mdi:food", None, SensorStateClass.TOTAL, False],
     "totalDistanceMeters": [
         "Total Distance Mtr",
-        LENGTH_METERS,
+        UnitOfLength.METERS,
         "mdi:walk",
         SensorDeviceClass.DISTANCE,
         SensorStateClass.TOTAL,
@@ -71,7 +70,7 @@ GARMIN_ENTITY_LIST = {
     "wellnessDescription": ["Wellness Description", "", "mdi:clock", None, SensorStateClass.TOTAL, False],
     "wellnessDistanceMeters": [
         "Wellness Distance Mtr",
-        LENGTH_METERS,
+        UnitOfLength.METERS,
         "mdi:walk",
         SensorDeviceClass.DISTANCE,
         SensorStateClass.TOTAL,
@@ -88,18 +87,18 @@ GARMIN_ENTITY_LIST = {
     "wellnessKilocalories": ["Wellness KiloCalories", "kcal", "mdi:food", None, SensorStateClass.TOTAL, False],
     "highlyActiveSeconds": [
         "Highly Active Time",
-        TIME_MINUTES,
+        UnitOfTime.MINUTES,
         "mdi:fire",
         SensorDeviceClass.DURATION,
         SensorStateClass.TOTAL,
         False,
     ],
-    "activeSeconds": ["Active Time", TIME_MINUTES, "mdi:fire", None, SensorStateClass.TOTAL, True],
-    "sedentarySeconds": ["Sedentary Time", TIME_MINUTES, "mdi:seat", None, SensorStateClass.TOTAL, True],
-    "sleepingSeconds": ["Sleeping Time", TIME_MINUTES, "mdi:sleep", None, SensorStateClass.TOTAL, True],
+    "activeSeconds": ["Active Time", UnitOfTime.MINUTES, "mdi:fire", None, SensorStateClass.TOTAL, True],
+    "sedentarySeconds": ["Sedentary Time", UnitOfTime.MINUTES, "mdi:seat", None, SensorStateClass.TOTAL, True],
+    "sleepingSeconds": ["Sleeping Time", UnitOfTime.MINUTES, "mdi:sleep", None, SensorStateClass.TOTAL, True],
     "measurableAwakeDuration": [
         "Awake Duration",
-        TIME_MINUTES,
+        UnitOfTime.MINUTES,
         "mdi:sleep",
         SensorDeviceClass.DURATION,
         SensorStateClass.TOTAL,
@@ -107,7 +106,7 @@ GARMIN_ENTITY_LIST = {
     ],
     "measurableAsleepDuration": [
         "Sleep Duration",
-        TIME_MINUTES,
+        UnitOfTime.MINUTES,
         "mdi:sleep",
         SensorDeviceClass.DURATION,
         SensorStateClass.TOTAL,
@@ -115,7 +114,7 @@ GARMIN_ENTITY_LIST = {
     ],
     "floorsAscendedInMeters": [
         "Floors Ascended Mtr",
-        LENGTH_METERS,
+        UnitOfLength.METERS,
         "mdi:stairs",
         SensorDeviceClass.DISTANCE,
         SensorStateClass.TOTAL,
@@ -123,7 +122,7 @@ GARMIN_ENTITY_LIST = {
     ],
     "floorsDescendedInMeters": [
         "Floors Descended Mtr",
-        LENGTH_METERS,
+        UnitOfLength.METERS,
         "mdi:stairs",
         SensorDeviceClass.DISTANCE,
         SensorStateClass.TOTAL,
@@ -163,10 +162,10 @@ GARMIN_ENTITY_LIST = {
     "averageStressLevel": ["Avg Stress Level", "lvl", "mdi:flash-alert", None, SensorStateClass.TOTAL, True],
     "maxStressLevel": ["Max Stress Level", "lvl", "mdi:flash-alert", None, SensorStateClass.TOTAL, True],
     "stressQualifier": ["Stress Qualifier", None, "mdi:flash-alert", None, None, False],
-    "stressDuration": ["Stress Duration", TIME_MINUTES, "mdi:flash-alert", None, SensorStateClass.TOTAL, False],
+    "stressDuration": ["Stress Duration", UnitOfTime.MINUTES, "mdi:flash-alert", None, SensorStateClass.TOTAL, False],
     "restStressDuration": [
         "Rest Stress Duration",
-        TIME_MINUTES,
+        UnitOfTime.MINUTES,
         "mdi:flash-alert",
         SensorDeviceClass.DURATION,
         SensorStateClass.TOTAL,
@@ -174,7 +173,7 @@ GARMIN_ENTITY_LIST = {
     ],
     "activityStressDuration": [
         "Activity Stress Duration",
-        TIME_MINUTES,
+        UnitOfTime.MINUTES,
         "mdi:flash-alert",
         SensorDeviceClass.DURATION,
         SensorStateClass.TOTAL,
@@ -182,7 +181,7 @@ GARMIN_ENTITY_LIST = {
     ],
     "uncategorizedStressDuration": [
         "Uncat. Stress Duration",
-        TIME_MINUTES,
+        UnitOfTime.MINUTES,
         "mdi:flash-alert",
         SensorDeviceClass.DURATION,
         SensorStateClass.TOTAL,
@@ -190,7 +189,7 @@ GARMIN_ENTITY_LIST = {
     ],
     "totalStressDuration": [
         "Total Stress Duration",
-        TIME_MINUTES,
+        UnitOfTime.MINUTES,
         "mdi:flash-alert",
         SensorDeviceClass.DURATION,
         SensorStateClass.TOTAL,
@@ -198,7 +197,7 @@ GARMIN_ENTITY_LIST = {
     ],
     "lowStressDuration": [
         "Low Stress Duration",
-        TIME_MINUTES,
+        UnitOfTime.MINUTES,
         "mdi:flash-alert",
         SensorDeviceClass.DURATION,
         SensorStateClass.TOTAL,
@@ -206,7 +205,7 @@ GARMIN_ENTITY_LIST = {
     ],
     "mediumStressDuration": [
         "Medium Stress Duration",
-        TIME_MINUTES,
+        UnitOfTime.MINUTES,
         "mdi:flash-alert",
         SensorDeviceClass.DURATION,
         SensorStateClass.TOTAL,
@@ -214,7 +213,7 @@ GARMIN_ENTITY_LIST = {
     ],
     "highStressDuration": [
         "High Stress Duration",
-        TIME_MINUTES,
+        UnitOfTime.MINUTES,
         "mdi:flash-alert",
         None,
         SensorStateClass.TOTAL,
@@ -278,7 +277,7 @@ GARMIN_ENTITY_LIST = {
     ],
     "moderateIntensityMinutes": [
         "Moderate Intensity",
-        TIME_MINUTES,
+        UnitOfTime.MINUTES,
         "mdi:flash-alert",
         SensorDeviceClass.DURATION,
         SensorStateClass.TOTAL,
@@ -286,7 +285,7 @@ GARMIN_ENTITY_LIST = {
     ],
     "vigorousIntensityMinutes": [
         "Vigorous Intensity",
-        TIME_MINUTES,
+        UnitOfTime.MINUTES,
         "mdi:run-fast",
         SensorDeviceClass.DURATION,
         SensorStateClass.TOTAL,
@@ -294,7 +293,7 @@ GARMIN_ENTITY_LIST = {
     ],
     "intensityMinutesGoal": [
         "Intensity Goal",
-        TIME_MINUTES,
+        UnitOfTime.MINUTES,
         "mdi:run-fast",
         None,
         SensorStateClass.TOTAL,
@@ -391,15 +390,15 @@ GARMIN_ENTITY_LIST = {
         None,
         False,
     ],
-    "weight": ["Weight", MASS_KILOGRAMS, "mdi:weight-kilogram", SensorDeviceClass.WEIGHT, SensorStateClass.MEASUREMENT, False],
+    "weight": ["Weight", UnitOfMass.KILOGRAMS, "mdi:weight-kilogram", SensorDeviceClass.WEIGHT, SensorStateClass.MEASUREMENT, False],
     "bmi": ["BMI", "bmi", "mdi:food", None, SensorStateClass.TOTAL, False],
     "bodyFat": ["Body Fat", PERCENTAGE, "mdi:food", None, SensorStateClass.TOTAL, False],
     "bodyWater": ["Body Water", PERCENTAGE, "mdi:water-percent", None, SensorStateClass.TOTAL, False],
-    "boneMass": ["Bone Mass", MASS_KILOGRAMS, "mdi:bone", SensorDeviceClass.WEIGHT, SensorStateClass.MEASUREMENT, False],
-    "muscleMass": ["Muscle Mass", MASS_KILOGRAMS, "mdi:dumbbell", SensorDeviceClass.WEIGHT, SensorStateClass.MEASUREMENT, False],
+    "boneMass": ["Bone Mass", UnitOfMass.KILOGRAMS, "mdi:bone", SensorDeviceClass.WEIGHT, SensorStateClass.MEASUREMENT, False],
+    "muscleMass": ["Muscle Mass", UnitOfMass.KILOGRAMS, "mdi:dumbbell", SensorDeviceClass.WEIGHT, SensorStateClass.MEASUREMENT, False],
     "physiqueRating": ["Physique Rating", None, "mdi:numeric", None, SensorStateClass.TOTAL, False],
     "visceralFat": ["Visceral Fat", PERCENTAGE, "mdi:food", None, SensorStateClass.TOTAL, False],
-    "metabolicAge": ["Metabolic Age", TIME_YEARS, "mdi:calendar-heart", None, SensorStateClass.TOTAL, False],
+    "metabolicAge": ["Metabolic Age", UnitOfTime.YEARS, "mdi:calendar-heart", None, SensorStateClass.TOTAL, False],
     "nextAlarm": ["Next Alarm Time", None, "mdi:alarm", SensorDeviceClass.TIMESTAMP, None, True],
     "lastActivities": ["Last Activities", None, "mdi:numeric", SensorStateClass.TOTAL, None, False],
     "sleepScore": [
