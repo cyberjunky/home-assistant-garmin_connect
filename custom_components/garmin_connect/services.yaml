@@ -1,8 +1,5 @@
 set_active_gear:
   name: Set active gear for activity
-  # target:
-  #   entity:
-  #     integration: "garmin_connect"
   fields:
     activity_type:
       required: true
