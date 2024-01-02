@@ -15,10 +15,9 @@ from homeassistant.components.sensor import (
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
+    UnitOfLength,
     ATTR_ENTITY_ID,
     CONF_ID,
-    DEVICE_CLASS_TIMESTAMP,
-    LENGTH_KILOMETERS,
 )
 from homeassistant.const import ATTR_ATTRIBUTION, CONF_ID
 from homeassistant.core import HomeAssistant
@@ -248,7 +247,7 @@ class GarminConnectGearSensor(CoordinatorEntity, SensorEntity):
         self._attr_name = name
         self._attr_device_class = self._device_class
         self._attr_icon = GEAR_ICONS[sensor_type]
-        self._attr_native_unit_of_measurement = LENGTH_KILOMETERS
+        self._attr_native_unit_of_measurement = UnitOfLength.KILOMETERS
         self._attr_unique_id = f"{self._unique_id}_{self._uuid}"
         self._attr_state_class = SensorStateClass.TOTAL
         self._attr_device_class = "garmin_gear"
