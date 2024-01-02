@@ -233,3 +233,27 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
             await self.hass.async_add_executor_job(
                 self._api.set_gear_default, activity_type_id, entity.uuid, True
             )
+
+    async def add_body_composition(self, entity, service_data):
+        """Record a weigh in/body composition"""
+        if not await self.async_login():
+            raise IntegrationError(
+                "Failed to login to Garmin Connect, unable to update"
+            )
+
+        await self.hass.async_add_executor_job(
+            self._api.add_body_composition,
+                    service_data.data.get("timestamp", None),
+                    service_data.data.get("weight"),
+                    service_data.data.get("percent_fat", None),
+                    service_data.data.get("percent_hydration", None),
+                    service_data.data.get("visceral_fat_mass", None),
+                    service_data.data.get("bone_mass", None),
+                    service_data.data.get("muscle_mass", None),
+                    service_data.data.get("basal_met", None),
+                    service_data.data.get("active_met", None),
+                    service_data.data.get("physique_rating", None),
+                    service_data.data.get("metabolic_age", None),
+                    service_data.data.get("visceral_fat_rating", None),
+                    service_data.data.get("bmi", None)
+        )

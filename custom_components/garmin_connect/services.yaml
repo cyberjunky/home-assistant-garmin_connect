@@ -34,3 +34,79 @@ set_active_gear:
         entity:
           integration: garmin_connect
           device_class: garmin_gear
+
+add_body_composition:
+  name: Adds updated body composition metrics
+  fields:
+    weight:
+      required: true
+      name: Weight
+      description: Weight in KG
+      example: 82.3
+    timestamp:
+      required: false
+      name: Timestamp
+      description: Datetime string of when the measurements were recorded. Defaults to now.
+      example: 2023-12-30T07:34:00
+    bmi:
+      required: false
+      name: BMI (Body Mass Index)
+      description: Body mass index is based on weight and height.
+      example: 24.7
+    percent_fat:
+      required: false
+      name: Percent Fat
+      description: Percent body fat
+      example: 23.6
+    percent_hydration:
+      required: false
+      name: Percent Hydration
+      description: Percent body hydration
+      example: 51.2
+    visceral_fat_mass:
+      required: false
+      name: Visceral Fat Mass
+      description: Estimated mass of visceral fat in KG
+      example: 45.3
+    bone_mass:
+      required: false
+      name: Bone Mass
+      description: Estimated mass of bones in KG
+      example: 10.1
+    muscle_mass:
+      required: false
+      name: Muscle Mass
+      description: Estimated mass of muscle in KG
+      example: 15.2
+    basal_met:
+      required: false
+      name: Basel Metabolism
+      description: Basel metabolism
+      example: 1900
+    active_met:
+      required: false
+      name: Active Metabolism
+      description: Active metabolism
+      example: 840
+    physique_rating:
+      required: false
+      name: Physique Rating
+      description: Physique Rating
+      example: 28
+    metabolic_age:
+      required: false
+      name: Metabolic Age
+      description: Metabolic Age
+      example: 37
+    visceral_fat_rating:
+      required: false
+      name: Visceral Fat Rating
+      description: Visceral Fat Rating
+      example: 10
+    entity_id:
+      description: entity
+      required: true
+      selector:
+        entity:
+          integration: garmin_connect
+          device_class: weight
