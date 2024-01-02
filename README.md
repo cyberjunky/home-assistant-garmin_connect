@@ -135,6 +135,39 @@ Metabolic Age
 
 ![screenshot](https://github.com/cyberjunky/home-assistant-garmin_connect/blob/main/screenshots/garmin_connect.png?raw=true "Screenshot Garmin Connect")
 
+## Tips and Tricks
+
+### Set up an automation using the garmin_connect.add_body_composition service
+
+Useful if you want to pass your weight from another (incompatible) device to Garmin Connect. Garmin Connect does calculate your BMI when you enter your weight manually so it needs to be passed along for now.  
+
+```
+alias: uiSendWeightToGarminConnect
+description: ""
+trigger:
+  - platform: state
+    entity_id:
+      - sensor.my_weight
+condition:
+  - condition: and
+    conditions:
+      - condition: numeric_state
+        entity_id: sensor.my_weight
+        above: 75
+      - condition: numeric_state
+        entity_id: sensor.my_weight
+        below: 88
+action:
+  - service: garmin_connect.add_body_composition
+    data:
+      entity_id: sensor.garmin_connect_weight
+      weight: "{{trigger.to_state.state}}"
+      timestamp: "{{ as_timestamp(now())  | timestamp_local}}"
+      bmi: >-
+        {{ (trigger.to_state.state | float(0) / 1.86**2 )| round(1, default=0)
+        }}
+mode: single
+```
 ## Debugging
 
 Add the relevant lines below to the `configuration.yaml`:
