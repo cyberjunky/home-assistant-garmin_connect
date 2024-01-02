@@ -1,5 +1,6 @@
 set_active_gear:
   name: Set active gear for activity
+  description: Set active gear for activity.
   fields:
     activity_type:
       required: true
@@ -37,6 +38,7 @@ set_active_gear:
 
 add_body_composition:
   name: Adds updated body composition metrics
+  description: Adds updated body composition metrics.
   fields:
     weight:
       required: true
