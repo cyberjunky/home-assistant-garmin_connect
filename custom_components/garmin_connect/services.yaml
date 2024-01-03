@@ -29,6 +29,7 @@ set_active_gear:
             - set as default
             - unset default
     entity_id:
+      name: entity
       description: entity
       required: true
       selector:
@@ -106,6 +107,7 @@ add_body_composition:
       description: Visceral Fat Rating
       example: 10
     entity_id:
+      name: entity
       description: entity
       required: true
       selector:
