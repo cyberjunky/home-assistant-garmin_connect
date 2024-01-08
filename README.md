@@ -139,7 +139,7 @@ Metabolic Age
 
 ### Set up an automation using the garmin_connect.add_body_composition service
 
-Useful if you want to pass your weight from another (incompatible) device to Garmin Connect. Garmin Connect does calculate your BMI when you enter your weight manually so it needs to be passed along for now.  
+Useful if you want to pass your weight from another (incompatible) device to Garmin Connect. Garmin Connect does not calculate your BMI when you enter your weight manually so it needs to be passed along for now.  
 
 ```
 alias: uiSendWeightToGarminConnect
