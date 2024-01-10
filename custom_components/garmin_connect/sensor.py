@@ -168,7 +168,7 @@ class GarminConnectSensor(CoordinatorEntity, SensorEntity):
         self._attr_device_class = self._device_class
         self._attr_icon = icon
         self._attr_native_unit_of_measurement = unit
-        self._attr_unique_id = f"{self._device_id}_{self._type}"
+        self._attr_unique_id = f"{GARMIN_DOMAIN}_{self._device_id}_{self._type}"
         self._attr_state_class = state_class
 
     @property
@@ -279,7 +279,7 @@ class GarminConnectGearSensor(CoordinatorEntity, SensorEntity):
         self._attr_device_class = self._device_class
         self._attr_icon = GEAR_ICONS[sensor_type]
         self._attr_native_unit_of_measurement = UnitOfLength.KILOMETERS
-        self._attr_unique_id = f"{self._device_id}_{self._uuid}"
+        self._attr_unique_id = f"{GARMIN_DOMAIN}_{self._device_id}_{self._uuid}"
         self._attr_state_class = SensorStateClass.TOTAL
         self._attr_device_class = "garmin_gear"
 
