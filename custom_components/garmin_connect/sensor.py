@@ -20,7 +20,8 @@ from homeassistant.const import (
     ATTR_ENTITY_ID,
     CONF_ID,
 )
-from homeassistant.const import ATTR_ATTRIBUTION, CONF_ID, CONF_USERNAME
+
+from homeassistant.const import CONF_ID, CONF_USERNAME
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_platform
 from homeassistant.helpers.entity import DeviceInfo, generate_entity_id

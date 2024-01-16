@@ -1,6 +1,5 @@
 """Constants for the Garmin Connect integration."""
 from datetime import timedelta
-from enum import Enum
 from typing import NamedTuple
 
 from homeassistant.const import (
