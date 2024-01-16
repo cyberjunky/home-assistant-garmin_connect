@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+
+set -e
+
+cd "$(dirname "$0")/.."
+
+python3 -m pip install --requirement requirements_lint.txt
+
+ruff check . --fix;
+pre-commit install-hooks --config .github/pre-commit-config.yaml;
+pre-commit run --hook-stage manual --all-files --config .github/pre-commit-config.yaml;
+
+vulture . --min-confidence 55 --ignore-names policy

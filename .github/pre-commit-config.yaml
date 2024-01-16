@@ -1,0 +1,50 @@
+repos:
+  - repo: https://github.com/asottile/pyupgrade
+    rev: v2.34.0
+    hooks:
+      - id: pyupgrade
+        stages: [manual]
+        args:
+          - "--py39-plus"
+
+  - repo: https://github.com/pycqa/isort
+    rev: 5.12.0
+    hooks:
+      - id: isort
+        name: isort (python)
+
+  - repo: https://github.com/psf/black
+    rev: 23.1.0
+    hooks:
+      - id: black
+        stages: [manual]
+        args:
+          - --safe
+          - --quiet
+        files: ^((custom_components|script|tests)/.+)?[^/]+\.py$
+
+  - repo: https://github.com/codespell-project/codespell
+    rev: v2.1.0
+    hooks:
+      - id: codespell
+        stages: [manual]
+        args:
+          - --quiet-level=2
+          - --ignore-words-list=hass,ba,fo
+          - --exclude-file=custom_components/hacs/utils/default.repositories
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.3.0
+    hooks:
+      - id: check-executables-have-shebangs
+        stages: [manual]
+      - id: check-json
+        stages: [manual]
+      - id: requirements-txt-fixer
+        stages: [manual]
+      - id: check-ast
+        stages: [manual]
+      - id: mixed-line-ending
+        stages: [manual]
+        args:
+          - --fix=lf

@@ -112,13 +112,13 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
         activity_types = {}
         sleep_data = {}
         sleep_score = None
-        
+
         try:
             summary = await self.hass.async_add_executor_job(
                 self._api.get_user_summary, date.today().isoformat()
             )
             _LOGGER.debug(f"Summary data: {summary}")
-            
+
             body = await self.hass.async_add_executor_job(
                 self._api.get_body_composition, date.today().isoformat()
             )

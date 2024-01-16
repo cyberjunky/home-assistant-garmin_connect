@@ -19,8 +19,7 @@ DAY_TO_NUMBER = {
 
 
 def calculate_next_active_alarms(alarms):
-    """
-    Calculate garmin next active alarms from settings.
+    """Calculate garmin next active alarms from settings.
 
     Alarms are sorted by time
     """

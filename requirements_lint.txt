@@ -1,0 +1,3 @@
+-r requirements.txt
+pre-commit==3.5.0
+vulture==2.10
