@@ -1,12 +1,12 @@
 {
-  "domain": "garmin_connect",
-  "name": "Garmin Connect",
-  "codeowners": ["@cyberjunky"],
+  "domain": "garmin_connect_custom",
+  "name": "Garmin Connect (Custom)",
+  "codeowners": ["@kozerskil"],
   "config_flow": true,
   "dependencies": [],
-  "documentation": "https://github.com/cyberjunky/home-assistant-garmin_connect",
+  "documentation": "https://github.com/kozerskil/home-assistant-garmin_connect",
   "iot_class": "cloud_polling",
-  "issue_tracker": "https://github.com/cyberjunky/home-assistant-garmin_connect/issues",
+  "issue_tracker": "https://github.com/kozerskil/home-assistant-garmin_connect/issues",
   "requirements": ["garminconnect==0.2.12", "tzlocal"],
   "version": "0.2.19"
 }
