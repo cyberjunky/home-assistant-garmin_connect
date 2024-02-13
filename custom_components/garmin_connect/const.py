@@ -13,7 +13,7 @@ from homeassistant.components.sensor import (
     SensorStateClass,
 )
 
-DOMAIN = "garmin_connect"
+DOMAIN = "garmin_connect_custom"
 DATA_COORDINATOR = "coordinator"
 DEFAULT_UPDATE_INTERVAL = timedelta(minutes=5)
 
