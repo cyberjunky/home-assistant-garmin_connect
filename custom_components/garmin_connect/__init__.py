@@ -130,6 +130,12 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
             _LOGGER.debug(f"Activities data: {activities}")
             summary['lastActivities'] = activities
 
+            badges = await self.hass.async_add_executor_job(
+                self._api.get_earned_badges
+            )
+            _LOGGER.debug(f"Badges data: {badges}")
+            summary['badges'] = badges
+
             alarms = await self.hass.async_add_executor_job(self._api.get_device_alarms)
             _LOGGER.debug(f"Alarms data: {alarms}")
 
