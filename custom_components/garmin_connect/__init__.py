@@ -120,7 +120,7 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
             _LOGGER.debug(f"Summary data: {summary}")
 
             body = await self.hass.async_add_executor_job(
-                self._api.get_body_composition, date.today().isoformat()
+                self._api.get_body_composition, (date.today()-timedelta(days=7)).isoformat(), date.today().isoformat())
             )
             _LOGGER.debug(f"Body data: {body}")
 
