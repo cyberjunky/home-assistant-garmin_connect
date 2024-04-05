@@ -267,8 +267,8 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
 
         await self.hass.async_add_executor_job(
             self._api.set_blood_pressure,
-                    service_data.data.get("systolic"),
-                    service_data.data.get("diastolic"),
-                    service_data.data.get("pulse"),
-                    service_data.data.get("note", None)
+                    service_data.data.get('systolic'),
+                    service_data.data.get('diastolic'),
+                    service_data.data.get('pulse'),
+                    service_data.data.get('note', None)
         )
