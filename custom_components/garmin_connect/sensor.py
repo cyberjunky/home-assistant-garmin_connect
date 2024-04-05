@@ -108,6 +108,10 @@ async def async_setup_entry(
         "add_body_composition", BODY_COMPOSITION_SERVICE_SCHEMA, coordinator.add_body_composition
     )
 
+    platform.async_register_entity_service(
+        "add_blood_pressure", BLOOD_PRESSURE_SERVICE_SCHEMA, coordinator.add_blood_pressure
+    )
+
 ENTITY_SERVICE_SCHEMA = vol.Schema(
     {
         vol.Required(ATTR_ENTITY_ID): str,
@@ -132,6 +136,17 @@ BODY_COMPOSITION_SERVICE_SCHEMA = vol.Schema(
         vol.Optional("metabolic_age"): float,
         vol.Optional("visceral_fat_rating"): float,
         vol.Optional("bmi"): float
+    }
+)
+
+BLOOD_PRESSURE_SERVICE_SCHEMA = vol.Schema(
+    {
+        vol.Required(ATTR_ENTITY_ID): str,
+        vol.Required("systolic"): float,
+        vol.Required("diastolic"): float,
+        vol.Required("pulse"): float,
+        vol.Optional("note"): str
+
     }
 )
 

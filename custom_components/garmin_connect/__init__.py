@@ -257,3 +257,18 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
                     service_data.data.get("visceral_fat_rating", None),
                     service_data.data.get("bmi", None)
         )
+
+    async def add_blood_pressure(self, entity, service_data):
+        """Record a blood pressure measurement"""
+        if not await self.async_login():
+            raise IntegrationError(
+                "Failed to login to Garmin Connect, unable to update"
+            )
+
+        await self.hass.async_add_executor_job(
+            self._api.set_blood_pressure,
+                    service_data.data.get("systolic"),
+                    service_data.data.get("diastolic"),
+                    service_data.data.get("pulse"),
+                    service_data.data.get("note", None)
+        )
