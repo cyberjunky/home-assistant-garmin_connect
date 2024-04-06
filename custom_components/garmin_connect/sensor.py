@@ -9,7 +9,6 @@ import datetime
 from tzlocal import get_localzone
 
 from homeassistant.components.sensor import (
-    ENTITY_ID_FORMAT,
     SensorEntity,
     SensorDeviceClass,
     SensorStateClass,
@@ -20,11 +19,10 @@ from homeassistant.const import (
     ATTR_ENTITY_ID,
     CONF_ID,
 )
-
-from homeassistant.const import CONF_ID, CONF_USERNAME
+from homeassistant.const import ATTR_ATTRIBUTION, CONF_ID
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_platform
-from homeassistant.helpers.entity import DeviceInfo, generate_entity_id
+from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.update_coordinator import (
     CoordinatorEntity,
     DataUpdateCoordinator,
@@ -50,14 +48,14 @@ async def async_setup_entry(
     coordinator: DataUpdateCoordinator = hass.data[GARMIN_DOMAIN][entry.entry_id][
         DATA_COORDINATOR
     ]
-    device_id = entry.data[CONF_ID]
-    user_identifier = entry.data[CONF_USERNAME].split("@")[0]
+    unique_id = entry.data[CONF_ID]
 
     entities = []
     for (
         sensor_type,
         (name, unit, icon, device_class, state_class, enabled_by_default),
     ) in GARMIN_ENTITY_LIST.items():
+
         _LOGGER.debug(
             "Registering entity: %s, %s, %s, %s, %s, %s, %s",
             sensor_type,
@@ -71,8 +69,7 @@ async def async_setup_entry(
         entities.append(
             GarminConnectSensor(
                 coordinator,
-                device_id,
-                user_identifier,
+                unique_id,
                 sensor_type,
                 name,
                 unit,
@@ -87,8 +84,7 @@ async def async_setup_entry(
             entities.append(
                 GarminConnectGearSensor(
                     coordinator,
-                    device_id,
-                    user_identifier,
+                    unique_id,
                     gear_item[GEAR.UUID],
                     gear_item["gearTypeName"],
                     gear_item["displayName"],
@@ -141,10 +137,9 @@ class GarminConnectSensor(CoordinatorEntity, SensorEntity):
     def __init__(
         self,
         coordinator,
-        device_id,
-        user_identifier,
+        unique_id,
         sensor_type,
-        sensor_name,
+        name,
         unit,
         icon,
         device_class,
@@ -154,22 +149,17 @@ class GarminConnectSensor(CoordinatorEntity, SensorEntity):
         """Initialize a Garmin Connect sensor."""
         super().__init__(coordinator)
 
-        self._device_id = device_id
+        self._unique_id = unique_id
         self._type = sensor_type
         self._device_class = device_class
         self._state_class = state_class
         self._enabled_default = enabled_default
 
-        self._attr_name = f"{user_identifier} {sensor_name}"
-        self.entity_id = generate_entity_id(
-            ENTITY_ID_FORMAT,
-            f"{GARMIN_DOMAIN} {self._attr_name}",
-            hass=coordinator.hass,
-        )
+        self._attr_name = name
         self._attr_device_class = self._device_class
         self._attr_icon = icon
         self._attr_native_unit_of_measurement = unit
-        self._attr_unique_id = f"{GARMIN_DOMAIN}_{self._device_id}_{self._type}"
+        self._attr_unique_id = f"{self._unique_id}_{self._type}"
         self._attr_state_class = state_class
 
     @property
@@ -233,7 +223,7 @@ class GarminConnectSensor(CoordinatorEntity, SensorEntity):
     def device_info(self) -> DeviceInfo:
         """Return device information."""
         return {
-            "identifiers": {(GARMIN_DOMAIN, self._device_id)},
+            "identifiers": {(GARMIN_DOMAIN, self._unique_id)},
             "name": "Garmin Connect",
             "manufacturer": "Garmin Connect",
         }
@@ -259,28 +249,27 @@ class GarminConnectGearSensor(CoordinatorEntity, SensorEntity):
     def __init__(
         self,
         coordinator,
-        device_id,
-        user_identifier,
+        unique_id,
         uuid,
         sensor_type,
-        sensor_name,
+        name,
         device_class: None,
         enabled_default: bool = True,
     ):
         """Initialize a Garmin Connect sensor."""
         super().__init__(coordinator)
 
-        self._device_id = device_id
+        self._unique_id = unique_id
         self._type = sensor_type
         self._uuid = uuid
         self._device_class = device_class
         self._enabled_default = enabled_default
 
-        self._attr_name = f"{user_identifier} {sensor_name}"
+        self._attr_name = name
         self._attr_device_class = self._device_class
         self._attr_icon = GEAR_ICONS[sensor_type]
         self._attr_native_unit_of_measurement = UnitOfLength.KILOMETERS
-        self._attr_unique_id = f"{GARMIN_DOMAIN}_{self._device_id}_{self._uuid}"
+        self._attr_unique_id = f"{self._unique_id}_{self._uuid}"
         self._attr_state_class = SensorStateClass.TOTAL
         self._attr_device_class = "garmin_gear"
 
@@ -348,7 +337,7 @@ class GarminConnectGearSensor(CoordinatorEntity, SensorEntity):
     def device_info(self) -> DeviceInfo:
         """Return device information."""
         return {
-            "identifiers": {(GARMIN_DOMAIN, self._device_id)},
+            "identifiers": {(GARMIN_DOMAIN, self._unique_id)},
             "name": "Garmin Connect",
             "manufacturer": "Garmin Connect",
         }

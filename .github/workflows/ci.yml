@@ -1,0 +1,56 @@
+# This workflow will install Python dependencies, run tests and lint with a single version of Python
+# For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
+
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request: ~
+  schedule:
+    - cron: "0 0 * * *"
+
+env:
+  DEFAULT_PYTHON: "3.11"
+
+jobs:
+  validate-hacs:
+    runs-on: "ubuntu-latest"
+    name: Validate with HACS
+    steps:
+      - uses: "actions/checkout@v4"
+
+      - name: HACS validation
+        uses: "hacs/action@main"
+        with:
+          category: "integration"
+
+  validate-hassfest:
+    runs-on: "ubuntu-latest"
+    name: Validate with Hassfest
+    steps:
+      - uses: "actions/checkout@v4"
+
+      - name: Hassfest validation
+        uses: "home-assistant/actions/hassfest@master"
+
+  code-quality:
+    runs-on: "ubuntu-latest"
+    name: Check code quality
+    steps:
+      - uses: "actions/checkout@v4"
+      - name: Set up Python ${{ env.DEFAULT_PYTHON }}
+        id: python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.DEFAULT_PYTHON }}
+          cache: "pip"
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+      # Following steps cannot run by pre-commit.ci as repo = local
+      - name: Run mypy
+        run: mypy custom_components/
+      - name: Pylint review
+        run: pylint custom_components/

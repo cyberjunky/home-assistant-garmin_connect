@@ -1,0 +1,81 @@
+[MASTER]
+ignore=tests
+# Use a conservative default here; 2 should speed up most setups and not hurt
+# any too bad. Override on command line as appropriate.
+jobs=2
+
+# Return non-zero exit code if any of these messages/categories are detected,
+# even if score is above --fail-under value. Syntax same as enable. Messages
+# specified are enabled, while categories only check already-enabled messages.
+fail-on=
+  useless-suppression,
+
+# Specify a score threshold to be exceeded before program exits with error.
+fail-under=10.0
+
+# List of plugins (as comma separated values of python module names) to load,
+# usually to register additional checkers.
+# load-plugins=
+
+# Pickle collected data for later comparisons.
+persistent=no
+
+# A comma-separated list of package or module names from where C extensions may
+# be loaded. Extensions are loading into the active Python interpreter and may
+# run arbitrary code. (This is an alternative name to extension-pkg-allow-list
+# for backward compatibility.)
+extension-pkg-whitelist=ciso8601,
+                        cv2
+
+
+[BASIC]
+good-names=i,j,k,ex,_,T,x,y,id
+
+[MESSAGES CONTROL]
+# Reasons disabled:
+# format - handled by black
+# duplicate-code - unavoidable
+# cyclic-import - doesn't test if both import on load
+# too-many-* - are not enforced for the sake of readability
+# abstract-method - with intro of async there are always methods missing
+# inconsistent-return-statements - doesn't handle raise
+# wrong-import-order - isort guards this
+disable=
+  format,
+  abstract-class-little-used,
+  abstract-method,
+  cyclic-import,
+  duplicate-code,
+  inconsistent-return-statements,
+  too-many-instance-attributes,
+  wrong-import-order,
+  too-few-public-methods
+
+# enable useless-suppression temporarily every now and then to clean them up
+enable=
+  useless-suppression,
+  use-symbolic-message-instead,
+
+[REPORTS]
+score=no
+
+[REFACTORING]
+
+# Maximum number of nested blocks for function / method body
+max-nested-blocks=5
+
+# Complete name of functions that never returns. When checking for
+# inconsistent-return-statements if a never returning function is called then
+# it will be considered as an explicit return statement and no message will be
+# printed.
+never-returning-functions=sys.exit,argparse.parse_error
+
+[FORMAT]
+expected-line-ending-format=LF
+
+[EXCEPTIONS]
+
+# Exceptions that will emit a warning when being caught. Defaults to
+# "BaseException, Exception".
+overgeneral-exceptions=BaseException,
+                       Exception
