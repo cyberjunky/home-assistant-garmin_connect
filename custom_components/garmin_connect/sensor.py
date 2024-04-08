@@ -142,9 +142,9 @@ BODY_COMPOSITION_SERVICE_SCHEMA = vol.Schema(
 BLOOD_PRESSURE_SERVICE_SCHEMA = vol.Schema(
     {
         vol.Required(ATTR_ENTITY_ID): str,
-        vol.Required("systolic"): float,
-        vol.Required("diastolic"): float,
-        vol.Required("pulse"): float,
+        vol.Required("systolic"): int,
+        vol.Required("diastolic"): int,
+        vol.Required("pulse"): int,
         vol.Optional("note"): str
 
     }

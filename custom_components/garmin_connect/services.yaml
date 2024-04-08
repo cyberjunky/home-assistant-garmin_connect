@@ -146,4 +146,4 @@ add_blood_pressure:
       required: false
       name: Notes
       description: Add a note to the measurement
-      example: "Measured with Beurer BC54"
+      example: 'Measured with Beurer BC54'

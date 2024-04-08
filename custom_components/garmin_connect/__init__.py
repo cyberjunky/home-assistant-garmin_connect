@@ -260,6 +260,7 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
 
     async def add_blood_pressure(self, entity, service_data):
         """Record a blood pressure measurement"""
+
         if not await self.async_login():
             raise IntegrationError(
                 "Failed to login to Garmin Connect, unable to update"
