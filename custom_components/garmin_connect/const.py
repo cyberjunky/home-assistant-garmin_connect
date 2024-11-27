@@ -158,8 +158,8 @@ GARMIN_ENTITY_LIST = {
         SensorStateClass.MEASUREMENT,
         False,
     ],
-    "averageStressLevel": ["Avg Stress Level", "lvl", "mdi:flash-alert", None, SensorStateClass.TOTAL, True],
-    "maxStressLevel": ["Max Stress Level", "lvl", "mdi:flash-alert", None, SensorStateClass.TOTAL, True],
+    "averageStressLevel": ["Avg Stress Level", "lvl", "mdi:flash-alert", None, SensorStateClass.MEASUREMENT, True],
+    "maxStressLevel": ["Max Stress Level", "lvl", "mdi:flash-alert", None, SensorStateClass.MEASUREMENT, True],
     "stressQualifier": ["Stress Qualifier", None, "mdi:flash-alert", None, None, False],
     "stressDuration": ["Stress Duration", UnitOfTime.MINUTES, "mdi:flash-alert", None, SensorStateClass.TOTAL, False],
     "restStressDuration": [
@@ -223,7 +223,7 @@ GARMIN_ENTITY_LIST = {
         PERCENTAGE,
         "mdi:flash-alert",
         None,
-        SensorStateClass.TOTAL,
+        SensorStateClass.MEASUREMENT,
         False,
     ],
     "restStressPercentage": [
@@ -231,7 +231,7 @@ GARMIN_ENTITY_LIST = {
         PERCENTAGE,
         "mdi:flash-alert",
         None,
-        SensorStateClass.TOTAL,
+        SensorStateClass.MEASUREMENT,
         False,
     ],
     "activityStressPercentage": [
@@ -239,7 +239,7 @@ GARMIN_ENTITY_LIST = {
         PERCENTAGE,
         "mdi:flash-alert",
         None,
-        SensorStateClass.TOTAL,
+        SensorStateClass.MEASUREMENT,
         False,
     ],
     "uncategorizedStressPercentage": [
@@ -247,7 +247,7 @@ GARMIN_ENTITY_LIST = {
         PERCENTAGE,
         "mdi:flash-alert",
         None,
-        SensorStateClass.TOTAL,
+        SensorStateClass.MEASUREMENT,
         False,
     ],
     "lowStressPercentage": [
@@ -255,7 +255,7 @@ GARMIN_ENTITY_LIST = {
         PERCENTAGE,
         "mdi:flash-alert",
         None,
-        SensorStateClass.TOTAL,
+        SensorStateClass.MEASUREMENT,
         False,
     ],
     "mediumStressPercentage": [
@@ -263,7 +263,7 @@ GARMIN_ENTITY_LIST = {
         PERCENTAGE,
         "mdi:flash-alert",
         None,
-        SensorStateClass.TOTAL,
+        SensorStateClass.MEASUREMENT,
         False,
     ],
     "highStressPercentage": [
@@ -271,7 +271,7 @@ GARMIN_ENTITY_LIST = {
         PERCENTAGE,
         "mdi:flash-alert",
         None,
-        SensorStateClass.TOTAL,
+        SensorStateClass.MEASUREMENT,
         False,
     ],
     "moderateIntensityMinutes": [
