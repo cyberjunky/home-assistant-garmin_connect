@@ -169,6 +169,9 @@ class GarminConnectSensor(CoordinatorEntity, SensorEntity):
         if self._type == "lastActivities":
             return len(self.coordinator.data[self._type])
 
+        if self._type == "badges":
+            return len(self.coordinator.data[self._type])
+        
         if not self.coordinator.data or not self.coordinator.data[self._type]:
             return None
 
@@ -211,6 +214,9 @@ class GarminConnectSensor(CoordinatorEntity, SensorEntity):
 
         if self._type == "lastActivities":
             attributes["last_Activities"] = self.coordinator.data[self._type]
+
+        if self._type == "badges":
+            attributes["badges"] = self.coordinator.data[self._type]
 
         if self._type == "nextAlarm":
             attributes["next_alarms"] = calculate_next_active_alarms(
