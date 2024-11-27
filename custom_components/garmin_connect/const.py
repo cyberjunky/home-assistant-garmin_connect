@@ -362,7 +362,7 @@ GARMIN_ENTITY_LIST = {
         "brpm",
         "mdi:progress-clock",
         None,
-        SensorStateClass.TOTAL,
+        SensorStateClass.MEASUREMENT,
         False,
     ],
     "lowestRespirationValue": [
@@ -370,7 +370,7 @@ GARMIN_ENTITY_LIST = {
         "brpm",
         "mdi:progress-clock",
         None,
-        SensorStateClass.TOTAL,
+        SensorStateClass.MEASUREMENT,
         False,
     ],
     "latestRespirationValue": [
@@ -378,7 +378,7 @@ GARMIN_ENTITY_LIST = {
         "brpm",
         "mdi:progress-clock",
         None,
-        SensorStateClass.TOTAL,
+        SensorStateClass.MEASUREMENT,
         False,
     ],
     "latestRespirationTimeGMT": [
