@@ -338,9 +338,9 @@ GARMIN_ENTITY_LIST = {
         SensorStateClass.TOTAL,
         True,
     ],
-    "averageSpo2": ["Average SPO2", PERCENTAGE, "mdi:diabetes", None, SensorStateClass.TOTAL, True],
-    "lowestSpo2": ["Lowest SPO2", PERCENTAGE, "mdi:diabetes", None, SensorStateClass.TOTAL, True],
-    "latestSpo2": ["Latest SPO2", PERCENTAGE, "mdi:diabetes", None, SensorStateClass.TOTAL, True],
+    "averageSpo2": ["Average SPO2", PERCENTAGE, "mdi:diabetes", None, SensorStateClass.MEASUREMENT, True],
+    "lowestSpo2": ["Lowest SPO2", PERCENTAGE, "mdi:diabetes", None, SensorStateClass.MEASUREMENT, True],
+    "latestSpo2": ["Latest SPO2", PERCENTAGE, "mdi:diabetes", None, SensorStateClass.MEASUREMENT, True],
     "latestSpo2ReadingTimeLocal": [
         "Latest SPO2 Time",
         None,
