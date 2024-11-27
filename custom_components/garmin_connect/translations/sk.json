@@ -15,7 +15,7 @@
                     "password": "Heslo",
                     "username": "Užívateľské meno"
                 },
-                "description": "Zadajte svoje poverenia.",
+                "description": "Zadajte svoje poverovacie údaje.",
                 "title": "Garmin Connect"
             }
         }
