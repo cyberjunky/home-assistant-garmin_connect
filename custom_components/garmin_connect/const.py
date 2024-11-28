@@ -408,8 +408,15 @@ GARMIN_ENTITY_LIST = {
         SensorStateClass.TOTAL,
         SensorStateClass.MEASUREMENT,
         True,
-    ]
-
+    ],
+    "hrvStatus": [
+        "HRV Status",
+        None,
+        "mdi:heart-pulse",
+        None,
+        None,
+        True,
+    ],
 }
 
 GEAR_ICONS = {

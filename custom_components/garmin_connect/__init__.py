@@ -112,6 +112,8 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
         activity_types = {}
         sleep_data = {}
         sleep_score = None
+        hrv_data = {}
+        hrvStatus = None
 
         try:
             summary = await self.hass.async_add_executor_job(
@@ -147,6 +149,10 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
             sleep_data = await self.hass.async_add_executor_job(
                 self._api.get_sleep_data, date.today().isoformat())
             _LOGGER.debug(f"Sleep data: {sleep_data}")
+
+            hrv_data = await self.hass.async_add_executor_job(
+                self._api.get_hrv_data, date.today().isoformat())
+            _LOGGER.debug(f"hrv data: {hrv_data}")
         except (
             GarminConnectAuthenticationError,
             GarminConnectTooManyRequestsError,
@@ -185,6 +191,12 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
         except KeyError:
             _LOGGER.debug("Sleep score data is not available")
 
+        try:
+            hrvStatus = hrv_data["hrvSummary"]
+            _LOGGER.debug(f"HRV status: {hrvStatus} ")
+        except KeyError:
+            _LOGGER.debug("HRV data is not available")
+
         return {
             **summary,
             **body["totalAverage"],
@@ -194,6 +206,7 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
             "activity_types": activity_types,
             "gear_defaults": gear_defaults,
             "sleepScore": sleep_score,
+            "hrvStatus": hrvStatus,
         }
 
     async def set_active_gear(self, entity, service_data):
