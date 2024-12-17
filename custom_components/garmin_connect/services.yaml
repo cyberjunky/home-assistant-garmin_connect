@@ -114,3 +114,36 @@ add_body_composition:
         entity:
           integration: garmin_connect
           device_class: weight
+
+add_blood_pressure:
+  name: Adds updated blood pressure metrics
+  description: Adds updated blood pressure metrics.
+  fields:
+    entity_id:
+      name: entity
+      description: entity
+      required: true
+      selector:
+        entity:
+          integration: garmin_connect
+          device_class: weight
+    systolic:
+      required: true
+      name: Systolic
+      description: Systolic value
+      example: 120
+    diastolic:
+      required: true
+      name: Diastolic
+      description: Diastolic value
+      example: 80
+    pulse:
+      required: true
+      name: Pulse
+      description: Pulse
+      example: 60
+    notes:
+      required: false
+      name: Notes
+      description: Add a note to the measurement
+      example: 'Measured with Beurer BC54'
