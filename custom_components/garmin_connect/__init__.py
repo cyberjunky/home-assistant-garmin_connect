@@ -191,7 +191,7 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
             _LOGGER.debug("Sleep score data is not available")
 
         try:
-            if "hrvSummary" in hrv_data:
+            if hrv_data and "hrvSummary" in hrv_data:
                 hrvStatus = hrv_data["hrvSummary"]
                 _LOGGER.debug(f"HRV status: {hrvStatus} ")
         except KeyError:
