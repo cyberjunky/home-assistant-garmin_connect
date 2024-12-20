@@ -104,7 +104,6 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
 
         summary = {}
         body = {}
-        activites = {}
         alarms = {}
         gear = {}
         gear_stats = {}
@@ -113,7 +112,7 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
         sleep_data = {}
         sleep_score = None
         hrv_data = {}
-        hrvStatus = None
+        hrvStatus = {"status": "UNKNOWN"}
 
         try:
             summary = await self.hass.async_add_executor_job(
@@ -122,7 +121,7 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
             _LOGGER.debug(f"Summary data: {summary}")
 
             body = await self.hass.async_add_executor_job(
-                self._api.get_body_composition, (date.today()-timedelta(days=7)).isoformat(), date.today().isoformat()
+                self._api.get_body_composition, date.today().isoformat()
             )
             _LOGGER.debug(f"Body data: {body}")
 
@@ -156,7 +155,7 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
         except (
             GarminConnectAuthenticationError,
             GarminConnectTooManyRequestsError,
-            GarminConnectConnectionError,
+            GarminConnectConnectionError
         ) as error:
             _LOGGER.debug("Trying to relogin to Garmin Connect")
             if not await self.async_login():
@@ -192,14 +191,15 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
             _LOGGER.debug("Sleep score data is not available")
 
         try:
-            hrvStatus = hrv_data["hrvSummary"]
-            _LOGGER.debug(f"HRV status: {hrvStatus} ")
+            if "hrvSummary" in hrv_data:
+                hrvStatus = hrv_data["hrvSummary"]
+                _LOGGER.debug(f"HRV status: {hrvStatus} ")
         except KeyError:
             _LOGGER.debug("HRV data is not available")
 
         return {
             **summary,
-            **body["dateWeightList"][0],
+            **body["totalAverage"],
             "nextAlarm": alarms,
             "gear": gear,
             "gear_stats": gear_stats,
