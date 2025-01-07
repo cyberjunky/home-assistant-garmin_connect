@@ -57,6 +57,7 @@ Sedentary Time
 Sleeping Time
 Awake Duration
 Sleep Duration
+Total Sleep Duration
 Floors Ascended
 Floors Descended
 Floors Ascended Goal

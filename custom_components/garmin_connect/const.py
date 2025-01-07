@@ -409,6 +409,7 @@ GARMIN_ENTITY_LIST = {
         SensorStateClass.MEASUREMENT,
         True,
     ],
+    "sleepTimeSeconds": ["Total Sleep Duration", UnitOfTime.MINUTES, "mdi:sleep", None, SensorStateClass.TOTAL, True],
     "hrvStatus": [
         "HRV Status",
         None,
