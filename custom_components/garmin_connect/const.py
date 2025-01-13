@@ -400,7 +400,7 @@ GARMIN_ENTITY_LIST = {
     "metabolicAge": ["Metabolic Age", UnitOfTime.YEARS, "mdi:calendar-heart", None, SensorStateClass.MEASUREMENT, False],
     "nextAlarm": ["Next Alarm Time", None, "mdi:alarm", SensorDeviceClass.TIMESTAMP, None, True],
     "lastActivities": ["Last Activities", None, "mdi:numeric", None, SensorStateClass.TOTAL, False],
-    "badges": ["Badges", None, "mdi:numeric", None, SensorStateClass.TOTAL, False],
+    "badges": ["Badges", None, "mdi:medal", None, SensorStateClass.TOTAL, False],
     "sleepScore": [
         "Sleep Score",
         None,
