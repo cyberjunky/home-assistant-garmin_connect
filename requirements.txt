@@ -4,5 +4,5 @@ pip>=24.1.1,<24.4
 ruff==0.8.3
 mypy==1.14.1
 pre-commit==4.0.1
-pylint==3.3.2
+pylint==3.3.3
 types-cachetools
