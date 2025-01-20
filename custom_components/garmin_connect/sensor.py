@@ -241,7 +241,9 @@ class GarminConnectSensor(CoordinatorEntity, SensorEntity):
 
         # Only show the last 10 badges for performance reasons
         if self._type == "badges":
-            attributes["badges"] = self.coordinator.data[self._type][-10:]
+            badges = self.coordinator.data.get(self._type, [])
+            sorted_badges = sorted(badges, key=lambda x: x['badgeEarnedDate'])
+            attributes["badges"] = sorted_badges[-10:]
 
         if self._type == "nextAlarm":
             attributes["next_alarms"] = self.coordinator.data[self._type]
@@ -289,7 +291,8 @@ class GarminConnectSensor(CoordinatorEntity, SensorEntity):
 
         """Check for login."""
         if not await self.coordinator.async_login():
-            raise IntegrationError("Failed to login to Garmin Connect, unable to update")
+            raise IntegrationError(
+                "Failed to login to Garmin Connect, unable to update")
 
         """Record a weigh in/body composition."""
         await self.hass.async_add_executor_job(
@@ -319,7 +322,8 @@ class GarminConnectSensor(CoordinatorEntity, SensorEntity):
 
         """Check for login."""
         if not await self.coordinator.async_login():
-            raise IntegrationError("Failed to login to Garmin Connect, unable to update")
+            raise IntegrationError(
+                "Failed to login to Garmin Connect, unable to update")
 
         """Record a blood pressure measurement."""
         await self.hass.async_add_executor_job(
@@ -381,7 +385,8 @@ class GarminConnectGearSensor(CoordinatorEntity, SensorEntity):
         stats = self._stats()
         gear_defaults = self._gear_defaults()
         activity_types = self.coordinator.data["activity_types"]
-        default_for_activity = self._activity_names_for_gear_defaults(gear_defaults, activity_types)
+        default_for_activity = self._activity_names_for_gear_defaults(
+            gear_defaults, activity_types)
 
         if not self.coordinator.data or not gear or not stats:
             return {}
@@ -458,7 +463,8 @@ class GarminConnectGearSensor(CoordinatorEntity, SensorEntity):
 
         """Check for login."""
         if not await self.coordinator.async_login():
-            raise IntegrationError("Failed to login to Garmin Connect, unable to update")
+            raise IntegrationError(
+                "Failed to login to Garmin Connect, unable to update")
 
         """Update Garmin Gear settings."""
         activity_type_id = next(
