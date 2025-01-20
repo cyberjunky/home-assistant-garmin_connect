@@ -4,16 +4,19 @@ set -e
 
 cd "$(dirname "$0")/.."
 
-# Create config dir if not present
-if [[ ! -d "${PWD}/config" ]]; then
-    mkdir -p "${PWD}/config"
-    hass --config "${PWD}/config" --script ensure_config
+if [ ! -f "${PWD}/config/configuration.yaml" ]; then
+  mkdir -p "${PWD}/config"
+  hass --config "${PWD}/config" --script ensure_config
+  echo "Updating default configuration."
+  echo "
+logger:
+  default: info
+  logs:
+    custom_components.garmin_connect: debug
+" >> "${PWD}/config/configuration.yaml"
 fi
 
-# Set the path to custom_components
-## This let's us have the structure we want <root>/custom_components/integration_blueprint
-## while at the same time have Home Assistant configuration inside <root>/config
-## without resulting to symlinks.
+# Set the python path to include our custom_components directory
 export PYTHONPATH="${PYTHONPATH}:${PWD}/custom_components"
 
 # Start Home Assistant

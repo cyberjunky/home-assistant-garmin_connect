@@ -1,8 +1,3 @@
-# misc
-.vscode
-outputdata
-settings.json
-
 # Translation files
 custom_components/garmin_connect/translations
 !custom_components/garmin_connect/translations/en.json

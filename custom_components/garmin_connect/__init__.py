@@ -1,9 +1,10 @@
 """The Garmin Connect integration."""
-from datetime import date
-from datetime import timedelta
-import logging
+
 import asyncio
 from collections.abc import Awaitable
+from datetime import datetime, timedelta
+import logging
+from zoneinfo import ZoneInfo
 
 from garminconnect import (
     Garmin,
@@ -11,19 +12,18 @@ from garminconnect import (
     GarminConnectConnectionError,
     GarminConnectTooManyRequestsError,
 )
-
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
 from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import ConfigEntryNotReady, IntegrationError
+from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .const import (
     DATA_COORDINATOR,
+    DAY_TO_NUMBER,
     DEFAULT_UPDATE_INTERVAL,
     DOMAIN,
-    GEAR,
-    SERVICE_SETTING,
+    Gear,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -66,42 +66,39 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
         self.hass = hass
         self.in_china = False
 
-        country = self.hass.config.country
-        if country == "CN":
+        self.country = self.hass.config.country
+        if self.country == "CN":
             self.in_china = True
+        _LOGGER.debug("Country: %s", self.country)
 
-        self._api = Garmin(entry.data[CONF_USERNAME], entry.data[CONF_PASSWORD], self.in_china)
+        self.time_zone = self.hass.config.time_zone
+        _LOGGER.debug("Time zone: %s", self.time_zone)
 
-        super().__init__(
-            hass, _LOGGER, name=DOMAIN, update_interval=DEFAULT_UPDATE_INTERVAL
-        )
+        self.api = Garmin(entry.data[CONF_USERNAME], entry.data[CONF_PASSWORD], self.in_china)
+
+        super().__init__(hass, _LOGGER, name=DOMAIN, update_interval=DEFAULT_UPDATE_INTERVAL)
 
     async def async_login(self) -> bool:
         """Login to Garmin Connect."""
         try:
-            await self.hass.async_add_executor_job(self._api.login)
+            await self.hass.async_add_executor_job(self.api.login)
         except (
             GarminConnectAuthenticationError,
             GarminConnectTooManyRequestsError,
         ) as err:
             _LOGGER.error("Error occurred during Garmin Connect login request: %s", err)
             return False
-        except (GarminConnectConnectionError) as err:
-            _LOGGER.error(
-                "Connection error occurred during Garmin Connect login request: %s", err
-            )
+        except GarminConnectConnectionError as err:
+            _LOGGER.error("Connection error occurred during Garmin Connect login request: %s", err)
             raise ConfigEntryNotReady from err
         except Exception:  # pylint: disable=broad-except
-            _LOGGER.exception(
-                "Unknown error occurred during Garmin Connect login request"
-            )
+            _LOGGER.exception("Unknown error occurred during Garmin Connect login request")
             return False
 
         return True
 
     async def _async_update_data(self) -> dict:
         """Fetch data from Garmin Connect."""
-
         summary = {}
         body = {}
         alarms = {}
@@ -113,190 +110,158 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
         sleep_score = None
         sleep_time_seconds = None
         hrv_data = {}
-        hrvStatus = {"status": "UNKNOWN"}
+        hrv_status = {"status": "unknown"}
+        next_alarms = []
+
+        today = datetime.now(ZoneInfo(self.time_zone)).date()
 
         try:
             summary = await self.hass.async_add_executor_job(
-                self._api.get_user_summary, date.today().isoformat()
+                self.api.get_user_summary, today.isoformat()
             )
-            _LOGGER.debug(f"Summary data: {summary}")
+            _LOGGER.debug("Summary data fetched: %s", summary)
 
             body = await self.hass.async_add_executor_job(
-                self._api.get_body_composition, date.today().isoformat()
+                self.api.get_body_composition, today.isoformat()
             )
-            _LOGGER.debug(f"Body data: {body}")
+            _LOGGER.debug("Body data fetched: %s", body)
 
             activities = await self.hass.async_add_executor_job(
-                self._api.get_activities_by_date, (date.today()-timedelta(days=7)).isoformat(), (date.today()+timedelta(days=1)).isoformat()
+                self.api.get_activities_by_date,
+                (today - timedelta(days=7)).isoformat(),
+                (today + timedelta(days=1)).isoformat(),
             )
-            _LOGGER.debug(f"Activities data: {activities}")
-            summary['lastActivities'] = activities
+            _LOGGER.debug("Activities data fetched: %s", activities)
+            summary["lastActivities"] = activities
 
-            badges = await self.hass.async_add_executor_job(
-                self._api.get_earned_badges
-            )
-            _LOGGER.debug(f"Badges data: {badges}")
-            summary['badges'] = badges
+            badges = await self.hass.async_add_executor_job(self.api.get_earned_badges)
+            _LOGGER.debug("Badges data fetched: %s", badges)
+            summary["badges"] = badges
 
-            alarms = await self.hass.async_add_executor_job(self._api.get_device_alarms)
-            _LOGGER.debug(f"Alarms data: {alarms}")
+            alarms = await self.hass.async_add_executor_job(self.api.get_device_alarms)
+            _LOGGER.debug("Alarms data fetched: %s", alarms)
 
-            activity_types = await self.hass.async_add_executor_job(
-                self._api.get_activity_types
-            )
-            _LOGGER.debug(f"Activity types data: {activity_types}")
+            next_alarms = calculate_next_active_alarms(alarms, self.time_zone)
+
+            activity_types = await self.hass.async_add_executor_job(self.api.get_activity_types)
+            _LOGGER.debug("Activity types data fetched: %s", activity_types)
 
             sleep_data = await self.hass.async_add_executor_job(
-                self._api.get_sleep_data, date.today().isoformat())
-            _LOGGER.debug(f"Sleep data: {sleep_data}")
+                self.api.get_sleep_data, today.isoformat()
+            )
+            _LOGGER.debug("Sleep data fetched: %s", sleep_data)
 
             hrv_data = await self.hass.async_add_executor_job(
-                self._api.get_hrv_data, date.today().isoformat())
-            _LOGGER.debug(f"hrv data: {hrv_data}")
+                self.api.get_hrv_data, today.isoformat()
+            )
+            _LOGGER.debug("HRV data fetched: %s", hrv_data)
         except (
             GarminConnectAuthenticationError,
             GarminConnectTooManyRequestsError,
-            GarminConnectConnectionError
+            GarminConnectConnectionError,
         ) as error:
             _LOGGER.debug("Trying to relogin to Garmin Connect")
             if not await self.async_login():
                 raise UpdateFailed(error) from error
-            return {}
 
         try:
             gear = await self.hass.async_add_executor_job(
-                self._api.get_gear, summary[GEAR.USERPROFILE_ID]
+                self.api.get_gear, summary[Gear.USERPROFILE_ID]
             )
-            _LOGGER.debug(f"Gear data: {gear}")
+            _LOGGER.debug("Gear data fetched: %s", gear)
 
             tasks: list[Awaitable] = [
-                self.hass.async_add_executor_job(
-                    self._api.get_gear_stats, gear_item[GEAR.UUID]
-                )
+                self.hass.async_add_executor_job(self.api.get_gear_stats, gear_item[Gear.UUID])
                 for gear_item in gear
             ]
             gear_stats = await asyncio.gather(*tasks)
-            _LOGGER.debug(f"Gear stats data: {gear_stats}")
+            _LOGGER.debug("Gear stats data fetched: %s", gear_stats)
 
             gear_defaults = await self.hass.async_add_executor_job(
-                self._api.get_gear_defaults, summary[GEAR.USERPROFILE_ID]
+                self.api.get_gear_defaults, summary[Gear.USERPROFILE_ID]
             )
-            _LOGGER.debug(f"Gear defaults data: {gear_defaults}")
-        except:
-            _LOGGER.debug("Gear data is not available")
+            _LOGGER.debug("Gear defaults data fetched: %s", gear_defaults)
+        except (KeyError, TypeError, ValueError, ConnectionError) as err:
+            _LOGGER.debug("Gear data is not available: %s", err)
 
         try:
             sleep_score = sleep_data["dailySleepDTO"]["sleepScores"]["overall"]["value"]
-            _LOGGER.debug(f"Sleep score data: {sleep_score}")
+            _LOGGER.debug("Sleep score data: %s", sleep_score)
         except KeyError:
             _LOGGER.debug("Sleep score data is not available")
 
         try:
             sleep_time_seconds = sleep_data["dailySleepDTO"]["sleepTimeSeconds"]
-            _LOGGER.debug(f"Sleep time seconds data: {sleep_time_seconds}")
+            _LOGGER.debug("Sleep time seconds data: %s", sleep_time_seconds)
         except KeyError:
             _LOGGER.debug("Sleep time seconds data is not available")
 
         try:
             if hrv_data and "hrvSummary" in hrv_data:
-                hrvStatus = hrv_data["hrvSummary"]
-                _LOGGER.debug(f"HRV status: {hrvStatus} ")
+                hrv_status = hrv_data["hrvSummary"]
+                _LOGGER.debug("HRV summary: %s", hrv_status)
         except KeyError:
             _LOGGER.debug("HRV data is not available")
 
         return {
             **summary,
             **body["totalAverage"],
-            "nextAlarm": alarms,
+            "nextAlarm": next_alarms,
             "gear": gear,
             "gear_stats": gear_stats,
             "activity_types": activity_types,
             "gear_defaults": gear_defaults,
             "sleepScore": sleep_score,
             "sleepTimeSeconds": sleep_time_seconds,
-            "hrvStatus": hrvStatus,
+            "hrvStatus": hrv_status,
         }
 
-    async def set_active_gear(self, entity, service_data):
-        """Update Garmin Gear settings"""
-        if not await self.async_login():
-            raise IntegrationError(
-                "Failed to login to Garmin Connect, unable to update"
-            )
 
-        setting = service_data.data["setting"]
-        activity_type_id = next(
-            filter(
-                lambda a: a[GEAR.TYPE_KEY] == service_data.data["activity_type"],
-                self.data["activity_types"],
-            )
-        )[GEAR.TYPE_ID]
-        if setting != SERVICE_SETTING.ONLY_THIS_AS_DEFAULT:
-            await self.hass.async_add_executor_job(
-                self._api.set_gear_default,
-                activity_type_id,
-                entity.uuid,
-                setting == SERVICE_SETTING.DEFAULT,
-            )
-        else:
-            old_default_state = await self.hass.async_add_executor_job(
-                self._api.get_gear_defaults, self.data[GEAR.USERPROFILE_ID]
-            )
-            to_deactivate = list(
-                filter(
-                    lambda o: o[GEAR.ACTIVITY_TYPE_PK] == activity_type_id
-                    and o[GEAR.UUID] != entity.uuid,
-                    old_default_state,
+def calculate_next_active_alarms(alarms, time_zone):
+    """
+    Calculate garmin next active alarms from settings.
+    Alarms are sorted by time.
+
+    Example of alarms data:
+    Alarms data fetched: [{'alarmMode': 'OFF', 'alarmTime': 1233, 'alarmDays': ['ONCE'], 'alarmSound': 'TONE_AND_VIBRATION', 'alarmId': 1737308355, 'changeState': 'UNCHANGED', 'backlight': 'ON', 'enabled': None, 'alarmMessage': None, 'alarmImageId': None, 'alarmIcon': None, 'alarmType': None}]
+    """
+    active_alarms = []
+    now = datetime.now(ZoneInfo(time_zone))
+    _LOGGER.debug("Now: %s, Alarms: %s", now, alarms)
+
+    for alarm_setting in alarms:
+        if alarm_setting["alarmMode"] != "ON":
+            continue
+
+        for day in alarm_setting["alarmDays"]:
+            alarm_time = alarm_setting["alarmTime"]
+            _LOGGER.debug("Alarm time: %s, Alarm day: %s", alarm_time, day)
+            if day == "ONCE":
+                midnight = datetime.combine(
+                    now.date(), datetime.min.time(), tzinfo=ZoneInfo(time_zone)
                 )
-            )
 
-            for active_gear in to_deactivate:
-                await self.hass.async_add_executor_job(
-                    self._api.set_gear_default,
-                    activity_type_id,
-                    active_gear[GEAR.UUID],
-                    False,
+                alarm = midnight + timedelta(minutes=alarm_time)
+                _LOGGER.debug("Midnight: %s, Alarm: %s", midnight, alarm_time)
+
+                # If the alarm time is in the past, move it to the next day
+                if alarm < now:
+                    alarm += timedelta(days=1)
+            else:
+                start_of_week = datetime.combine(
+                    now.date() - timedelta(days=now.date().isoweekday() % 7),
+                    datetime.min.time(),
+                    tzinfo=ZoneInfo(time_zone),
                 )
-            await self.hass.async_add_executor_job(
-                self._api.set_gear_default, activity_type_id, entity.uuid, True
-            )
 
-    async def add_body_composition(self, entity, service_data):
-        """Record a weigh in/body composition"""
-        if not await self.async_login():
-            raise IntegrationError(
-                "Failed to login to Garmin Connect, unable to update"
-            )
+                days_to_add = DAY_TO_NUMBER[day] % 7
+                alarm = start_of_week + timedelta(minutes=alarm_time, days=days_to_add)
+                _LOGGER.debug("Start of week: %s, Alarm: %s", start_of_week, alarm)
 
-        await self.hass.async_add_executor_job(
-            self._api.add_body_composition,
-                    service_data.data.get("timestamp", None),
-                    service_data.data.get("weight"),
-                    service_data.data.get("percent_fat", None),
-                    service_data.data.get("percent_hydration", None),
-                    service_data.data.get("visceral_fat_mass", None),
-                    service_data.data.get("bone_mass", None),
-                    service_data.data.get("muscle_mass", None),
-                    service_data.data.get("basal_met", None),
-                    service_data.data.get("active_met", None),
-                    service_data.data.get("physique_rating", None),
-                    service_data.data.get("metabolic_age", None),
-                    service_data.data.get("visceral_fat_rating", None),
-                    service_data.data.get("bmi", None)
-        )
+                # If the alarm time is in the past, move it to the next week
+                if alarm < now:
+                    alarm += timedelta(days=7)
 
-    async def add_blood_pressure(self, entity, service_data):
-        """Record a blood pressure measurement"""
+            active_alarms.append(alarm.isoformat())
 
-        if not await self.async_login():
-            raise IntegrationError(
-                "Failed to login to Garmin Connect, unable to update"
-            )
-
-        await self.hass.async_add_executor_job(
-            self._api.set_blood_pressure,
-                    service_data.data.get('systolic'),
-                    service_data.data.get('diastolic'),
-                    service_data.data.get('pulse'),
-                    service_data.data.get('note', None)
-        )
+    return sorted(active_alarms) if active_alarms else None

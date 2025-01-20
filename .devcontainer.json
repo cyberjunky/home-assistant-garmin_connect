@@ -1,6 +1,6 @@
 {
   "name": "cyberjunky/home-assistant-garmin_connect",
-  "image": "mcr.microsoft.com/vscode/devcontainers/python:0-3.11-bullseye",
+  "image": "mcr.microsoft.com/devcontainers/python:1-3.12",
   "postCreateCommand": "scripts/setup",
   "forwardPorts": [
     8123
@@ -20,29 +20,32 @@
   },
   "customizations": {
     "extensions": [
+      "charliermarsh.ruff",
       "ms-python.python",
       "github.vscode-pull-request-github",
       "ryanluker.vscode-coverage-gutters",
-      "ms-python.vscode-pylance"
+      "ms-python.vscode-pylance",
+      "GitHub.copilot"
     ],
     "vscode": {
       "settings": {
-        "python.defaultInterpreterPath": "/usr/local/bin/python",
-        "files.eol": "\n",
-        "editor.tabSize": 4,
-        "python.pythonPath": "/usr/local/python/bin/python",
-        "python.analysis.autoSearchPaths": false,
-        "python.linting.pylintArgs": [
-          "--disable",
-          "import-error"
-        ],
-        "python.formatting.provider": "black",
+        "python.pythonPath": "/usr/local/bin/python",
+        "python.formatting.provider": "ruff",
         "editor.formatOnPaste": false,
         "editor.formatOnSave": true,
         "editor.formatOnType": true,
+        "editor.defaultFormatter": "charliermarsh.ruff",
+        "editor.rulers": [
+          100
+        ],
+        "editor.codeActionsOnSave": {
+          "source.fixAll": "always",
+          "source.organizeImports": "always"
+        },
         "files.trimTrailingWhitespace": true
       },
       "extensions": [
+        "GitHub.copilot",
         "github.vscode-pull-request-github",
         "ms-python.python",
         "ms-python.vscode-pylance",
@@ -53,6 +56,7 @@
   },
   "remoteUser": "vscode",
   "features": {
-    "rust": "latest"
+    "ghcr.io/devcontainers/features/github-cli:1": {},
+    "ghcr.io/devcontainers/features/rust:1": {}
   }
 }

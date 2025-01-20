@@ -1,4 +1,5 @@
 """Config flow for Garmin Connect integration."""
+
 import logging
 
 from garminconnect import (
@@ -7,10 +8,9 @@ from garminconnect import (
     GarminConnectConnectionError,
     GarminConnectTooManyRequestsError,
 )
-import voluptuous as vol
-
 from homeassistant import config_entries
 from homeassistant.const import CONF_ID, CONF_PASSWORD, CONF_USERNAME
+import voluptuous as vol
 
 from .const import DOMAIN
 

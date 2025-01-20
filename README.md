@@ -49,7 +49,6 @@ Daily Step Goal
 Total KiloCalories
 Active KiloCalories
 BMR KiloCalories
-Consumed KiloCalories
 Burned KiloCalories
 Total Distance Mtr
 Active Time
@@ -81,11 +80,16 @@ Body Battery Most Recent
 Average SPO2
 Lowest SPO2
 Latest SPO2
+Next Alarm Time
+Total Sleep Duration
+HRV Status
+Gear Sensors
 ```
 
 Disabled by default:
 
 ```text
+Consumed KiloCalories
 Remaining KiloCalories
 Net Remaining KiloCalories
 Net Calorie Goal
@@ -120,12 +124,11 @@ Latest Respiration Update
 Highest Respiration
 Lowest Respiration
 Latest Respiration
-
 Weight
 BMI
 Body Fat
 Body Water
-Body Mass
+Bone Mass
 Muscle Mass
 Physique Rating
 Visceral Fat
@@ -140,7 +143,7 @@ Metabolic Age
 
 ### Set up an automation using the garmin_connect.add_body_composition service
 
-Useful if you want to pass your weight from another (incompatible) device to Garmin Connect. Garmin Connect does not calculate your BMI when you enter your weight manually so it needs to be passed along for now.  
+Useful if you want to pass your weight from another (incompatible) device to Garmin Connect. Garmin Connect does not calculate your BMI when you enter your weight manually so it needs to be passed along for now.
 
 ```
 alias: uiSendWeightToGarminConnect

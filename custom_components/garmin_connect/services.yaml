@@ -142,8 +142,13 @@ add_blood_pressure:
       name: Pulse
       description: Pulse
       example: 60
+    timestamp:
+      required: false
+      name: Timestamp
+      description: Datetime string of when the measurements were recorded. Defaults to now.
+      example: 2023-12-30T07:34:00
     notes:
       required: false
       name: Notes
-      description: Add a note to the measurement
+      description: Add notes to the measurement
       example: 'Measured with Beurer BC54'
