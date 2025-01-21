@@ -2,6 +2,14 @@ set_active_gear:
   name: Set active gear for activity
   description: Set active gear for activity.
   fields:
+    entity_id:
+      name: entity
+      description: entity
+      required: true
+      selector:
+        entity:
+          integration: garmin_connect
+          device_class: garmin_gear
     activity_type:
       required: true
       name: activity type
@@ -28,6 +36,11 @@ set_active_gear:
             - set this as default, unset others
             - set as default
             - unset default
+
+add_body_composition:
+  name: Adds updated body composition metrics
+  description: Adds updated body composition metrics.
+  fields:
     entity_id:
       name: entity
       description: entity
@@ -35,12 +48,7 @@ set_active_gear:
       selector:
         entity:
           integration: garmin_connect
-          device_class: garmin_gear
-
-add_body_composition:
-  name: Adds updated body composition metrics
-  description: Adds updated body composition metrics.
-  fields:
+          device_class: weight
     weight:
       required: true
       name: Weight
@@ -106,14 +114,6 @@ add_body_composition:
       name: Visceral Fat Rating
       description: Visceral Fat Rating
       example: 10
-    entity_id:
-      name: entity
-      description: entity
-      required: true
-      selector:
-        entity:
-          integration: garmin_connect
-          device_class: weight
 
 add_blood_pressure:
   name: Adds updated blood pressure metrics
@@ -126,7 +126,7 @@ add_blood_pressure:
       selector:
         entity:
           integration: garmin_connect
-          device_class: weight
+          device_class: min_heart_rate
     systolic:
       required: true
       name: Systolic

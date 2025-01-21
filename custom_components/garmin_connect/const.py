@@ -23,6 +23,19 @@ DAY_TO_NUMBER = {
     "Su": 7,
 }
 
+LEVEL_POINTS = {
+    1: 0,
+    2: 20,
+    3: 60,
+    4: 140,
+    5: 300,
+    6: 620,
+    7: 1260,
+    8: 2540,
+    9: 5100,
+    10: 10220,
+}
+
 GARMIN_ENTITY_LIST = {
     "totalSteps": ["Total Steps", "steps", "mdi:walk", None, SensorStateClass.TOTAL, True],
     "dailyStepGoal": ["Daily Step Goal", "steps", "mdi:walk", None, SensorStateClass.TOTAL, True],

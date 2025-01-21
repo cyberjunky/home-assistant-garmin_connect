@@ -89,6 +89,7 @@ Gear Sensors
 Disabled by default:
 
 ```text
+Badges
 Consumed KiloCalories
 Remaining KiloCalories
 Net Remaining KiloCalories
@@ -151,20 +152,20 @@ description: ""
 trigger:
   - platform: state
     entity_id:
-      - sensor.my_weight
+      - sensor.weight
 condition:
   - condition: and
     conditions:
       - condition: numeric_state
-        entity_id: sensor.my_weight
+        entity_id: sensor.weight
         above: 75
       - condition: numeric_state
-        entity_id: sensor.my_weight
+        entity_id: sensor.weight
         below: 88
 action:
   - service: garmin_connect.add_body_composition
     data:
-      entity_id: sensor.garmin_connect_weight
+      entity_id: sensor.weight
       weight: "{{trigger.to_state.state}}"
       timestamp: "{{ as_timestamp(now())  | timestamp_local}}"
       bmi: >-
@@ -172,6 +173,46 @@ action:
         }}
 mode: single
 ```
+
+### Examples on how to test services from HA GUI
+
+#### Add Body Composition
+
+```
+action: garmin_connect.add_body_composition
+data:
+  entity_id: sensor.weight
+  weight: 87
+  bmi: 25.5
+  bone_mass: 4.8
+  ...
+```
+
+NOTE: You need to enable Weight entity
+
+#### Set Active Gear
+
+```
+action: garmin_connect.set_active_gear
+data:
+  entity_id: sensor.adidas
+  activity_type: running
+  setting: set as default
+```
+
+#### Add Blood Pressure
+
+```
+action: garmin_connect.add_blood_pressure
+data:
+  entity_id: sensor.min_heart_rate
+  systolic: 120
+  diastolic: 80
+  pulse: 60
+  timestamp: 2025-1-21T07:34:00.000Z
+  notes: Measured with Beurer BC54
+```
+
 ## Debugging
 
 Add the relevant lines below to the `configuration.yaml`:
