@@ -23,6 +23,7 @@ from .const import (
     DAY_TO_NUMBER,
     DEFAULT_UPDATE_INTERVAL,
     DOMAIN,
+    LEVEL_POINTS,
     Gear,
 )
 
@@ -106,6 +107,7 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
         gear_stats = {}
         gear_defaults = {}
         activity_types = {}
+        last_activities = []
         sleep_data = {}
         sleep_score = None
         sleep_time_seconds = None
@@ -116,41 +118,64 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
         today = datetime.now(ZoneInfo(self.time_zone)).date()
 
         try:
+            # User summary
             summary = await self.hass.async_add_executor_job(
                 self.api.get_user_summary, today.isoformat()
             )
             _LOGGER.debug("Summary data fetched: %s", summary)
 
+            # Body composition
             body = await self.hass.async_add_executor_job(
                 self.api.get_body_composition, today.isoformat()
             )
             _LOGGER.debug("Body data fetched: %s", body)
 
-            activities = await self.hass.async_add_executor_job(
+            # Last activities
+            last_activities = await self.hass.async_add_executor_job(
                 self.api.get_activities_by_date,
                 (today - timedelta(days=7)).isoformat(),
                 (today + timedelta(days=1)).isoformat(),
             )
-            _LOGGER.debug("Activities data fetched: %s", activities)
-            summary["lastActivities"] = activities
+            _LOGGER.debug("Activities data fetched: %s", last_activities)
+            summary["lastActivities"] = last_activities
+            summary["lastActivity"] = last_activities[0] if last_activities else {}
 
+            # Badges
             badges = await self.hass.async_add_executor_job(self.api.get_earned_badges)
             _LOGGER.debug("Badges data fetched: %s", badges)
             summary["badges"] = badges
 
+            # Calculate user points and user level
+            user_points = 0
+            for badge in badges:
+                user_points += badge["badgePoints"] * badge["badgeEarnedNumber"]
+
+            summary["userPoints"] = user_points
+
+            user_level = 0
+            for level, points in LEVEL_POINTS.items():
+                if user_points >= points:
+                    user_level = level
+
+            summary["userLevel"] = user_level
+
+            # Alarms
             alarms = await self.hass.async_add_executor_job(self.api.get_device_alarms)
             _LOGGER.debug("Alarms data fetched: %s", alarms)
 
             next_alarms = calculate_next_active_alarms(alarms, self.time_zone)
 
+            # Activity types
             activity_types = await self.hass.async_add_executor_job(self.api.get_activity_types)
             _LOGGER.debug("Activity types data fetched: %s", activity_types)
 
+            # Sleep data
             sleep_data = await self.hass.async_add_executor_job(
                 self.api.get_sleep_data, today.isoformat()
             )
             _LOGGER.debug("Sleep data fetched: %s", sleep_data)
 
+            # HRV data
             hrv_data = await self.hass.async_add_executor_job(
                 self.api.get_hrv_data, today.isoformat()
             )
@@ -164,6 +189,7 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
             if not await self.async_login():
                 raise UpdateFailed(error) from error
 
+        # Gear data
         try:
             gear = await self.hass.async_add_executor_job(
                 self.api.get_gear, summary[Gear.USERPROFILE_ID]
@@ -184,18 +210,21 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
         except (KeyError, TypeError, ValueError, ConnectionError) as err:
             _LOGGER.debug("Gear data is not available: %s", err)
 
+        # Sleep score data
         try:
             sleep_score = sleep_data["dailySleepDTO"]["sleepScores"]["overall"]["value"]
             _LOGGER.debug("Sleep score data: %s", sleep_score)
         except KeyError:
             _LOGGER.debug("Sleep score data is not available")
 
+        # Sleep time seconds data
         try:
             sleep_time_seconds = sleep_data["dailySleepDTO"]["sleepTimeSeconds"]
             _LOGGER.debug("Sleep time seconds data: %s", sleep_time_seconds)
         except KeyError:
             _LOGGER.debug("Sleep time seconds data is not available")
 
+        # HRV data
         try:
             if hrv_data and "hrvSummary" in hrv_data:
                 hrv_status = hrv_data["hrvSummary"]
@@ -208,9 +237,9 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
             **body["totalAverage"],
             "nextAlarm": next_alarms,
             "gear": gear,
-            "gear_stats": gear_stats,
-            "activity_types": activity_types,
-            "gear_defaults": gear_defaults,
+            "gearStats": gear_stats,
+            "activityTypes": activity_types,
+            "gearDefaults": gear_defaults,
             "sleepScore": sleep_score,
             "sleepTimeSeconds": sleep_time_seconds,
             "hrvStatus": hrv_status,

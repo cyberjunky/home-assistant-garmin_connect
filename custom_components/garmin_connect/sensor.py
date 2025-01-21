@@ -198,6 +198,9 @@ class GarminConnectSensor(CoordinatorEntity, SensorEntity):
         if self._type == "lastActivities" or self._type == "badges":
             value = len(self.coordinator.data[self._type])
 
+        if self._type == "lastActivity":
+            value = self.coordinator.data[self._type]["activityName"]
+
         elif self._type == "hrvStatus":
             value = self.coordinator.data[self._type]["status"].capitalize()
 
@@ -237,12 +240,15 @@ class GarminConnectSensor(CoordinatorEntity, SensorEntity):
         }
 
         if self._type == "lastActivities":
-            attributes["last_Activities"] = self.coordinator.data[self._type]
+            attributes["last_activities"] = self.coordinator.data[self._type]
+
+        if self._type == "lastActivity":
+            attributes = {**attributes, **self.coordinator.data[self._type]}
 
         # Only show the last 10 badges for performance reasons
         if self._type == "badges":
             badges = self.coordinator.data.get(self._type, [])
-            sorted_badges = sorted(badges, key=lambda x: x['badgeEarnedDate'])
+            sorted_badges = sorted(badges, key=lambda x: x["badgeEarnedDate"])
             attributes["badges"] = sorted_badges[-10:]
 
         if self._type == "nextAlarm":
@@ -291,8 +297,7 @@ class GarminConnectSensor(CoordinatorEntity, SensorEntity):
 
         """Check for login."""
         if not await self.coordinator.async_login():
-            raise IntegrationError(
-                "Failed to login to Garmin Connect, unable to update")
+            raise IntegrationError("Failed to login to Garmin Connect, unable to update")
 
         """Record a weigh in/body composition."""
         await self.hass.async_add_executor_job(
@@ -322,8 +327,7 @@ class GarminConnectSensor(CoordinatorEntity, SensorEntity):
 
         """Check for login."""
         if not await self.coordinator.async_login():
-            raise IntegrationError(
-                "Failed to login to Garmin Connect, unable to update")
+            raise IntegrationError("Failed to login to Garmin Connect, unable to update")
 
         """Record a blood pressure measurement."""
         await self.hass.async_add_executor_job(
@@ -384,9 +388,8 @@ class GarminConnectGearSensor(CoordinatorEntity, SensorEntity):
         gear = self._gear()
         stats = self._stats()
         gear_defaults = self._gear_defaults()
-        activity_types = self.coordinator.data["activity_types"]
-        default_for_activity = self._activity_names_for_gear_defaults(
-            gear_defaults, activity_types)
+        activity_types = self.coordinator.data["activityTypes"]
+        default_for_activity = self._activity_names_for_gear_defaults(gear_defaults, activity_types)
 
         if not self.coordinator.data or not gear or not stats:
             return {}
@@ -437,7 +440,7 @@ class GarminConnectGearSensor(CoordinatorEntity, SensorEntity):
 
     def _stats(self):
         """Get gear statistics from garmin"""
-        for gear_stats_item in self.coordinator.data["gear_stats"]:
+        for gear_stats_item in self.coordinator.data["gearStats"]:
             if gear_stats_item[Gear.UUID] == self._uuid:
                 return gear_stats_item
 
@@ -452,7 +455,7 @@ class GarminConnectGearSensor(CoordinatorEntity, SensorEntity):
         return list(
             filter(
                 lambda d: d[Gear.UUID] == self.uuid and d["defaultGear"] is True,
-                self.coordinator.data["gear_defaults"],
+                self.coordinator.data["gearDefaults"],
             )
         )
 
@@ -463,14 +466,13 @@ class GarminConnectGearSensor(CoordinatorEntity, SensorEntity):
 
         """Check for login."""
         if not await self.coordinator.async_login():
-            raise IntegrationError(
-                "Failed to login to Garmin Connect, unable to update")
+            raise IntegrationError("Failed to login to Garmin Connect, unable to update")
 
         """Update Garmin Gear settings."""
         activity_type_id = next(
             filter(
                 lambda a: a[Gear.TYPE_KEY] == activity_type,
-                self.coordinator.data["activity_types"],
+                self.coordinator.data["activityTypes"],
             )
         )[Gear.TYPE_ID]
         if setting != ServiceSetting.ONLY_THIS_AS_DEFAULT:

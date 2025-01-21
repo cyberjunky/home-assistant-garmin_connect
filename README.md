@@ -90,6 +90,8 @@ Disabled by default:
 
 ```text
 Badges
+User Points
+User Level
 Consumed KiloCalories
 Remaining KiloCalories
 Net Remaining KiloCalories
@@ -134,6 +136,8 @@ Muscle Mass
 Physique Rating
 Visceral Fat
 Metabolic Age
+Last Activities
+Last Activity
 ```
 
 ## Screenshots

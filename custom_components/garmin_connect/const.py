@@ -622,7 +622,17 @@ GARMIN_ENTITY_LIST = {
     ],
     "nextAlarm": ["Next Alarm Time", None, "mdi:alarm", SensorDeviceClass.TIMESTAMP, None, True],
     "lastActivities": ["Last Activities", None, "mdi:numeric", None, SensorStateClass.TOTAL, False],
+    "lastActivity": ["Last Activity", None, "mdi:walk", None, None, False],
     "badges": ["Badges", None, "mdi:medal", None, SensorStateClass.TOTAL, False],
+    "userPoints": ["User Points", None, "mdi:counter", None, SensorStateClass.TOTAL, False],
+    "userLevel": [
+        "User Level",
+        None,
+        "mdi:star-four-points-circle",
+        None,
+        SensorStateClass.TOTAL,
+        False,
+    ],
     "sleepScore": [
         "Sleep Score",
         None,
