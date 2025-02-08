@@ -178,7 +178,7 @@ action:
 mode: single
 ```
 
-### Examples on how to test services from HA GUI
+### Examples on how to test actions from HA GUI
 
 #### Add Body Composition
 
@@ -189,10 +189,10 @@ data:
   weight: 87
   bmi: 25.5
   bone_mass: 4.8
-  ...
 ```
+See the action template for other available values to add
 
-NOTE: You need to enable Weight entity
+NOTE: You need to enable the Weight entity
 
 #### Set Active Gear
 

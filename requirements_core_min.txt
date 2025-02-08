@@ -1,2 +1,1 @@
-# homeassistant==2024.4.1
 homeassistant==2025.1.4

@@ -17,6 +17,7 @@ from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+import requests
 
 from .const import (
     DATA_COORDINATOR,
@@ -196,19 +197,29 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
             )
             _LOGGER.debug("Gear data fetched: %s", gear)
 
+            gear_defaults = await self.hass.async_add_executor_job(
+                self.api.get_gear_defaults, summary[Gear.USERPROFILE_ID]
+            )
+            _LOGGER.debug("Gear defaults data fetched: %s", gear_defaults)
+        except (KeyError, TypeError, ValueError, ConnectionError) as err:
+            _LOGGER.debug("Error while fetching Gear data: %s", err)
+
+        # Gear stats data
+        try:
             tasks: list[Awaitable] = [
                 self.hass.async_add_executor_job(self.api.get_gear_stats, gear_item[Gear.UUID])
                 for gear_item in gear
             ]
             gear_stats = await asyncio.gather(*tasks)
             _LOGGER.debug("Gear stats data fetched: %s", gear_stats)
-
-            gear_defaults = await self.hass.async_add_executor_job(
-                self.api.get_gear_defaults, summary[Gear.USERPROFILE_ID]
-            )
-            _LOGGER.debug("Gear defaults data fetched: %s", gear_defaults)
-        except (KeyError, TypeError, ValueError, ConnectionError) as err:
-            _LOGGER.debug("Gear data is not available: %s", err)
+        except (
+            KeyError,
+            TypeError,
+            ValueError,
+            ConnectionError,
+            requests.exceptions.HTTPError,
+        ) as err:
+            _LOGGER.debug("Error while fetching Gear stats data: %s", err)
 
         # Sleep score data
         try:

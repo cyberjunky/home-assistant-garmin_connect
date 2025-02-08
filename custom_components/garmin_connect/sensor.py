@@ -239,13 +239,16 @@ class GarminConnectSensor(CoordinatorEntity, SensorEntity):
             "last_synced": self.coordinator.data["lastSyncTimestampGMT"],
         }
 
+        # Only add the last 5 activities for performance reasons
         if self._type == "lastActivities":
-            attributes["last_activities"] = self.coordinator.data[self._type]
+            activities = self.coordinator.data.get(self._type, [])
+            sorted_activities = sorted(activities, key=lambda x: x["activityId"])
+            attributes["last_activities"] = sorted_activities[-5:]
 
         if self._type == "lastActivity":
             attributes = {**attributes, **self.coordinator.data[self._type]}
 
-        # Only show the last 10 badges for performance reasons
+        # Only add the last 10 badges for performance reasons
         if self._type == "badges":
             badges = self.coordinator.data.get(self._type, [])
             sorted_badges = sorted(badges, key=lambda x: x["badgeEarnedDate"])
