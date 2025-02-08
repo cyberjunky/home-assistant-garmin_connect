@@ -12,7 +12,7 @@ from homeassistant import config_entries
 from homeassistant.const import CONF_ID, CONF_PASSWORD, CONF_USERNAME
 import voluptuous as vol
 
-from .const import DOMAIN
+from .const import DOMAIN, CONF_MFA
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -22,12 +22,20 @@ class GarminConnectConfigFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
 
     VERSION = 1
 
+    def __init__(self) -> None:
+        """Initialize."""
+        self.mfa_data_schema = {
+            vol.Required(CONF_MFA): str,
+        }
+        self._mfa_code: str | None = None
+
     async def _show_setup_form(self, errors=None):
         """Show the setup form to the user."""
         return self.async_show_form(
             step_id="user",
             data_schema=vol.Schema(
-                {vol.Required(CONF_USERNAME): str, vol.Required(CONF_PASSWORD): str}
+                {vol.Required(CONF_USERNAME): str,
+                 vol.Required(CONF_PASSWORD): str}
             ),
             errors=errors or {},
         )
@@ -40,7 +48,7 @@ class GarminConnectConfigFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         username = user_input[CONF_USERNAME]
         password = user_input[CONF_PASSWORD]
 
-        api = Garmin(username, password)
+        api = Garmin(username, password, prompt_mfa=self.get_mfa)
 
         errors = {}
         try:

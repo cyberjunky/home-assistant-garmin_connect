@@ -178,7 +178,7 @@ action:
 mode: single
 ```
 
-### Examples on how to test services from HA GUI
+### Examples on how to test actions from HA GUI
 
 #### Add Body Composition
 

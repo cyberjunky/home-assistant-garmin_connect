@@ -9,6 +9,7 @@ from homeassistant.const import PERCENTAGE, UnitOfLength, UnitOfMass, UnitOfTime
 DOMAIN = "garmin_connect"
 DATA_COORDINATOR = "coordinator"
 DEFAULT_UPDATE_INTERVAL = timedelta(minutes=5)
+CONF_MFA = "mfa_code"
 
 DAY_TO_NUMBER = {
     "Mo": 1,
