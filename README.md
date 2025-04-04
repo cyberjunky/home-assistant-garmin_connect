@@ -37,6 +37,37 @@ After successful set up a standard set of sensors are enabled. You can enable mo
 
 Please be aware that Garmin Connect has very low rate limits, max. once every ~5 minutes.
 
+### Configuration with 2FA enabled on your account
+
+
+Currently this integration does not support configuration from Home Assistant if you have 2FA enabled in your Garmin Connect account.
+To use the integration with 2FA, you need to manually obtain authentication tokens (which should be valid for 1 year).
+
+To use this integration with 2-factor authentication:
+
+1. save session tokens using garth. This is doable with some simple python code, for instance (install garth first, `pip install garth`:
+```python
+import garth
+from getpass import getpass
+
+email = input("Enter email address: ")
+password = getpass("Enter password: ")
+# If there's MFA, you'll be prompted during the login
+garth.login(email, password)
+garth.save("~/.garth")
+```
+this will generate and save your session tokens to `~/.garth` (a hidden directory directly in your home dir, tokens are valid for 1 year)
+
+2. you need to make those tokens accessible by Home Assistant.
+
+    2.1 if you're running Home Assistant in docker:
+    * copy content of `~/.garth` to any place you desire
+    * mount that directory in the container, eg `/srv/docks/hass/.garth:/config/.garth`
+    * add an environment variable `GARMINTOKENS` to equal to the path inside container
+ 
+    2.2 if you're running HASS anyhow else - add env variable `GARMINTOKENS` that points at the directory tokens are in
+4. configure the integration as you would if you didn't have 2FA enabled - tokens will be used
+
 ## Available Sensors
 
 Not every sensor holds meaningful values, it depends on the tracking and health devices you use, or the apps you have connected.
