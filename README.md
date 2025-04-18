@@ -74,6 +74,11 @@ Chronological Age
 Fitness Age
 Achievable Fitness Age
 Previous Fitness Age
+Hydration
+Hydration Goal
+Hydration Daily Average
+Hydration Sweat Loss
+Hydration Activity Intake
 ```
 
 Disabled by default:
