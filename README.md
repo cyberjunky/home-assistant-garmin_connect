@@ -3,39 +3,25 @@
 # Garmin Connect
 The Garmin Connect integration allows you to expose data from Garmin Connect to Home Assistant.
 
-NOTE: This integration doesn't support 2FA on Garmin Connect yet (support is coming), so if you have enabled it -and want to keep it- this integration doesn't work, it will try to login repeatedly and generate lots of 2FA codes via email.
-The change of adding support for it is unlikely since the Garmin Connect API is closed source, and will not be open for open-sourced projects.
-
 ## Installation
 
-### HACS - Recommended
-- Have [HACS](https://hacs.xyz) installed, this will allow you to easily manage and track updates.
-- Inside HACS click 'Explore & download repositories'
-- Search for 'Garmin Connect'.
-- Click on found integration.
-- Click Download this repository with HACS.
-- Restart Home-Assistant.
-- Follow configuration steps below.
+[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=cyberjunky&repository=home-assistant-garmin_connect&category=integration)
 
-### Manual
-- Copy directory `custom_components/garmin_connect` to your `<config dir>/custom_components` directory.
-- Restart Home-Assistant.
-- Follow configuration steps below.
+## Install via HACS
+
+- The installation is done inside [HACS](https://hacs.xyz/) (Home Assistant Community Store). If you don't have HACS, you must install it before adding this integration. [Installation instructions here.](https://hacs.xyz/docs/setup/download)
+- Once HACS is installed, search for `garmin connect`
+  - Click on "Download". Once fully downloaded, restart HomeAssistant.
 
 ## Configuration
 
-Adding Garmin Connect to your Home Assistant instance can be done via the integrations user interface.
+- In the sidebar, click 'Configuration', then 'Devices & Services'. Click the + icon to add "Garmin Connect" to your Home Assistant installation.
+  - Enter the credentials of the Garmin Connect account you want to add.
+  - Optionally -when MFA is enabled- it will ask for your MFA code.
 
-- Browse to your Home Assistant instance.
-- In the sidebar click on Configuration.
-- From the configuration menu select: Integrations.
-- In the bottom right, click on the Add Integration button.
-- From the list, search and select “Garmin Connect”.
-- Follow the instruction on screen to complete the set up
+After successful set up a standard set of sensors are enabled. You can enable more if needed by using the Entities page under Devices and services. (Filter on disabled state)
 
-After successful set up a standard set of sensors are enabled. You can enable more if needed by using the Integrations page.
-
-Please be aware that Garmin Connect has very low rate limits, max. once every ~5 minutes.
+The integration will fetch new data every 5 minutes, make sure your devices sync to the Garmin Connect website.
 
 ## Available Sensors
 
