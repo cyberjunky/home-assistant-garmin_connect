@@ -70,6 +70,10 @@ Next Alarm Time
 Total Sleep Duration
 HRV Status
 Gear Sensors
+Chronological Age
+Fitness Age
+Achievable Fitness Age
+Previous Fitness Age
 ```
 
 Disabled by default:
@@ -124,10 +128,6 @@ Visceral Fat
 Metabolic Age
 Last Activities
 Last Activity
-Chronological Age
-Fitness Age
-Achievable Fitness Age
-Previous Fitness Age
 ```
 
 ## Screenshots
