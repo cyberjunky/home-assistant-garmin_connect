@@ -657,6 +657,38 @@ GARMIN_ENTITY_LIST = {
         None,
         True,
     ],
+    "chronologicalAge": [
+        "Chronological Age",
+        UnitOfTime.YEARS,
+        "mdi:calendar-heart",
+        None,
+        SensorStateClass.MEASUREMENT,
+        True,
+    ],
+    "fitnessAge": [
+        "Fitness Age",
+        UnitOfTime.YEARS,
+        "mdi:calendar-heart",
+        None,
+        SensorStateClass.MEASUREMENT,
+        True,
+    ],
+    "achievableFitnessAge": [
+        "Achievable Fitness Age",
+        UnitOfTime.YEARS,
+        "mdi:calendar-heart",
+        None,
+        SensorStateClass.MEASUREMENT,
+        True,
+    ],
+    "previousFitnessAge": [
+        "Previous Fitness Age",
+        UnitOfTime.YEARS,
+        "mdi:calendar-heart",
+        None,
+        SensorStateClass.MEASUREMENT,
+        True,
+    ],
 }
 
 GEAR_ICONS = {

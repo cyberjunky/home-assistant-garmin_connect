@@ -124,6 +124,10 @@ Visceral Fat
 Metabolic Age
 Last Activities
 Last Activity
+Chronological Age
+Fitness Age
+Achievable Fitness Age
+Previous Fitness Age
 ```
 
 ## Screenshots
