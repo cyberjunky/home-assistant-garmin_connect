@@ -242,6 +242,15 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
             else:
                 _LOGGER.debug("No fitness age data found")
 
+            # Hyrdation data
+            hydration_data = await self.hass.async_add_executor_job(
+                self.api.get_hydration_data, today.isoformat()
+            )
+            if hydration_data:
+                _LOGGER.debug("Hydration data fetched: %s", hydration_data)
+            else:
+                _LOGGER.debug("No hydration data found")
+
         except GarminConnectAuthenticationError as err:
             _LOGGER.error(
                 "Authentication error occurred during update: %s", err.response.text)
@@ -343,6 +352,7 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
             "sleepTimeSeconds": sleep_time_seconds,
             "hrvStatus": hrv_status,
             **fitnessage_data,
+            **hydration_data,
         }
 
 

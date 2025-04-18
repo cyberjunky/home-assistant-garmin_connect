@@ -4,7 +4,7 @@ from datetime import timedelta
 from typing import NamedTuple
 
 from homeassistant.components.sensor import SensorDeviceClass, SensorStateClass
-from homeassistant.const import PERCENTAGE, UnitOfLength, UnitOfMass, UnitOfTime
+from homeassistant.const import PERCENTAGE, UnitOfLength, UnitOfMass, UnitOfTime, UnitOfVolume
 
 DOMAIN = "garmin_connect"
 DATA_COORDINATOR = "coordinator"
@@ -685,6 +685,46 @@ GARMIN_ENTITY_LIST = {
         "Previous Fitness Age",
         UnitOfTime.YEARS,
         "mdi:calendar-heart",
+        None,
+        SensorStateClass.MEASUREMENT,
+        True,
+    ],
+    "valueInML": [
+        "Hydration",
+        UnitOfVolume.MILLILITERS,
+        "mdi:water",
+        None,
+        SensorStateClass.MEASUREMENT,
+        True,
+    ],
+    "goalInML": [
+        "Hydration Goal",
+        UnitOfVolume.MILLILITERS,
+        "mdi:water",
+        None,
+        SensorStateClass.MEASUREMENT,
+        True,
+    ],
+    "dailyAverageInML": [
+        "Hydration Daily Average",
+        UnitOfVolume.MILLILITERS,
+        "mdi:water",
+        None,
+        SensorStateClass.MEASUREMENT,
+        True,
+    ],
+    "sweatLossInML": [
+        "Hydration Sweat Loss",
+        UnitOfVolume.MILLILITERS,
+        "mdi:water",
+        None,
+        SensorStateClass.MEASUREMENT,
+        True,
+    ],
+    "activityIntakeInML": [
+        "Hydration Activity Intake",
+        UnitOfVolume.MILLILITERS,
+        "mdi:water",
         None,
         SensorStateClass.MEASUREMENT,
         True,
