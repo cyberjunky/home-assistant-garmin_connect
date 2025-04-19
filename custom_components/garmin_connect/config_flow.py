@@ -13,6 +13,7 @@ from garminconnect import (
 from homeassistant.config_entries import ConfigFlow, ConfigFlowResult
 from homeassistant.const import CONF_ID, CONF_TOKEN, CONF_PASSWORD, CONF_USERNAME
 import voluptuous as vol
+import garth
 
 from .const import CONF_MFA, DOMAIN
 
@@ -57,8 +58,6 @@ class GarminConnectConfigFlowHandler(ConfigFlow, domain=DOMAIN):
         try:
             self._login_result1, self._login_result2 = await self.hass.async_add_executor_job(self._api.login)
 
-            _LOGGER.debug(f"Login result1: {self._login_result1}")
-            _LOGGER.debug(f"Login result2: {self._login_result2}")
             if self._login_result1 == "needs_mfa":  # MFA is required
                 return await self.async_step_mfa()
 
@@ -89,12 +88,10 @@ class GarminConnectConfigFlowHandler(ConfigFlow, domain=DOMAIN):
     async def _async_garmin_connect_mfa_login(self) -> ConfigFlowResult:
         """Handle multi-factor authentication (MFA) login with Garmin Connect."""
         try:
+            await self.hass.async_add_executor_job(self._api.resume_login, self._login_result2, self._mfa_code)
 
-            oauth1, oauth2 = await self.hass.async_add_executor_job(self._api.resume_login, self._login_result2, self._mfa_code)
-
-            _LOGGER.info(f"Oauth1: {oauth1}, Oauth2: {oauth2}")
-
-        except GarminConnectAuthenticationError:
+        except garth.exc.GarthException as err:
+            _LOGGER.error(f"Error during MFA login: {err}")
             return self.async_show_form(
                 step_id="mfa",
                 data_schema=vol.Schema(self.mfa_data_schema),

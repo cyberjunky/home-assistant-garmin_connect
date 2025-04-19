@@ -15,9 +15,9 @@ from garminconnect import (
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_TOKEN
 from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import ConfigEntryNotReady
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
-
+from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
+import binascii
 from .const import (
     DATA_COORDINATOR,
     DAY_TO_NUMBER,
@@ -84,11 +84,15 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
     async def async_login(self) -> bool:
         """Login to Garmin Connect."""
         try:
+            # Check if the token exists in the entry data
+            if CONF_TOKEN not in self.entry.data:
+                raise KeyError("Token not found, migrating config entry")
+
             await self.hass.async_add_executor_job(self.api.login, self.entry.data[CONF_TOKEN])
         except GarminConnectAuthenticationError as err:
             _LOGGER.error(
                 "Authentication error occurred during login: %s", err.response.text)
-            return False
+            raise ConfigEntryAuthFailed from err
         except GarminConnectTooManyRequestsError as err:
             _LOGGER.error(
                 "Too many request error occurred during login: %s", err)
@@ -101,7 +105,7 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
             if err.response.status_code == 401:
                 _LOGGER.error(
                     "Authentication error occurred during login: %s", err.response.text)
-                return False
+                raise ConfigEntryAuthFailed from err
             if err.response.status_code == 429:
                 _LOGGER.error(
                     "Too many requests error occurred during login: %s", err.response.text)
@@ -109,6 +113,10 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
             _LOGGER.error(
                 "Unknown HTTP error occurred during login: %s", err)
             return False
+        except KeyError as err:
+            _LOGGER.error(
+                "Found old config during login: %s", err)
+            raise ConfigEntryAuthFailed from err
         except Exception as err:  # pylint: disable=broad-except
             _LOGGER.exception(
                 "Unknown error occurred during login: %s", err)
@@ -254,7 +262,7 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
         except GarminConnectAuthenticationError as err:
             _LOGGER.error(
                 "Authentication error occurred during update: %s", err.response.text)
-            return False
+            raise ConfigEntryAuthFailed from err
         except GarminConnectTooManyRequestsError as err:
             _LOGGER.error(
                 "Too many request error occurred during update: %s", err)
@@ -267,7 +275,7 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
             if err.response.status_code == 401:
                 _LOGGER.error(
                     "Authentication error occurred during update: %s", err.response.text)
-                return False
+                raise ConfigEntryAuthFailed from err
             if err.response.status_code == 429:
                 _LOGGER.error(
                     "Too many requests error occurred during update: %s", err.response.text)

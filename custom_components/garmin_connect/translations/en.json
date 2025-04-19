@@ -24,13 +24,15 @@
             }
         },
         "abort": {
-            "already_configured": "Account is already configured"
+            "already_configured": "Account is already configured",
+            "reauth_successful": "Reauthentication successful"
         },
         "error": {
             "cannot_connect": "Failed to connect",
             "invalid_auth": "Invalid authentication",
-            "too_many_requests": "Too many requests, retry later.",
-            "unknown": "Unexpected error"
+            "too_many_requests": "Too many requests, retry later",
+            "unknown": "Unexpected error",
+            "invalid_mfa_code": "Invalid MFA code"
         }
     }
 }

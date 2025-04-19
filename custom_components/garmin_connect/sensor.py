@@ -244,7 +244,7 @@ class GarminConnectSensor(CoordinatorEntity, SensorEntity):
             activities = self.coordinator.data.get(self._type, [])
             sorted_activities = sorted(
                 activities, key=lambda x: x["activityId"])
-            attributes["last_activities"] = sorted_activities[-10:]
+            attributes["last_activities"] = sorted_activities[-5:]
 
         if self._type == "lastActivity":
             attributes = {**attributes, **self.coordinator.data[self._type]}
