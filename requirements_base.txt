@@ -1,2 +1,2 @@
 colorlog==6.9.0
-setuptools==78.1.0
+setuptools==79.0.0
