@@ -204,6 +204,9 @@ class GarminConnectSensor(CoordinatorEntity, SensorEntity):
         elif self._type == "hrvStatus":
             value = self.coordinator.data[self._type]["status"].capitalize()
 
+        elif self._type == "enduranceScore":
+            value = self.coordinator.data[self._type]["overallScore"]
+
         elif "Duration" in self._type or "Seconds" in self._type:
             value = round(value // 60, 2)
 
@@ -260,6 +263,10 @@ class GarminConnectSensor(CoordinatorEntity, SensorEntity):
         if self._type == "hrvStatus":
             attributes = {**attributes, **self.coordinator.data[self._type]}
             del attributes["status"]
+
+        if self._type == "enduranceScore":
+            attributes = {**attributes, **self.coordinator.data[self._type]}
+            del attributes["overallScore"]
 
         return attributes
 

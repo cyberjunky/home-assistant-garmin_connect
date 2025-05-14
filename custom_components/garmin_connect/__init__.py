@@ -114,6 +114,7 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
         sleep_time_seconds = None
         hrv_data = {}
         hrv_status = {"status": "unknown"}
+        endurance_data = {}
         next_alarms = []
 
         today = datetime.now(ZoneInfo(self.time_zone)).date()
@@ -181,6 +182,13 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
                 self.api.get_hrv_data, today.isoformat()
             )
             _LOGGER.debug("HRV data fetched: %s", hrv_data)
+
+            # Endurance data
+            endurance_data = await self.hass.async_add_executor_job(
+                self.api.get_endurance_score, today.isoformat()
+            )
+            _LOGGER.debug("Endurance data fetched: %s", endurance_data)
+
         except (
             GarminConnectAuthenticationError,
             GarminConnectTooManyRequestsError,
@@ -254,6 +262,7 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
             "sleepScore": sleep_score,
             "sleepTimeSeconds": sleep_time_seconds,
             "hrvStatus": hrv_status,
+            "enduranceScore": endurance_data,
         }
 
 
