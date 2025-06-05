@@ -91,7 +91,7 @@ class GarminConnectConfigFlowHandler(ConfigFlow, domain=DOMAIN):
             await self.hass.async_add_executor_job(self._api.resume_login, self._login_result2, self._mfa_code)
 
         except garth.exc.GarthException as err:
-            _LOGGER.error(f"Error during MFA login: {err}")
+            _LOGGER.error("Error during MFA login: %s", err)
             return self.async_show_form(
                 step_id="mfa",
                 data_schema=vol.Schema(self.mfa_data_schema),
