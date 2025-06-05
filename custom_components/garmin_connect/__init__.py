@@ -63,7 +63,7 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
     def __init__(self, hass: HomeAssistant, entry: ConfigEntry) -> None:
         """
         Initializes the Garmin Connect data update coordinator.
-        
+
         Sets up the integration's API client, determines if the user is in China, configures the time zone, and establishes the update interval for data synchronization.
         """
         self.entry = entry
@@ -87,12 +87,12 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
     async def async_login(self) -> bool:
         """
         Asynchronously logs into Garmin Connect using a stored authentication token.
-        
+
         Attempts to authenticate with Garmin Connect via the token stored in the configuration entry. Handles authentication failures, rate limiting, connection errors, and missing tokens by raising appropriate Home Assistant exceptions or returning False on recoverable errors.
-        
+
         Returns:
             True if login is successful, False if rate limited or an unknown error occurs.
-        
+
         Raises:
             ConfigEntryAuthFailed: If authentication fails or the token is missing.
             ConfigEntryNotReady: If a connection error occurs.
@@ -141,9 +141,9 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
     async def _async_update_data(self) -> dict:
         """
         Asynchronously fetches and aggregates user data from Garmin Connect.
-        
+
         Retrieves user summary, body composition, recent activities, badges, alarms, activity types, sleep data, HRV data, fitness age, hydration, and gear information. Calculates user points, user level, and determines the next active alarms. Handles authentication, connection, and rate limiting errors by raising Home Assistant exceptions or returning False as appropriate.
-        
+
         Returns:
             A dictionary containing consolidated Garmin Connect data, including user summary, body composition, activities, badges, alarms, activity types, sleep metrics, HRV status, fitness age, hydration, gear details, and calculated fields such as user points, user level, next alarms, sleep score, and sleep time.
         """
@@ -287,7 +287,7 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
         except GarminConnectTooManyRequestsError as err:
             _LOGGER.error(
                 "Too many request error occurred during update: %s", err)
-            return False
+            return {}
         except GarminConnectConnectionError as err:
             _LOGGER.error(
                 "Connection error occurred during update: %s", err)
@@ -300,14 +300,14 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
             if err.response.status_code == 429:
                 _LOGGER.error(
                     "Too many requests error occurred during update: %s", err.response.text)
-                return False
+                return {}
             _LOGGER.error(
                 "Unknown HTTP error occurred during update: %s", err)
             return False
         except Exception as err:  # pylint: disable=broad-except
             _LOGGER.exception(
                 "Unknown error occurred during update: %s", err)
-            return False
+            return {}
 
         try:
             # Gear data like shoes, bike, etc.
@@ -413,13 +413,13 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
 def calculate_next_active_alarms(alarms, time_zone):
     """
     Calculates the next active Garmin alarms based on alarm settings and the current time.
-    
+
     Filters alarms set to "ON" and computes the next scheduled datetime for each alarm day, considering both one-time and recurring alarms. Returns a sorted list of ISO-formatted datetimes for upcoming alarms, or None if no active alarms are found.
-    
+
     Args:
         alarms: List of alarm setting dictionaries from Garmin devices.
         time_zone: Time zone string used to localize alarm times.
-    
+
     Returns:
         A sorted list of ISO-formatted datetimes for the next active alarms, or None if none are scheduled.
     """
