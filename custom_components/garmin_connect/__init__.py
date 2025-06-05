@@ -61,7 +61,11 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
     """Garmin Connect Data Update Coordinator."""
 
     def __init__(self, hass: HomeAssistant, entry: ConfigEntry) -> None:
-        """Initialize the Garmin Connect hub."""
+        """
+        Initializes the Garmin Connect data update coordinator.
+        
+        Sets up the integration's API client, determines if the user is in China, configures the time zone, and establishes the update interval for data synchronization.
+        """
         self.entry = entry
         self.hass = hass
         self._in_china = False
@@ -81,7 +85,18 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
                          update_interval=DEFAULT_UPDATE_INTERVAL)
 
     async def async_login(self) -> bool:
-        """Login to Garmin Connect."""
+        """
+        Asynchronously logs into Garmin Connect using a stored authentication token.
+        
+        Attempts to authenticate with Garmin Connect via the token stored in the configuration entry. Handles authentication failures, rate limiting, connection errors, and missing tokens by raising appropriate Home Assistant exceptions or returning False on recoverable errors.
+        
+        Returns:
+            True if login is successful, False if rate limited or an unknown error occurs.
+        
+        Raises:
+            ConfigEntryAuthFailed: If authentication fails or the token is missing.
+            ConfigEntryNotReady: If a connection error occurs.
+        """
         try:
             # Check if the token exists in the entry data
             if CONF_TOKEN not in self.entry.data:
@@ -124,7 +139,14 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
         return True
 
     async def _async_update_data(self) -> dict:
-        """Fetch data from Garmin Connect."""
+        """
+        Asynchronously fetches and aggregates user data from Garmin Connect.
+        
+        Retrieves user summary, body composition, recent activities, badges, alarms, activity types, sleep data, HRV data, fitness age, hydration, and gear information. Calculates user points, user level, and determines the next active alarms. Handles authentication, connection, and rate limiting errors by raising Home Assistant exceptions or returning False as appropriate.
+        
+        Returns:
+            A dictionary containing consolidated Garmin Connect data, including user summary, body composition, activities, badges, alarms, activity types, sleep metrics, HRV status, fitness age, hydration, gear details, and calculated fields such as user points, user level, next alarms, sleep score, and sleep time.
+        """
         summary = {}
         body = {}
         alarms = {}
@@ -390,11 +412,16 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
 
 def calculate_next_active_alarms(alarms, time_zone):
     """
-    Calculate garmin next active alarms from settings.
-    Alarms are sorted by time.
-
-    Example of alarms data:
-    Alarms data fetched: [{'alarmMode': 'OFF', 'alarmTime': 1233, 'alarmDays': ['ONCE'], 'alarmSound': 'TONE_AND_VIBRATION', 'alarmId': 1737308355, 'changeState': 'UNCHANGED', 'backlight': 'ON', 'enabled': None, 'alarmMessage': None, 'alarmImageId': None, 'alarmIcon': None, 'alarmType': None}]
+    Calculates the next active Garmin alarms based on alarm settings and the current time.
+    
+    Filters alarms set to "ON" and computes the next scheduled datetime for each alarm day, considering both one-time and recurring alarms. Returns a sorted list of ISO-formatted datetimes for upcoming alarms, or None if no active alarms are found.
+    
+    Args:
+        alarms: List of alarm setting dictionaries from Garmin devices.
+        time_zone: Time zone string used to localize alarm times.
+    
+    Returns:
+        A sorted list of ISO-formatted datetimes for the next active alarms, or None if none are scheduled.
     """
     active_alarms = []
 
