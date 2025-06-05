@@ -1,22 +1,38 @@
 {
     "config": {
-        "abort": {
-            "already_configured": "Account is already configured"
-        },
-        "error": {
-            "cannot_connect": "Failed to connect",
-            "invalid_auth": "Invalid authentication",
-            "too_many_requests": "Too many requests, retry later.",
-            "unknown": "Unexpected error"
-        },
         "step": {
             "user": {
+                "title": "Enter your Garmin Connect credentials",
                 "data": {
                     "password": "Password",
                     "username": "Username"
                 },
                 "description": "Enter your credentials."
+            },
+            "mfa": {
+                "title": "Enter your Garmin Connect MFA code",
+                "data": {
+                    "mfa_code": "MFA code (6-digits)"
+                }
+            },
+            "reauth_confirm": {
+                "title": "Enter your Garmin Connect credentials",
+                "data": {
+                    "password": "Password",
+                    "username": "Username"
+                }
             }
+        },
+        "abort": {
+            "already_configured": "Account is already configured",
+            "reauth_successful": "Reauthentication successful"
+        },
+        "error": {
+            "cannot_connect": "Failed to connect",
+            "invalid_auth": "Invalid authentication",
+            "too_many_requests": "Too many requests, retry later",
+            "unknown": "Unexpected error",
+            "invalid_mfa_code": "Invalid MFA code"
         }
     }
 }
