@@ -306,9 +306,9 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
             ]
             gear_stats = await asyncio.gather(*tasks)
             if gear_stats:
-                _LOGGER.debug("Gear stats data fetched: %s", gear_stats)
+                _LOGGER.debug("Gear statistics data fetched: %s", gear_stats)
             else:
-                _LOGGER.debug("No gear stats data found")
+                _LOGGER.debug("No gear statistics data found")
 
             # Gear defaults data like shoe, bike, etc.
             gear_defaults = await self.hass.async_add_executor_job(
@@ -318,6 +318,31 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
                 _LOGGER.debug("Gear defaults data fetched: %s", gear_defaults)
             else:
                 _LOGGER.debug("No gear defaults data found")
+        except GarminConnectAuthenticationError as err:
+            _LOGGER.error(
+                "Authentication error occurred while fetching Gear data: %s", err.response.text)
+            raise ConfigEntryAuthFailed from err
+        except GarminConnectTooManyRequestsError as err:
+            _LOGGER.error(
+                "Too many request error occurred while fetching Gear data: %s", err)
+            raise ConfigEntryNotReady from err
+        except GarminConnectConnectionError as err:
+            _LOGGER.error(
+                "Connection error occurred while fetching Gear data: %s", err)
+            raise ConfigEntryNotReady from err
+        except requests.exceptions.HTTPError as err:
+            if err.response.status_code == 401:
+                _LOGGER.error(
+                    "Authentication error while fetching Gear data: %s", err.response.text)
+            elif err.response.status_code == 404:
+                _LOGGER.error(
+                    "URL not found error while fetching Gear data: %s", err.response.text)
+            elif err.response.status_code == 429:
+                _LOGGER.error(
+                    "Too many requests error while fetching Gear data: %s", err.response.text)
+            else:
+                _LOGGER.error(
+                    "Unknown HTTP error occurred while fetching Gear data: %s", err)
         except (KeyError, TypeError, ValueError, ConnectionError) as err:
             _LOGGER.debug("Error occurred while fetching Gear data: %s", err)
 
