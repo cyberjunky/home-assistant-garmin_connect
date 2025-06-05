@@ -140,8 +140,7 @@ class GarminConnectConfigFlowHandler(ConfigFlow, domain=DOMAIN):
             )
 
         self._mfa_code = user_input[CONF_MFA]
--        _LOGGER.info(f"MFA CODE: {self._mfa_code}")
-+        _LOGGER.debug("MFA code received")
+        _LOGGER.debug("MFA code received")
 
         return await self._async_garmin_connect_mfa_login()
 
