@@ -239,7 +239,7 @@ class GarminConnectSensor(CoordinatorEntity, SensorEntity):
             "last_synced": self.coordinator.data["lastSyncTimestampGMT"],
         }
 
-        # Only keep the last 10 activities for performance reasons
+        # Only keep the last 5 activities for performance reasons
         if self._type == "lastActivities":
             activities = self.coordinator.data.get(self._type, [])
             sorted_activities = sorted(
