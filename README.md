@@ -3,15 +3,16 @@
 # Garmin Connect
 The Garmin Connect integration allows you to expose data from Garmin Connect to Home Assistant.
 
+## Install via HACS
+
+- The installation is done inside [HACS](https://hacs.xyz/) (Home Assistant Community Store).
+- If you already have HACS installed click on the MyHomeAssistant button below, otherwise install HACS before adding this integration.  
+  You can find installation instructions [here.](https://hacs.xyz/docs/setup/download)
+- Once HACS is installed, search for `garmin connect` and click on "Download". Once downloaded, restart HomeAssistant.
+
 ## Installation
 
 [![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=cyberjunky&repository=home-assistant-garmin_connect&category=integration)
-
-## Install via HACS
-
-- The installation is done inside [HACS](https://hacs.xyz/) (Home Assistant Community Store). If you don't have HACS, you must install it before adding this integration. [Installation instructions here.](https://hacs.xyz/docs/setup/download)
-- Once HACS is installed, search for `garmin connect`
-  - Click on "Download". Once fully downloaded, restart HomeAssistant.
 
 ## Configuration
 
