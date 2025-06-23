@@ -188,9 +188,9 @@ class GarminConnectSensor(CoordinatorEntity, SensorEntity):
     @property
     def native_value(self):
         """
-        Returns the current state value for the sensor, formatted and converted as appropriate for its type.
+        Return the current value of the sensor, applying type-specific formatting and conversions.
         
-        Handles special cases for activity, badge, HRV status, duration, mass, alarm, and stress qualifier sensor types, including value conversions and formatting. Returns None if data is unavailable.
+        For activity and badge sensors, returns the count. For last activity, returns the activity name. HRV status and stress qualifier values are capitalized. Duration and seconds values are converted from seconds to minutes, and mass values from grams to kilograms. For alarms, returns the next active alarm if available. Timestamp values are converted to timezone-aware datetime objects. Returns None if data is unavailable.
         """
         if not self.coordinator.data:
             return None
@@ -236,9 +236,9 @@ class GarminConnectSensor(CoordinatorEntity, SensorEntity):
     @property
     def extra_state_attributes(self):
         """
-        Returns additional state attributes for the sensor entity.
+        Return additional state attributes for the sensor entity.
         
-        Includes attributes such as the last sync timestamp and, depending on the sensor type, recent activities, badges, alarms, or HRV status details. Limits the number of returned activities and badges for performance.
+        Includes the last sync timestamp and, depending on the sensor type, recent activities (up to 5), badges (up to 10), alarms, or HRV status details (excluding the status string). Returns an empty dictionary if no coordinator data is available.
         """
         if not self.coordinator.data:
             return {}
@@ -288,29 +288,16 @@ class GarminConnectSensor(CoordinatorEntity, SensorEntity):
 
     @property
     def available(self) -> bool:
-        """Return True if entity is available."""
+        """
+        Indicates whether the sensor entity is available based on coordinator data presence and the sensor type.
+        """
         return super().available and self.coordinator.data and self._type in self.coordinator.data
 
     async def add_body_composition(self, **kwargs):
         """
-        Adds a new body composition record to Garmin Connect.
+        Add a new body composition measurement to Garmin Connect.
         
-        Extracts body composition metrics from the provided keyword arguments and submits them to the Garmin Connect API. Ensures the user is logged in before attempting to add the record.
-        
-        Args:
-            weight: The user's weight to record.
-            timestamp: Optional timestamp for the measurement.
-            percent_fat: Optional body fat percentage.
-            percent_hydration: Optional body hydration percentage.
-            visceral_fat_mass: Optional visceral fat mass.
-            bone_mass: Optional bone mass.
-            muscle_mass: Optional muscle mass.
-            basal_met: Optional basal metabolic rate.
-            active_met: Optional active metabolic rate.
-            physique_rating: Optional physique rating.
-            metabolic_age: Optional metabolic age.
-            visceral_fat_rating: Optional visceral fat rating.
-            bmi: Optional body mass index.
+        Extracts body composition metrics from keyword arguments and submits them to the Garmin Connect API. Ensures the user is logged in before attempting to add the record.
         
         Raises:
             IntegrationError: If login to Garmin Connect fails.
@@ -354,9 +341,9 @@ class GarminConnectSensor(CoordinatorEntity, SensorEntity):
 
     async def add_blood_pressure(self, **kwargs):
         """
-        Adds a blood pressure measurement to Garmin Connect via a service call.
+        Add a blood pressure measurement to Garmin Connect using the provided values.
         
-        Args:
+        Parameters:
             systolic: Systolic blood pressure value.
             diastolic: Diastolic blood pressure value.
             pulse: Pulse rate.
@@ -364,7 +351,7 @@ class GarminConnectSensor(CoordinatorEntity, SensorEntity):
             notes: Optional notes for the measurement.
         
         Raises:
-            IntegrationError: If login to Garmin Connect fails.
+            IntegrationError: If unable to log in to Garmin Connect.
         """
         timestamp = kwargs.get("timestamp")
         systolic = kwargs.get("systolic")
@@ -433,9 +420,9 @@ class GarminConnectGearSensor(CoordinatorEntity, SensorEntity):
     @property
     def extra_state_attributes(self):
         """
-        Returns additional state attributes for the gear sensor entity.
+        Return additional state attributes for the gear sensor entity.
         
-        Includes metadata such as last sync time, total activities, creation and update dates, gear details, maximum distance, and the activity types for which this gear is set as default.
+        Includes metadata such as last sync time, total activities, creation and update dates, gear make/model/status, custom model, maximum distance, and a comma-separated list of activity types for which this gear is set as default. Returns an empty dictionary if required data is missing.
         """
         gear = self._gear()
         stats = self._stats()
@@ -504,7 +491,12 @@ class GarminConnectGearSensor(CoordinatorEntity, SensorEntity):
                 return gear_item
 
     def _gear_defaults(self):
-        """Get gear defaults"""
+        """
+        Return a list of default gear settings for this gear UUID.
+        
+        Returns:
+            List of gear default dictionaries where this gear is set as the default.
+        """
         return list(
             filter(
                 lambda d: d[Gear.UUID] == self.uuid and d["defaultGear"] is True,
@@ -514,14 +506,14 @@ class GarminConnectGearSensor(CoordinatorEntity, SensorEntity):
 
     async def set_active_gear(self, **kwargs):
         """
-        Sets the active gear for a specified activity type in Garmin Connect.
+        Set this gear as active or default for a specified activity type in Garmin Connect.
         
-        Args:
-            activity_type: The activity type for which to set the active gear.
-            setting: The desired gear setting, determining whether to set as default or only default.
+        Parameters:
+            activity_type (str): The activity type key for which to update the gear setting.
+            setting (str): The desired gear setting, indicating whether to set as default or as the only default.
         
         Raises:
-            IntegrationError: If login to Garmin Connect fails.
+            IntegrationError: If unable to log in to Garmin Connect.
         """
         activity_type = kwargs.get("activity_type")
         setting = kwargs.get("setting")
