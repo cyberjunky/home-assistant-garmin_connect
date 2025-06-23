@@ -187,7 +187,11 @@ class GarminConnectSensor(CoordinatorEntity, SensorEntity):
 
     @property
     def native_value(self):
-        """Return the state of the sensor."""
+        """
+        Return the current value of the sensor, applying type-specific formatting and conversions.
+        
+        For activity and badge sensors, returns the count. For last activity, returns the activity name. HRV status and stress qualifier values are capitalized. Duration and seconds values are converted from seconds to minutes, and mass values from grams to kilograms. For alarms, returns the next active alarm if available. Timestamp values are converted to timezone-aware datetime objects. Returns None if data is unavailable.
+        """
         if not self.coordinator.data:
             return None
 
@@ -212,8 +216,8 @@ class GarminConnectSensor(CoordinatorEntity, SensorEntity):
 
         elif self._type == "nextAlarm":
             active_alarms = self.coordinator.data[self._type]
-            _LOGGER.debug("Active alarms: %s", active_alarms)
             if active_alarms:
+                _LOGGER.debug("Active alarms: %s", active_alarms)
                 _LOGGER.debug("Next alarm: %s", active_alarms[0])
                 value = active_alarms[0]
             else:
@@ -231,7 +235,11 @@ class GarminConnectSensor(CoordinatorEntity, SensorEntity):
 
     @property
     def extra_state_attributes(self):
-        """Return attributes for sensor."""
+        """
+        Return additional state attributes for the sensor entity.
+        
+        Includes the last sync timestamp and, depending on the sensor type, recent activities (up to 5), badges (up to 10), alarms, or HRV status details (excluding the status string). Returns an empty dictionary if no coordinator data is available.
+        """
         if not self.coordinator.data:
             return {}
 
@@ -239,16 +247,17 @@ class GarminConnectSensor(CoordinatorEntity, SensorEntity):
             "last_synced": self.coordinator.data["lastSyncTimestampGMT"],
         }
 
-        # Only add the last 5 activities for performance reasons
+        # Only keep the last 5 activities for performance reasons
         if self._type == "lastActivities":
             activities = self.coordinator.data.get(self._type, [])
-            sorted_activities = sorted(activities, key=lambda x: x["activityId"])
+            sorted_activities = sorted(
+                activities, key=lambda x: x["activityId"])
             attributes["last_activities"] = sorted_activities[-5:]
 
         if self._type == "lastActivity":
             attributes = {**attributes, **self.coordinator.data[self._type]}
 
-        # Only add the last 10 badges for performance reasons
+        # Only keep the last 10 badges for performance reasons
         if self._type == "badges":
             badges = self.coordinator.data.get(self._type, [])
             sorted_badges = sorted(badges, key=lambda x: x["badgeEarnedDate"])
@@ -279,11 +288,20 @@ class GarminConnectSensor(CoordinatorEntity, SensorEntity):
 
     @property
     def available(self) -> bool:
-        """Return True if entity is available."""
+        """
+        Indicates whether the sensor entity is available based on coordinator data presence and the sensor type.
+        """
         return super().available and self.coordinator.data and self._type in self.coordinator.data
 
     async def add_body_composition(self, **kwargs):
-        """Handle the service call to add body composition."""
+        """
+        Add a new body composition measurement to Garmin Connect.
+        
+        Extracts body composition metrics from keyword arguments and submits them to the Garmin Connect API. Ensures the user is logged in before attempting to add the record.
+        
+        Raises:
+            IntegrationError: If login to Garmin Connect fails.
+        """
         weight = kwargs.get("weight")
         timestamp = kwargs.get("timestamp")
         percent_fat = kwargs.get("percent_fat")
@@ -300,7 +318,8 @@ class GarminConnectSensor(CoordinatorEntity, SensorEntity):
 
         """Check for login."""
         if not await self.coordinator.async_login():
-            raise IntegrationError("Failed to login to Garmin Connect, unable to update")
+            raise IntegrationError(
+                "Failed to login to Garmin Connect, unable to update")
 
         """Record a weigh in/body composition."""
         await self.hass.async_add_executor_job(
@@ -321,7 +340,19 @@ class GarminConnectSensor(CoordinatorEntity, SensorEntity):
         )
 
     async def add_blood_pressure(self, **kwargs):
-        """Handle the service call to add blood pressure."""
+        """
+        Add a blood pressure measurement to Garmin Connect using the provided values.
+        
+        Parameters:
+            systolic: Systolic blood pressure value.
+            diastolic: Diastolic blood pressure value.
+            pulse: Pulse rate.
+            timestamp: Optional timestamp for the measurement.
+            notes: Optional notes for the measurement.
+        
+        Raises:
+            IntegrationError: If unable to log in to Garmin Connect.
+        """
         timestamp = kwargs.get("timestamp")
         systolic = kwargs.get("systolic")
         diastolic = kwargs.get("diastolic")
@@ -330,7 +361,8 @@ class GarminConnectSensor(CoordinatorEntity, SensorEntity):
 
         """Check for login."""
         if not await self.coordinator.async_login():
-            raise IntegrationError("Failed to login to Garmin Connect, unable to update")
+            raise IntegrationError(
+                "Failed to login to Garmin Connect, unable to update")
 
         """Record a blood pressure measurement."""
         await self.hass.async_add_executor_job(
@@ -387,12 +419,17 @@ class GarminConnectGearSensor(CoordinatorEntity, SensorEntity):
 
     @property
     def extra_state_attributes(self):
-        """Return attributes for sensor."""
+        """
+        Return additional state attributes for the gear sensor entity.
+        
+        Includes metadata such as last sync time, total activities, creation and update dates, gear make/model/status, custom model, maximum distance, and a comma-separated list of activity types for which this gear is set as default. Returns an empty dictionary if required data is missing.
+        """
         gear = self._gear()
         stats = self._stats()
         gear_defaults = self._gear_defaults()
         activity_types = self.coordinator.data["activityTypes"]
-        default_for_activity = self._activity_names_for_gear_defaults(gear_defaults, activity_types)
+        default_for_activity = self._activity_names_for_gear_defaults(
+            gear_defaults, activity_types)
 
         if not self.coordinator.data or not gear or not stats:
             return {}
@@ -454,7 +491,12 @@ class GarminConnectGearSensor(CoordinatorEntity, SensorEntity):
                 return gear_item
 
     def _gear_defaults(self):
-        """Get gear defaults"""
+        """
+        Return a list of default gear settings for this gear UUID.
+        
+        Returns:
+            List of gear default dictionaries where this gear is set as the default.
+        """
         return list(
             filter(
                 lambda d: d[Gear.UUID] == self.uuid and d["defaultGear"] is True,
@@ -463,13 +505,23 @@ class GarminConnectGearSensor(CoordinatorEntity, SensorEntity):
         )
 
     async def set_active_gear(self, **kwargs):
-        """Handle the service call to set active gear."""
+        """
+        Set this gear as active or default for a specified activity type in Garmin Connect.
+        
+        Parameters:
+            activity_type (str): The activity type key for which to update the gear setting.
+            setting (str): The desired gear setting, indicating whether to set as default or as the only default.
+        
+        Raises:
+            IntegrationError: If unable to log in to Garmin Connect.
+        """
         activity_type = kwargs.get("activity_type")
         setting = kwargs.get("setting")
 
         """Check for login."""
         if not await self.coordinator.async_login():
-            raise IntegrationError("Failed to login to Garmin Connect, unable to update")
+            raise IntegrationError(
+                "Failed to login to Garmin Connect, unable to update")
 
         """Update Garmin Gear settings."""
         activity_type_id = next(
