@@ -27,9 +27,9 @@ class GarminConnectConfigFlowHandler(ConfigFlow, domain=DOMAIN):
 
     def __init__(self) -> None:
         """
-        Initializes the Garmin Connect configuration flow handler.
+        Initialize schemas and internal state for the Garmin Connect configuration flow handler.
         
-        Sets up schemas for user credentials and MFA input, and initializes internal state variables for API client, login results, MFA code, credentials, and region flag.
+        Sets up validation schemas for user credentials and MFA input, and initializes variables for API client, login results, MFA code, credentials, and region detection.
         """
         self.data_schema = {
             vol.Required(CONF_USERNAME): str,
@@ -49,9 +49,15 @@ class GarminConnectConfigFlowHandler(ConfigFlow, domain=DOMAIN):
 
     async def _async_garmin_connect_login(self, step_id: str) -> ConfigFlowResult:
         """
-        Attempts to authenticate the user with Garmin Connect and handles login errors or MFA requirements.
+        Authenticate the user with Garmin Connect and handle login errors or multi-factor authentication requirements.
         
-        If the user is located in China, configures the API client accordingly. Initiates the login process and, if multi-factor authentication is required, transitions to the MFA step. Handles specific authentication and connection errors, returning appropriate error messages to the user. On successful authentication, proceeds to create the configuration entry.
+        If the user is located in China, configures the API client for the region. Initiates the login process and, if multi-factor authentication is needed, transitions to the MFA step. Handles specific authentication and connection errors, returning appropriate error messages to the user. On successful authentication, proceeds to create or update the configuration entry.
+        
+        Parameters:
+            step_id (str): The current step identifier in the configuration flow.
+        
+        Returns:
+            ConfigFlowResult: The result of the configuration flow step, which may be a form with errors, a transition to MFA, or entry creation.
         """
         errors = {}
 
@@ -95,9 +101,9 @@ class GarminConnectConfigFlowHandler(ConfigFlow, domain=DOMAIN):
 
     async def _async_garmin_connect_mfa_login(self) -> ConfigFlowResult:
         """
-        Completes the Garmin Connect login process using the provided MFA code.
+        Complete the Garmin Connect authentication process using the stored multi-factor authentication (MFA) code.
         
-        Attempts to resume the login session with the stored MFA code. If the MFA code is invalid or an error occurs, prompts the user to re-enter the code. On success, creates the configuration entry.
+        If the MFA code is invalid or an error occurs, prompts the user to re-enter the code. On successful authentication, creates or updates the configuration entry.
         """
         try:
             await self.hass.async_add_executor_job(self._api.resume_login, self._login_result2, self._mfa_code)
@@ -114,9 +120,9 @@ class GarminConnectConfigFlowHandler(ConfigFlow, domain=DOMAIN):
 
     async def _async_create_entry(self) -> ConfigFlowResult:
         """
-        Creates or updates the configuration entry for the Garmin Connect integration.
+        Create or update the configuration entry for the Garmin Connect integration using the current user's credentials and API token.
         
-        If an entry with the same username exists, updates its data and reloads it; otherwise, creates a new entry with the username as the unique ID and stores the serialized API token.
+        If an entry with the same username exists, its data is updated and the entry is reloaded; otherwise, a new entry is created with the username as the unique ID and the serialized API token.
         """
         config_data = {
             CONF_ID: self._username,
@@ -136,9 +142,9 @@ class GarminConnectConfigFlowHandler(ConfigFlow, domain=DOMAIN):
             self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """
-            Handles the initial step of the configuration flow triggered by the user.
+            Handle the initial user step of the configuration flow.
             
-            If no input is provided, displays a form requesting username and password. Otherwise, stores the provided credentials and attempts to authenticate with Garmin Connect.
+            If no input is provided, displays a form to collect username and password. If credentials are submitted, stores them and attempts authentication with Garmin Connect.
             """
         if user_input is None:
             return self.async_show_form(
@@ -154,9 +160,9 @@ class GarminConnectConfigFlowHandler(ConfigFlow, domain=DOMAIN):
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """
-        Handles the multi-factor authentication (MFA) step during the configuration flow.
+        Handle the multi-factor authentication (MFA) step in the configuration flow.
         
-        If no user input is provided, displays a form requesting the MFA code. If input is received, stores the MFA code for further authentication processing.
+        If user input is not provided, displays a form to collect the MFA code. If input is provided, stores the MFA code and proceeds with MFA authentication.
         """
         if user_input is None:
             return self.async_show_form(
@@ -172,9 +178,9 @@ class GarminConnectConfigFlowHandler(ConfigFlow, domain=DOMAIN):
         self, entry_data: Mapping[str, Any]
     ) -> ConfigFlowResult:
         """
-        Initiates the reauthorization flow using existing entry data.
+        Start the reauthorization process using existing configuration entry data.
         
-        Extracts the username from the provided entry data and proceeds to the reauthorization confirmation step.
+        Extracts the username from the entry data and advances to the reauthorization confirmation step.
         """
         self._username = entry_data[CONF_USERNAME]
 
@@ -184,9 +190,9 @@ class GarminConnectConfigFlowHandler(ConfigFlow, domain=DOMAIN):
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """
-        Handles the confirmation step for reauthorizing the Garmin Connect integration.
+        Prompt the user to re-enter their username and password to confirm reauthorization of the Garmin Connect integration.
         
-        Prompts the user to re-enter their username and password. Upon receiving input, attempts to log in with the provided credentials to complete the reauthorization process.
+        If credentials are provided, attempts to log in and complete the reauthorization process.
         """
         if user_input is None:
             return self.async_show_form(

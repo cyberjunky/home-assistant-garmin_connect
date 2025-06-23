@@ -62,9 +62,9 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
 
     def __init__(self, hass: HomeAssistant, entry: ConfigEntry) -> None:
         """
-        Initializes the Garmin Connect data update coordinator.
-
-        Sets up the integration's API client, determines if the user is in China, configures the time zone, and establishes the update interval for data synchronization.
+        Initialize the Garmin Connect data update coordinator for Home Assistant.
+        
+        Configures the Garmin API client, determines if the user is located in China, sets the time zone, and establishes the data update interval for the integration.
         """
         self.entry = entry
         self.hass = hass
@@ -86,13 +86,13 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
 
     async def async_login(self) -> bool:
         """
-        Asynchronously logs into Garmin Connect using a stored authentication token.
-
-        Attempts to authenticate with Garmin Connect via the token stored in the configuration entry. Handles authentication failures, rate limiting, connection errors, and missing tokens by raising appropriate Home Assistant exceptions or returning False on recoverable errors.
-
+        Asynchronously authenticates with Garmin Connect using a stored token.
+        
+        Attempts to log in with the token from the configuration entry, handling authentication failures, rate limiting, connection errors, and missing tokens by raising Home Assistant exceptions or returning False for recoverable errors.
+        
         Returns:
-            True if login is successful, False if rate limited or an unknown error occurs.
-
+            bool: True if login succeeds; False if rate limited or an unknown error occurs.
+        
         Raises:
             ConfigEntryAuthFailed: If authentication fails or the token is missing.
             ConfigEntryNotReady: If a connection error occurs.
@@ -140,12 +140,12 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
 
     async def _async_update_data(self) -> dict:
         """
-        Asynchronously fetches and aggregates user data from Garmin Connect.
-
-        Retrieves user summary, body composition, recent activities, badges, alarms, activity types, sleep data, HRV data, fitness age, hydration, and gear information. Calculates user points, user level, and determines the next active alarms. Handles authentication, connection, and rate limiting errors by raising Home Assistant exceptions or returning False as appropriate.
-
+        Fetches and aggregates comprehensive user data from Garmin Connect for the current day.
+        
+        This asynchronous method retrieves and consolidates user summary, body composition, recent activities, badges, alarms, activity types, sleep metrics, HRV data, fitness age, hydration, and gear information. It calculates user points and level, determines the next scheduled alarms, and extracts key sleep and HRV metrics. Handles authentication, connection, and rate limiting errors by raising Home Assistant exceptions or returning empty results as appropriate.
+        
         Returns:
-            A dictionary containing consolidated Garmin Connect data, including user summary, body composition, activities, badges, alarms, activity types, sleep metrics, HRV status, fitness age, hydration, gear details, and calculated fields such as user points, user level, next alarms, sleep score, and sleep time.
+            dict: A dictionary containing consolidated Garmin Connect data, including user summary, body composition, activities, badges, alarms, activity types, sleep metrics, HRV status, fitness age, hydration, gear details, user points, user level, next alarms, sleep score, and sleep time.
         """
         summary = {}
         body = {}
@@ -412,14 +412,14 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
 
 def calculate_next_active_alarms(alarms, time_zone):
     """
-    Calculates the next active Garmin alarms based on alarm settings and the current time.
-
-    Filters alarms set to "ON" and computes the next scheduled datetime for each alarm day, considering both one-time and recurring alarms. Returns a sorted list of ISO-formatted datetimes for upcoming alarms, or None if no active alarms are found.
-
-    Args:
+    Calculate the next scheduled active Garmin alarms based on alarm settings and the current time.
+    
+    Filters alarms that are enabled and computes the next scheduled datetime for each alarm day, handling both one-time and recurring alarms. Returns a sorted list of ISO-formatted datetimes for upcoming alarms, or None if no active alarms are scheduled.
+    
+    Parameters:
         alarms: List of alarm setting dictionaries from Garmin devices.
         time_zone: Time zone string used to localize alarm times.
-
+    
     Returns:
         A sorted list of ISO-formatted datetimes for the next active alarms, or None if none are scheduled.
     """
