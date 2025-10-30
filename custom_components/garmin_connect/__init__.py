@@ -12,12 +12,13 @@ from garminconnect import (
     GarminConnectConnectionError,
     GarminConnectTooManyRequestsError,
 )
+import requests
+
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
-import requests
 
 from .const import (
     DATA_COORDINATOR,
@@ -76,9 +77,13 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
         self.time_zone = self.hass.config.time_zone
         _LOGGER.debug("Time zone: %s", self.time_zone)
 
-        self.api = Garmin(entry.data[CONF_USERNAME], entry.data[CONF_PASSWORD], self.in_china)
+        self.api = Garmin(
+            entry.data[CONF_USERNAME], entry.data[CONF_PASSWORD], self.in_china
+        )
 
-        super().__init__(hass, _LOGGER, name=DOMAIN, update_interval=DEFAULT_UPDATE_INTERVAL)
+        super().__init__(
+            hass, _LOGGER, name=DOMAIN, update_interval=DEFAULT_UPDATE_INTERVAL
+        )
 
     async def async_login(self) -> bool:
         """Login to Garmin Connect."""
@@ -91,10 +96,14 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
             _LOGGER.error("Error occurred during Garmin Connect login request: %s", err)
             return False
         except GarminConnectConnectionError as err:
-            _LOGGER.error("Connection error occurred during Garmin Connect login request: %s", err)
+            _LOGGER.error(
+                "Connection error occurred during Garmin Connect login request: %s", err
+            )
             raise ConfigEntryNotReady from err
         except Exception:  # pylint: disable=broad-except
-            _LOGGER.exception("Unknown error occurred during Garmin Connect login request")
+            _LOGGER.exception(
+                "Unknown error occurred during Garmin Connect login request"
+            )
             return False
 
         return True
@@ -115,6 +124,7 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
         hrv_data = {}
         hrv_status = {"status": "unknown"}
         endurance_data = {}
+        endurance_status = {"overallScore": None}
         next_alarms = []
 
         today = datetime.now(ZoneInfo(self.time_zone)).date()
@@ -168,7 +178,9 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
             next_alarms = calculate_next_active_alarms(alarms, self.time_zone)
 
             # Activity types
-            activity_types = await self.hass.async_add_executor_job(self.api.get_activity_types)
+            activity_types = await self.hass.async_add_executor_job(
+                self.api.get_activity_types
+            )
             _LOGGER.debug("Activity types data fetched: %s", activity_types)
 
             # Sleep data
@@ -215,7 +227,9 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
         # Gear stats data
         try:
             tasks: list[Awaitable] = [
-                self.hass.async_add_executor_job(self.api.get_gear_stats, gear_item[Gear.UUID])
+                self.hass.async_add_executor_job(
+                    self.api.get_gear_stats, gear_item[Gear.UUID]
+                )
                 for gear_item in gear
             ]
             gear_stats = await asyncio.gather(*tasks)
@@ -251,6 +265,14 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
         except KeyError:
             _LOGGER.debug("HRV data is not available")
 
+        # Endurance status
+        try:
+            if endurance_data and "overallScore" in endurance_data:
+                endurance_status = endurance_data
+                _LOGGER.debug("Endurance score: %s", endurance_status)
+        except KeyError:
+            _LOGGER.debug("Endurance data is not available")
+
         return {
             **summary,
             **body["totalAverage"],
@@ -262,7 +284,7 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
             "sleepScore": sleep_score,
             "sleepTimeSeconds": sleep_time_seconds,
             "hrvStatus": hrv_status,
-            "enduranceScore": endurance_data,
+            "enduranceScore": endurance_status,
         }
 
 
