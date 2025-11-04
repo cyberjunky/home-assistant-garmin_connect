@@ -7,6 +7,8 @@ import logging
 from numbers import Number
 from zoneinfo import ZoneInfo
 
+import voluptuous as vol
+
 from homeassistant.components.sensor import (
     SensorDeviceClass,
     SensorEntity,
@@ -22,7 +24,6 @@ from homeassistant.helpers.update_coordinator import (
     CoordinatorEntity,
     DataUpdateCoordinator,
 )
-import voluptuous as vol
 
 from .const import (
     DATA_COORDINATOR,
@@ -36,9 +37,13 @@ from .const import (
 _LOGGER = logging.getLogger(__name__)
 
 
-async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities) -> None:
+async def async_setup_entry(
+    hass: HomeAssistant, entry: ConfigEntry, async_add_entities
+) -> None:
     """Set up Garmin Connect sensor based on a config entry."""
-    coordinator: DataUpdateCoordinator = hass.data[GARMIN_DOMAIN][entry.entry_id][DATA_COORDINATOR]
+    coordinator: DataUpdateCoordinator = hass.data[GARMIN_DOMAIN][entry.entry_id][
+        DATA_COORDINATOR
+    ]
     unique_id = entry.data[CONF_ID]
 
     entities = []
@@ -208,6 +213,9 @@ class GarminConnectSensor(CoordinatorEntity, SensorEntity):
         elif self._type == "hrvStatus":
             value = self.coordinator.data[self._type]["status"].capitalize()
 
+        elif self._type == "enduranceScore":
+            value = self.coordinator.data[self._type]["overallScore"]
+
         elif "Duration" in self._type or "Seconds" in self._type:
             value = round(value // 60, 2)
 
@@ -270,6 +278,10 @@ class GarminConnectSensor(CoordinatorEntity, SensorEntity):
             attributes = {**attributes, **self.coordinator.data[self._type]}
             del attributes["status"]
 
+        if self._type == "enduranceScore":
+            attributes = {**attributes, **self.coordinator.data[self._type]}
+            del attributes["overallScore"]
+
         return attributes
 
     @property
@@ -288,10 +300,12 @@ class GarminConnectSensor(CoordinatorEntity, SensorEntity):
 
     @property
     def available(self) -> bool:
-        """
-        Indicates whether the sensor entity is available based on coordinator data presence and the sensor type.
-        """
-        return super().available and self.coordinator.data and self._type in self.coordinator.data
+        """Return True if entity is available."""
+        return (
+            super().available
+            and self.coordinator.data
+            and self._type in self.coordinator.data
+        )
 
     async def add_body_composition(self, **kwargs):
         """
@@ -319,7 +333,8 @@ class GarminConnectSensor(CoordinatorEntity, SensorEntity):
         """Check for login."""
         if not await self.coordinator.async_login():
             raise IntegrationError(
-                "Failed to login to Garmin Connect, unable to update")
+                "Failed to login to Garmin Connect, unable to update"
+            )
 
         """Record a weigh in/body composition."""
         await self.hass.async_add_executor_job(
@@ -362,11 +377,17 @@ class GarminConnectSensor(CoordinatorEntity, SensorEntity):
         """Check for login."""
         if not await self.coordinator.async_login():
             raise IntegrationError(
-                "Failed to login to Garmin Connect, unable to update")
+                "Failed to login to Garmin Connect, unable to update"
+            )
 
         """Record a blood pressure measurement."""
         await self.hass.async_add_executor_job(
-            self.coordinator.api.set_blood_pressure, systolic, diastolic, pulse, timestamp, notes
+            self.coordinator.api.set_blood_pressure,
+            systolic,
+            diastolic,
+            pulse,
+            timestamp,
+            notes,
         )
 
 
@@ -429,7 +450,8 @@ class GarminConnectGearSensor(CoordinatorEntity, SensorEntity):
         gear_defaults = self._gear_defaults()
         activity_types = self.coordinator.data["activityTypes"]
         default_for_activity = self._activity_names_for_gear_defaults(
-            gear_defaults, activity_types)
+            gear_defaults, activity_types
+        )
 
         if not self.coordinator.data or not gear or not stats:
             return {}
@@ -457,7 +479,9 @@ class GarminConnectGearSensor(CoordinatorEntity, SensorEntity):
     def _activity_names_for_gear_defaults(self, gear_defaults, activity_types):
         """Get activity names for gear defaults."""
         activity_type_ids = [d["activityTypePk"] for d in gear_defaults]
-        return [a["typeKey"] for a in activity_types if a["typeId"] in activity_type_ids]
+        return [
+            a["typeKey"] for a in activity_types if a["typeId"] in activity_type_ids
+        ]
 
     @property
     def device_info(self) -> DeviceInfo:
@@ -521,7 +545,8 @@ class GarminConnectGearSensor(CoordinatorEntity, SensorEntity):
         """Check for login."""
         if not await self.coordinator.async_login():
             raise IntegrationError(
-                "Failed to login to Garmin Connect, unable to update")
+                "Failed to login to Garmin Connect, unable to update"
+            )
 
         """Update Garmin Gear settings."""
         activity_type_id = next(
@@ -539,7 +564,8 @@ class GarminConnectGearSensor(CoordinatorEntity, SensorEntity):
             )
         else:
             old_default_state = await self.hass.async_add_executor_job(
-                self.coordinator.api.get_gear_defaults, self.coordinator.data[Gear.USERPROFILE_ID]
+                self.coordinator.api.get_gear_defaults,
+                self.coordinator.data[Gear.USERPROFILE_ID],
             )
             to_deactivate = list(
                 filter(
@@ -557,5 +583,8 @@ class GarminConnectGearSensor(CoordinatorEntity, SensorEntity):
                     False,
                 )
             await self.hass.async_add_executor_job(
-                self.coordinator.api.set_gear_default, activity_type_id, self._uuid, True
+                self.coordinator.api.set_gear_default,
+                activity_type_id,
+                self._uuid,
+                True,
             )

@@ -12,6 +12,8 @@ from garminconnect import (
     GarminConnectConnectionError,
     GarminConnectTooManyRequestsError,
 )
+import requests
+
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_TOKEN
 from homeassistant.core import HomeAssistant
@@ -113,6 +115,13 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
             return False
         except GarminConnectConnectionError as err:
             _LOGGER.error(
+                "Connection error occurred during Garmin Connect login request: %s", err
+            )
+            raise ConfigEntryNotReady from err
+        except Exception:  # pylint: disable=broad-except
+            _LOGGER.exception(
+                "Unknown error occurred during Garmin Connect login request"
+            )
                 "Connection error occurred during login: %s", err)
             raise ConfigEntryNotReady from err
         except requests.exceptions.HTTPError as err:
@@ -160,6 +169,8 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
         sleep_time_seconds = None
         hrv_data = {}
         hrv_status = {"status": "unknown"}
+        endurance_data = {}
+        endurance_status = {"overallScore": None}
         next_alarms = []
 
         today = datetime.now(ZoneInfo(self.time_zone)).date()
@@ -257,6 +268,27 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
             hrv_data = await self.hass.async_add_executor_job(
                 self.api.get_hrv_data, today.isoformat()
             )
+            _LOGGER.debug("HRV data fetched: %s", hrv_data)
+
+            # Endurance data
+            endurance_data = await self.hass.async_add_executor_job(
+                self.api.get_endurance_score, today.isoformat()
+            )
+            _LOGGER.debug("Endurance data fetched: %s", endurance_data)
+
+        except (
+            GarminConnectAuthenticationError,
+            GarminConnectTooManyRequestsError,
+            GarminConnectConnectionError,
+        ) as error:
+            _LOGGER.debug("Trying to relogin to Garmin Connect")
+            if not await self.async_login():
+                raise UpdateFailed(error) from error
+
+        # Gear data
+        try:
+            gear = await self.hass.async_add_executor_job(
+                self.api.get_gear, summary[Gear.USERPROFILE_ID]
             if hrv_data:
                 _LOGGER.debug("HRV data fetched: %s", hrv_data)
             else:
@@ -322,7 +354,8 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
             # Gear stats data like distance, time, etc.
             tasks: list[Awaitable] = [
                 self.hass.async_add_executor_job(
-                    self.api.get_gear_stats, gear_item[Gear.UUID])
+                    self.api.get_gear_stats, gear_item[Gear.UUID]
+                )
                 for gear_item in gear
             ]
             gear_stats = await asyncio.gather(*tasks)
@@ -394,6 +427,14 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
             _LOGGER.debug(
                 "Error occurred while processing HRV summary status data")
 
+        # Endurance status
+        try:
+            if endurance_data and "overallScore" in endurance_data:
+                endurance_status = endurance_data
+                _LOGGER.debug("Endurance score: %s", endurance_status)
+        except KeyError:
+            _LOGGER.debug("Endurance data is not available")
+
         return {
             **summary,
             **body["totalAverage"],
@@ -405,6 +446,7 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
             "sleepScore": sleep_score,
             "sleepTimeSeconds": sleep_time_seconds,
             "hrvStatus": hrv_status,
+            "enduranceScore": endurance_status,
             **fitnessage_data,
             **hydration_data,
         }

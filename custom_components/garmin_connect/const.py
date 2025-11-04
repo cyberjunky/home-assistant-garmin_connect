@@ -657,6 +657,13 @@ GARMIN_ENTITY_LIST = {
         None,
         True,
     ],
+    "enduranceScore": [
+        "Endurance Score",
+        None,
+        "mdi:run",
+        None,
+        SensorStateClass.MEASUREMENT,
+        False,
     "chronologicalAge": [
         "Chronological Age",
         UnitOfTime.YEARS,
