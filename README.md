@@ -1,4 +1,5 @@
-[![hacs_badge](https://img.shields.io/badge/HACS-Default-orange.svg)](https://github.com/hacs/integration)  [![made-with-python](https://img.shields.io/badge/Made%20with-Python-1f425f.svg)](https://www.python.org/) [![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.me/cyberjunkynl/)
+[![Donate via PayPal](https://img.shields.io/badge/Donate-PayPal-blue.svg?style=for-the-badge&logo=paypal)](https://www.paypal.me/cyberjunkynl/)
+[![Sponsor on GitHub](https://img.shields.io/badge/Sponsor-GitHub-red.svg?style=for-the-badge&logo=github)](https://github.com/sponsors/cyberjunky)
 
 # Garmin Connect
 The Garmin Connect integration allows you to expose data from Garmin Connect to Home Assistant.
@@ -10,7 +11,7 @@ The Garmin Connect integration allows you to expose data from Garmin Connect to 
   You can find installation instructions [here.](https://hacs.xyz/docs/setup/download)
 - Once HACS is installed, search for `garmin connect` and click on "Download". Once downloaded, restart HomeAssistant.
 
-## Installation
+## 📦 Installation
 
 [![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=cyberjunky&repository=home-assistant-garmin_connect&category=integration)
 
@@ -225,6 +226,26 @@ logger:
     custom_components.garmin_connect: debug
 ```
 
-## Donation
+## 💖 Support This Project
 
-[![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.me/cyberjunkynl/)
+If you find this library useful for your projects, please consider supporting its continued development and maintenance:
+
+### 🌟 Ways to Support
+
+- **⭐ Star this repository** - Help others discover the project
+- **💰 Financial Support** - Contribute to development and hosting costs
+- **🐛 Report Issues** - Help improve stability and compatibility
+- **📖 Spread the Word** - Share with other developers
+
+### 💳 Financial Support Options
+
+[![Donate via PayPal](https://img.shields.io/badge/Donate-PayPal-blue.svg?style=for-the-badge&logo=paypal)](https://www.paypal.me/cyberjunkynl/)
+[![Sponsor on GitHub](https://img.shields.io/badge/Sponsor-GitHub-red.svg?style=for-the-badge&logo=github)](https://github.com/sponsors/cyberjunky)
+
+**Why Support?**
+- Keeps the project actively maintained
+- Enables faster bug fixes and new features
+- Supports infrastructure costs (testing, AI, CI/CD)
+- Shows appreciation for hundreds of hours of development
+
+Every contribution, no matter the size, makes a difference and is greatly appreciated! 🙏
