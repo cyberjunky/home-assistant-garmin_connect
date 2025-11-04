@@ -15,10 +15,10 @@ from garminconnect import (
 import requests
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import CONF_TOKEN
+from homeassistant.const import CONF_ID, CONF_PASSWORD, CONF_TOKEN, CONF_USERNAME
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from .const import (
     DATA_COORDINATOR,
     DAY_TO_NUMBER,
@@ -31,6 +31,56 @@ from .const import (
 _LOGGER = logging.getLogger(__name__)
 
 PLATFORMS = ["sensor"]
+
+
+async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    """Migrate old config entry from username/password to token-based authentication."""
+    _LOGGER.debug(
+        "Migrating Garmin Connect config entry from version %s", entry.version)
+
+    if entry.version == 1:
+        # Check if we need to migrate (old entries have username/password, new ones have token)
+        if CONF_TOKEN not in entry.data and CONF_USERNAME in entry.data and CONF_PASSWORD in entry.data:
+            _LOGGER.info(
+                "Migrating Garmin Connect config entry to token-based authentication")
+
+            username = entry.data[CONF_USERNAME]
+            password = entry.data[CONF_PASSWORD]
+
+            # Determine if user is in China
+            in_china = hass.config.country == "CN"
+
+            # Create temporary API client to get token
+            api = Garmin(email=username, password=password, is_cn=in_china)
+
+            try:
+                # Login to get the token
+                await hass.async_add_executor_job(api.login)
+
+                # Get the OAuth tokens
+                tokens = api.garth.dumps()
+
+                # Create new data with token, keeping the ID
+                new_data = {
+                    CONF_ID: entry.data.get(CONF_ID, username),
+                    CONF_TOKEN: tokens,
+                }
+
+                # Update the config entry
+                hass.config_entries.async_update_entry(entry, data=new_data)
+
+                _LOGGER.info(
+                    "Successfully migrated Garmin Connect config entry")
+                return True
+
+            except Exception as err:  # pylint: disable=broad-except
+                _LOGGER.error(
+                    "Failed to migrate Garmin Connect config entry. "
+                    "Please re-add the integration. Error: %s", err
+                )
+                return False
+
+    return True
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -65,7 +115,7 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
     def __init__(self, hass: HomeAssistant, entry: ConfigEntry) -> None:
         """
         Initialize the Garmin Connect data update coordinator for Home Assistant.
-        
+
         Configures the Garmin API client, determines if the user is located in China, sets the time zone, and establishes the data update interval for the integration.
         """
         self.entry = entry
@@ -89,12 +139,12 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
     async def async_login(self) -> bool:
         """
         Asynchronously authenticates with Garmin Connect using a stored token.
-        
+
         Attempts to log in with the token from the configuration entry, handling authentication failures, rate limiting, connection errors, and missing tokens by raising Home Assistant exceptions or returning False for recoverable errors.
-        
+
         Returns:
             bool: True if login succeeds; False if rate limited or an unknown error occurs.
-        
+
         Raises:
             ConfigEntryAuthFailed: If authentication fails or the token is missing.
             ConfigEntryNotReady: If a connection error occurs.
@@ -102,7 +152,12 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
         try:
             # Check if the token exists in the entry data
             if CONF_TOKEN not in self.entry.data:
-                raise KeyError("Token not found, migrating config entry")
+                _LOGGER.error(
+                    "Token not found in config entry. This may be an old config entry that needs migration. "
+                    "Please remove and re-add the Garmin Connect integration."
+                )
+                raise ConfigEntryAuthFailed(
+                    "Token not found, please re-add the integration")
 
             await self.hass.async_add_executor_job(self.api.login, self.entry.data[CONF_TOKEN])
         except GarminConnectAuthenticationError as err:
@@ -118,11 +173,6 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
                 "Connection error occurred during Garmin Connect login request: %s", err
             )
             raise ConfigEntryNotReady from err
-        except Exception:  # pylint: disable=broad-except
-            _LOGGER.exception(
-                "Unknown error occurred during Garmin Connect login request"
-            )
-            raise ConfigEntryNotReady
         except requests.exceptions.HTTPError as err:
             if err.response.status_code == 401:
                 _LOGGER.error(
@@ -135,10 +185,6 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
             _LOGGER.error(
                 "Unknown HTTP error occurred during login: %s", err)
             return False
-        except KeyError as err:
-            _LOGGER.error(
-                "Found old config during login: %s", err)
-            raise ConfigEntryAuthFailed from err
         except Exception as err:  # pylint: disable=broad-except
             _LOGGER.exception(
                 "Unknown error occurred during login: %s", err)
@@ -149,9 +195,9 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
     async def _async_update_data(self) -> dict:
         """
         Fetches and aggregates comprehensive user data from Garmin Connect for the current day.
-        
+
         This asynchronous method retrieves and consolidates user summary, body composition, recent activities, badges, alarms, activity types, sleep metrics, HRV data, fitness age, hydration, and gear information. It calculates user points and level, determines the next scheduled alarms, and extracts key sleep and HRV metrics. Handles authentication, connection, and rate limiting errors by raising Home Assistant exceptions or returning empty results as appropriate.
-        
+
         Returns:
             dict: A dictionary containing consolidated Garmin Connect data, including user summary, body composition, activities, badges, alarms, activity types, sleep metrics, HRV status, fitness age, hydration, gear details, user points, user level, next alarms, sleep score, and sleep time.
         """
@@ -452,13 +498,13 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
 def calculate_next_active_alarms(alarms, time_zone):
     """
     Calculate the next scheduled active Garmin alarms based on alarm settings and the current time.
-    
+
     Filters alarms that are enabled and computes the next scheduled datetime for each alarm day, handling both one-time and recurring alarms. Returns a sorted list of ISO-formatted datetimes for upcoming alarms, or None if no active alarms are scheduled.
-    
+
     Parameters:
         alarms: List of alarm setting dictionaries from Garmin devices.
         time_zone: Time zone string used to localize alarm times.
-    
+
     Returns:
         A sorted list of ISO-formatted datetimes for the next active alarms, or None if none are scheduled.
     """
