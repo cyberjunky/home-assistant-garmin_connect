@@ -216,7 +216,6 @@ HEART_RATE_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
     GarminConnectSensorEntityDescription(
         key="restingHeartRate",
         translation_key="resting_heart_rate",
-        device_class=SensorDeviceClass.HEART_RATE,
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement="bpm",
         icon="mdi:heart-pulse",
@@ -224,7 +223,6 @@ HEART_RATE_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
     GarminConnectSensorEntityDescription(
         key="maxHeartRate",
         translation_key="max_heart_rate",
-        device_class=SensorDeviceClass.HEART_RATE,
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement="bpm",
         icon="mdi:heart-pulse",
@@ -232,7 +230,6 @@ HEART_RATE_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
     GarminConnectSensorEntityDescription(
         key="minHeartRate",
         translation_key="min_heart_rate",
-        device_class=SensorDeviceClass.HEART_RATE,
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement="bpm",
         icon="mdi:heart-pulse",
@@ -240,7 +237,6 @@ HEART_RATE_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
     GarminConnectSensorEntityDescription(
         key="lastSevenDaysAvgRestingHeartRate",
         translation_key="last_7_days_avg_resting_heart_rate",
-        device_class=SensorDeviceClass.HEART_RATE,
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement="bpm",
         icon="mdi:heart-pulse",
@@ -779,7 +775,6 @@ ADDITIONAL_HEART_RATE_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] 
     GarminConnectSensorEntityDescription(
         key="minAvgHeartRate",
         translation_key="min_avg_heart_rate",
-        device_class=SensorDeviceClass.HEART_RATE,
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement="bpm",
         icon="mdi:heart-pulse",
@@ -788,7 +783,6 @@ ADDITIONAL_HEART_RATE_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] 
     GarminConnectSensorEntityDescription(
         key="maxAvgHeartRate",
         translation_key="max_avg_heart_rate",
-        device_class=SensorDeviceClass.HEART_RATE,
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement="bpm",
         icon="mdi:heart-pulse",
