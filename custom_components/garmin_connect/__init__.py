@@ -40,45 +40,55 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     if entry.version == 1:
         # Check if we need to migrate (old entries have username/password, new ones have token)
-        if CONF_TOKEN not in entry.data and CONF_USERNAME in entry.data and CONF_PASSWORD in entry.data:
-            _LOGGER.info(
-                "Migrating Garmin Connect config entry to token-based authentication")
-
-            username = entry.data[CONF_USERNAME]
-            password = entry.data[CONF_PASSWORD]
-
-            # Determine if user is in China
-            in_china = hass.config.country == "CN"
-
-            # Create temporary API client to get token
-            api = Garmin(email=username, password=password, is_cn=in_china)
-
-            try:
-                # Login to get the token
-                await hass.async_add_executor_job(api.login)
-
-                # Get the OAuth tokens
-                tokens = api.garth.dumps()
-
-                # Create new data with token, keeping the ID
-                new_data = {
-                    CONF_ID: entry.data.get(CONF_ID, username),
-                    CONF_TOKEN: tokens,
-                }
-
-                # Update the config entry
-                hass.config_entries.async_update_entry(entry, data=new_data)
-
+        if CONF_TOKEN not in entry.data:
+            # Missing token - check if we have username/password to migrate
+            if CONF_USERNAME in entry.data and CONF_PASSWORD in entry.data:
                 _LOGGER.info(
-                    "Successfully migrated Garmin Connect config entry")
-                return True
+                    "Migrating Garmin Connect config entry to token-based authentication")
 
-            except Exception as err:  # pylint: disable=broad-except
-                _LOGGER.error(
-                    "Failed to migrate Garmin Connect config entry. "
-                    "Please re-add the integration. Error: %s", err
+                username = entry.data[CONF_USERNAME]
+                password = entry.data[CONF_PASSWORD]
+
+                # Determine if user is in China
+                in_china = hass.config.country == "CN"
+
+                # Create temporary API client to get token
+                api = Garmin(email=username, password=password, is_cn=in_china)
+
+                try:
+                    # Login to get the token
+                    await hass.async_add_executor_job(api.login)
+
+                    # Get the OAuth tokens
+                    tokens = api.garth.dumps()
+
+                    # Create new data with token, keeping the ID
+                    new_data = {
+                        CONF_ID: entry.data.get(CONF_ID, username),
+                        CONF_TOKEN: tokens,
+                    }
+
+                    # Update the config entry
+                    hass.config_entries.async_update_entry(entry, data=new_data)
+
+                    _LOGGER.info(
+                        "Successfully migrated Garmin Connect config entry")
+                    return True
+
+                except Exception as err:  # pylint: disable=broad-except
+                    _LOGGER.error(
+                        "Failed to migrate Garmin Connect config entry. "
+                        "Please re-authenticate. Error: %s", err
+                    )
+                    return False
+            else:
+                # No token and no username/password - config entry is incomplete
+                _LOGGER.warning(
+                    "Garmin Connect config entry is missing required data (no token and no credentials). "
+                    "This entry cannot be migrated automatically. A reauth flow will be triggered."
                 )
-                return False
+                # Return True to allow setup to proceed, which will trigger reauth via ConfigEntryAuthFailed
+                return True
 
     return True
 
@@ -152,12 +162,12 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
         try:
             # Check if the token exists in the entry data
             if CONF_TOKEN not in self.entry.data:
-                _LOGGER.error(
-                    "Token not found in config entry. This may be an old config entry that needs migration. "
-                    "Please remove and re-add the Garmin Connect integration."
+                _LOGGER.warning(
+                    "Token not found in config entry. This may be an old or incomplete configuration. "
+                    "A reauthentication flow will be initiated. Please check your notifications."
                 )
                 raise ConfigEntryAuthFailed(
-                    "Token not found, please re-add the integration")
+                    "Token not found. Please reauthenticate via the notification prompt.")
 
             await self.hass.async_add_executor_job(self.api.login, self.entry.data[CONF_TOKEN])
         except GarminConnectAuthenticationError as err:
