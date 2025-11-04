@@ -288,10 +288,8 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
         try:
             gear = await self.hass.async_add_executor_job(
                 self.api.get_gear, summary[Gear.USERPROFILE_ID]
-            if hrv_data:
-                _LOGGER.debug("HRV data fetched: %s", hrv_data)
-            else:
-                _LOGGER.debug("No HRV data found")
+            )
+            _LOGGER.debug("Gear data fetched: %s", gear)
 
             # Fitness age data
             fitnessage_data = await self.hass.async_add_executor_job(
