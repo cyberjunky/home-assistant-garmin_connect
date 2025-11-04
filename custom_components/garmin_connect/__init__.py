@@ -122,8 +122,7 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
             _LOGGER.exception(
                 "Unknown error occurred during Garmin Connect login request"
             )
-                "Connection error occurred during login: %s", err)
-            raise ConfigEntryNotReady from err
+            raise ConfigEntryNotReady
         except requests.exceptions.HTTPError as err:
             if err.response.status_code == 401:
                 _LOGGER.error(
