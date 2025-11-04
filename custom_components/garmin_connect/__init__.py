@@ -35,7 +35,8 @@ PLATFORMS = ["sensor"]
 
 async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Migrate old config entry from username/password to token-based authentication."""
-    _LOGGER.debug("Migrating Garmin Connect config entry from version %s", entry.version)
+    _LOGGER.debug(
+        "Migrating Garmin Connect config entry from version %s", entry.version)
 
     if entry.version == 1:
         # Check if we need to migrate (old entries have username/password, new ones have token)
@@ -44,7 +45,8 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             and CONF_USERNAME in entry.data
             and CONF_PASSWORD in entry.data
         ):
-            _LOGGER.info("Migrating Garmin Connect config entry to token-based authentication")
+            _LOGGER.info(
+                "Migrating Garmin Connect config entry to token-based authentication")
 
             username = entry.data[CONF_USERNAME]
             password = entry.data[CONF_PASSWORD]
@@ -71,7 +73,8 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 # Update the config entry
                 hass.config_entries.async_update_entry(entry, data=new_data)
 
-                _LOGGER.info("Successfully migrated Garmin Connect config entry")
+                _LOGGER.info(
+                    "Successfully migrated Garmin Connect config entry")
                 return True
 
             except Exception as err:  # pylint: disable=broad-except
@@ -100,7 +103,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
+    # Register update listener to reload integration when options change
+    entry.async_on_unload(entry.add_update_listener(async_reload_entry))
+
     return True
+
+
+async def async_reload_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Reload the config entry when options change."""
+    await hass.config_entries.async_reload(entry.entry_id)
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
@@ -135,7 +146,8 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
 
         self.api = Garmin(is_cn=self._in_china)
 
-        super().__init__(hass, _LOGGER, name=DOMAIN, update_interval=DEFAULT_UPDATE_INTERVAL)
+        super().__init__(hass, _LOGGER, name=DOMAIN,
+                         update_interval=DEFAULT_UPDATE_INTERVAL)
 
     async def async_login(self) -> bool:
         """
@@ -157,21 +169,26 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
                     "Token not found in config entry. This may be an old config entry that needs migration. "
                     "Please remove and re-add the Garmin Connect integration."
                 )
-                raise ConfigEntryAuthFailed("Token not found, please re-add the integration")
+                raise ConfigEntryAuthFailed(
+                    "Token not found, please re-add the integration")
 
             await self.hass.async_add_executor_job(self.api.login, self.entry.data[CONF_TOKEN])
         except GarminConnectAuthenticationError as err:
-            _LOGGER.error("Authentication error occurred during login: %s", err.response.text)
+            _LOGGER.error(
+                "Authentication error occurred during login: %s", err.response.text)
             raise ConfigEntryAuthFailed from err
         except GarminConnectTooManyRequestsError as err:
-            _LOGGER.error("Too many request error occurred during login: %s", err)
+            _LOGGER.error(
+                "Too many request error occurred during login: %s", err)
             return False
         except GarminConnectConnectionError as err:
-            _LOGGER.error("Connection error occurred during Garmin Connect login request: %s", err)
+            _LOGGER.error(
+                "Connection error occurred during Garmin Connect login request: %s", err)
             raise ConfigEntryNotReady from err
         except requests.exceptions.HTTPError as err:
             if err.response.status_code == 401:
-                _LOGGER.error("Authentication error occurred during login: %s", err.response.text)
+                _LOGGER.error(
+                    "Authentication error occurred during login: %s", err.response.text)
                 raise ConfigEntryAuthFailed from err
             if err.response.status_code == 429:
                 _LOGGER.error(
@@ -240,7 +257,8 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
                 (today + timedelta(days=1)).isoformat(),
             )
             if last_activities:
-                _LOGGER.debug("Last activities data fetched: %s", last_activities)
+                _LOGGER.debug("Last activities data fetched: %s",
+                              last_activities)
             else:
                 _LOGGER.debug("No last activities data found")
 
@@ -261,7 +279,8 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
             # Calculate user points and user level
             user_points = 0
             for badge in badges:
-                user_points += badge["badgePoints"] * badge["badgeEarnedNumber"]
+                user_points += badge["badgePoints"] * \
+                    badge["badgeEarnedNumber"]
 
             # Add user points to summary
             summary["userPoints"] = user_points
@@ -287,7 +306,8 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
             # Activity types
             activity_types = await self.hass.async_add_executor_job(self.api.get_activity_types)
             if activity_types:
-                _LOGGER.debug("Activity types data fetched: %s", activity_types)
+                _LOGGER.debug("Activity types data fetched: %s",
+                              activity_types)
             else:
                 _LOGGER.debug("No activity types data found")
 
@@ -347,17 +367,20 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
                 _LOGGER.debug("No hydration data found")
 
         except GarminConnectAuthenticationError as err:
-            _LOGGER.error("Authentication error occurred during update: %s", err.response.text)
+            _LOGGER.error(
+                "Authentication error occurred during update: %s", err.response.text)
             raise ConfigEntryAuthFailed from err
         except GarminConnectTooManyRequestsError as err:
-            _LOGGER.error("Too many request error occurred during update: %s", err)
+            _LOGGER.error(
+                "Too many request error occurred during update: %s", err)
             return {}
         except GarminConnectConnectionError as err:
             _LOGGER.error("Connection error occurred during update: %s", err)
             raise ConfigEntryNotReady from err
         except requests.exceptions.HTTPError as err:
             if err.response.status_code == 401:
-                _LOGGER.error("Authentication error occurred during update: %s", err.response.text)
+                _LOGGER.error(
+                    "Authentication error occurred during update: %s", err.response.text)
                 raise ConfigEntryAuthFailed from err
             if err.response.status_code == 429:
                 _LOGGER.error(
@@ -382,7 +405,8 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
 
             # Gear stats data like distance, time, etc.
             tasks: list[Awaitable] = [
-                self.hass.async_add_executor_job(self.api.get_gear_stats, gear_item[Gear.UUID])
+                self.hass.async_add_executor_job(
+                    self.api.get_gear_stats, gear_item[Gear.UUID])
                 for gear_item in gear
             ]
             gear_stats = await asyncio.gather(*tasks)
@@ -405,10 +429,12 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
             )
             raise ConfigEntryAuthFailed from err
         except GarminConnectTooManyRequestsError as err:
-            _LOGGER.error("Too many request error occurred while fetching Gear data: %s", err)
+            _LOGGER.error(
+                "Too many request error occurred while fetching Gear data: %s", err)
             raise ConfigEntryNotReady from err
         except GarminConnectConnectionError as err:
-            _LOGGER.error("Connection error occurred while fetching Gear data: %s", err)
+            _LOGGER.error(
+                "Connection error occurred while fetching Gear data: %s", err)
             raise ConfigEntryNotReady from err
         except requests.exceptions.HTTPError as err:
             if err.response.status_code == 401:
@@ -416,13 +442,15 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
                     "Authentication error while fetching Gear data: %s", err.response.text
                 )
             elif err.response.status_code == 404:
-                _LOGGER.error("URL not found error while fetching Gear data: %s", err.response.text)
+                _LOGGER.error(
+                    "URL not found error while fetching Gear data: %s", err.response.text)
             elif err.response.status_code == 429:
                 _LOGGER.error(
                     "Too many requests error while fetching Gear data: %s", err.response.text
                 )
             else:
-                _LOGGER.error("Unknown HTTP error occurred while fetching Gear data: %s", err)
+                _LOGGER.error(
+                    "Unknown HTTP error occurred while fetching Gear data: %s", err)
         except (KeyError, TypeError, ValueError, ConnectionError) as err:
             _LOGGER.debug("Error occurred while fetching Gear data: %s", err)
 
@@ -437,7 +465,8 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
         try:
             sleep_time_seconds = sleep_data["dailySleepDTO"]["sleepTimeSeconds"]
             if sleep_time_seconds:
-                _LOGGER.debug("Sleep time seconds data: %s", sleep_time_seconds)
+                _LOGGER.debug("Sleep time seconds data: %s",
+                              sleep_time_seconds)
             else:
                 _LOGGER.debug("No sleep time seconds data found")
         except KeyError:
@@ -449,7 +478,8 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
                 hrv_status = hrv_data["hrvSummary"]
                 _LOGGER.debug("HRV summary status: %s", hrv_status)
         except KeyError:
-            _LOGGER.debug("Error occurred while processing HRV summary status data")
+            _LOGGER.debug(
+                "Error occurred while processing HRV summary status data")
 
         # Endurance status
         try:
@@ -523,8 +553,10 @@ def calculate_next_active_alarms(alarms, time_zone):
                 )
 
                 days_to_add = DAY_TO_NUMBER[day] % 7
-                alarm = start_of_week + timedelta(minutes=alarm_time, days=days_to_add)
-                _LOGGER.debug("Start of week: %s, Alarm: %s", start_of_week, alarm)
+                alarm = start_of_week + \
+                    timedelta(minutes=alarm_time, days=days_to_add)
+                _LOGGER.debug("Start of week: %s, Alarm: %s",
+                              start_of_week, alarm)
 
                 # If the alarm time is in the past, move it to the next week
                 if alarm < now:
