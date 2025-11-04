@@ -62,14 +62,15 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                     # Get the OAuth tokens
                     tokens = api.garth.dumps()
 
-                    # Create new data with token, keeping the ID
+                    # Create new data with token, ensuring we have a CONF_ID
                     new_data = {
                         CONF_ID: entry.data.get(CONF_ID, username),
                         CONF_TOKEN: tokens,
                     }
 
                     # Update the config entry
-                    hass.config_entries.async_update_entry(entry, data=new_data)
+                    hass.config_entries.async_update_entry(
+                        entry, data=new_data)
 
                     _LOGGER.info(
                         "Successfully migrated Garmin Connect config entry")
@@ -82,10 +83,21 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                     )
                     return False
             else:
-                # No token and no username/password - config entry is incomplete
-                _LOGGER.warning(
-                    "Garmin Connect config entry is missing required data (no token and no credentials). "
-                    "This entry cannot be migrated automatically. A reauth flow will be triggered."
+                # No token and no username/password - config entry is incomplete/corrupted
+                # Add a placeholder CONF_ID if missing to allow reauth to work properly
+                if CONF_ID not in entry.data:
+                    _LOGGER.info(
+                        "Config entry missing CONF_ID, adding placeholder for reauth flow")
+                    new_data = {
+                        **entry.data,
+                        CONF_ID: entry.entry_id,  # Use entry_id as fallback
+                    }
+                    hass.config_entries.async_update_entry(
+                        entry, data=new_data)
+
+                _LOGGER.info(
+                    "Garmin Connect config entry is incomplete (missing token). "
+                    "Reauthentication will be required to complete setup."
                 )
                 # Return True to allow setup to proceed, which will trigger reauth via ConfigEntryAuthFailed
                 return True
@@ -162,12 +174,13 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
         try:
             # Check if the token exists in the entry data
             if CONF_TOKEN not in self.entry.data:
-                _LOGGER.warning(
+                _LOGGER.info(
+                    "Token not found in config entry. Reauthentication required."
+                )
+                raise ConfigEntryAuthFailed(
                     "Token not found in config entry. This may be an old or incomplete configuration. "
                     "A reauthentication flow will be initiated. Please check your notifications."
                 )
-                raise ConfigEntryAuthFailed(
-                    "Token not found. Please reauthenticate via the notification prompt.")
 
             await self.hass.async_add_executor_job(self.api.login, self.entry.data[CONF_TOKEN])
         except GarminConnectAuthenticationError as err:
