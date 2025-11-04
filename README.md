@@ -134,6 +134,7 @@ Visceral Fat
 Metabolic Age
 Last Activities
 Last Activity
+Endurance Score
 ```
 
 ## Screenshots
