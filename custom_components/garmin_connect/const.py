@@ -664,6 +664,7 @@ GARMIN_ENTITY_LIST = {
         None,
         SensorStateClass.MEASUREMENT,
         False,
+    ],
     "chronologicalAge": [
         "Chronological Age",
         UnitOfTime.YEARS,
