@@ -192,6 +192,38 @@ See the action template for other available values to add
 
 NOTE: You need to enable the Weight entity
 
+Full example:
+```
+alias: WithingsToGarmin
+description: ""
+triggers:
+  - trigger: state
+    entity_id:
+      - sensor.withings_poids
+conditions:
+  - condition: numeric_state
+    entity_id: sensor.withings_poids
+    above: 55
+    below: 80
+actions:
+  - action: garmin_connect.add_body_composition
+    metadata: {}
+    data:
+      entity_id: sensor.weight
+      weight: "{{states('sensor.withings_poids')}}"
+      timestamp: "{{ as_timestamp(now())  | timestamp_local}}"
+      bmi: >-
+        {{ (states('sensor.withings_poids') | float(0) / 1.72**2 )| round(1,
+        default=0) }}
+      bone_mass: "{{states('sensor.withings_bone_mass')}}"
+      muscle_mass: "{{states('sensor.withings_masse_musculaire')}}"
+      percent_hydration: >-
+        {{ (float(states('sensor.withings_hydration')) /
+        float(states('sensor.withings_poids')) * 100 ) | round(2, default=0) }}
+      percent_fat: "{{states('sensor.withings_taux_de_graisse')}}"
+mode: single
+```
+
 #### Set Active Gear
 
 ```
