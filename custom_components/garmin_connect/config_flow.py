@@ -1,21 +1,30 @@
 """Config flow for Garmin Connect integration."""
 
-import logging
 from collections.abc import Mapping
+import logging
 from typing import Any, cast
-import requests
+
 from garminconnect import (
     Garmin,
     GarminConnectAuthenticationError,
     GarminConnectConnectionError,
     GarminConnectTooManyRequestsError,
 )
-from homeassistant.config_entries import ConfigFlow, ConfigFlowResult
-from homeassistant.const import CONF_ID, CONF_TOKEN, CONF_PASSWORD, CONF_USERNAME
-import voluptuous as vol
 import garth
+from homeassistant.config_entries import (
+    ConfigEntry,
+    ConfigFlow,
+    ConfigFlowResult,
+    OptionsFlow,
+)
+from homeassistant.const import CONF_ID, CONF_PASSWORD, CONF_TOKEN, CONF_USERNAME
+from homeassistant.core import callback
+from homeassistant.helpers import config_validation as cv
+import requests
+import voluptuous as vol
 
-from .const import CONF_MFA, DOMAIN
+from .const import CONF_MFA, CONF_SENSOR_GROUPS, DOMAIN
+from .sensor_descriptions import SENSOR_GROUPS, get_default_enabled_groups
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -24,6 +33,12 @@ class GarminConnectConfigFlowHandler(ConfigFlow, domain=DOMAIN):
     """Handle a config flow for Garmin Connect."""
 
     VERSION = 1
+
+    @staticmethod
+    @callback
+    def async_get_options_flow(config_entry: ConfigEntry) -> OptionsFlow:
+        """Get the options flow for this handler."""
+        return GarminConnectOptionsFlowHandler(config_entry)
 
     def __init__(self) -> None:
         """
@@ -66,11 +81,14 @@ class GarminConnectConfigFlowHandler(ConfigFlow, domain=DOMAIN):
         if country == "CN":
             self._in_china = True
 
-        self._api = Garmin(email=self._username,
-                           password=self._password, return_on_mfa=True, is_cn=self._in_china)
+        self._api = Garmin(
+            email=self._username, password=self._password, return_on_mfa=True, is_cn=self._in_china
+        )
 
         try:
-            self._login_result1, self._login_result2 = await self.hass.async_add_executor_job(self._api.login)
+            self._login_result1, self._login_result2 = await self.hass.async_add_executor_job(
+                self._api.login
+            )
 
             if self._login_result1 == "needs_mfa":  # MFA is required
                 return await self.async_step_mfa()
@@ -106,7 +124,9 @@ class GarminConnectConfigFlowHandler(ConfigFlow, domain=DOMAIN):
         If the MFA code is invalid or an error occurs, prompts the user to re-enter the code. On successful authentication, creates or updates the configuration entry.
         """
         try:
-            await self.hass.async_add_executor_job(self._api.resume_login, self._login_result2, self._mfa_code)
+            await self.hass.async_add_executor_job(
+                self._api.resume_login, self._login_result2, self._mfa_code
+            )
 
         except garth.exc.GarthException as err:
             _LOGGER.error("Error during MFA login: %s", err)
@@ -131,62 +151,48 @@ class GarminConnectConfigFlowHandler(ConfigFlow, domain=DOMAIN):
         existing_entry = await self.async_set_unique_id(self._username)
 
         if existing_entry:
-            self.hass.config_entries.async_update_entry(
-                existing_entry, data=config_data)
+            self.hass.config_entries.async_update_entry(existing_entry, data=config_data)
             await self.hass.config_entries.async_reload(existing_entry.entry_id)
             return self.async_abort(reason="reauth_successful")
 
-        return self.async_create_entry(
-            title=cast(str, self._username), data=config_data
-        )
+        return self.async_create_entry(title=cast(str, self._username), data=config_data)
 
-    async def async_step_user(
-            self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
+    async def async_step_user(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         """
-            Handle the initial user step of the configuration flow.
+        Handle the initial user step of the configuration flow.
 
-            If no input is provided, displays a form to collect username and password. If credentials are submitted, stores them and attempts authentication with Garmin Connect.
-            """
+        If no input is provided, displays a form to collect username and password. If credentials are submitted, stores them and attempts authentication with Garmin Connect.
+        """
         if user_input is None:
-            return self.async_show_form(
-                step_id="user", data_schema=vol.Schema(self.data_schema)
-            )
+            return self.async_show_form(step_id="user", data_schema=vol.Schema(self.data_schema))
 
         self._username = user_input[CONF_USERNAME]
         self._password = user_input[CONF_PASSWORD]
 
         return await self._async_garmin_connect_login(step_id="user")
 
-    async def async_step_mfa(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
+    async def async_step_mfa(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         """
         Handle the multi-factor authentication (MFA) step in the configuration flow.
 
         If user input is not provided, displays a form to collect the MFA code. If input is provided, stores the MFA code and proceeds with MFA authentication.
         """
         if user_input is None:
-            return self.async_show_form(
-                step_id="mfa", data_schema=vol.Schema(self.mfa_data_schema)
-            )
+            return self.async_show_form(step_id="mfa", data_schema=vol.Schema(self.mfa_data_schema))
 
         self._mfa_code = user_input[CONF_MFA]
         _LOGGER.debug("MFA code received")
 
         return await self._async_garmin_connect_mfa_login()
 
-    async def async_step_reauth(
-        self, entry_data: Mapping[str, Any]
-    ) -> ConfigFlowResult:
+    async def async_step_reauth(self, entry_data: Mapping[str, Any]) -> ConfigFlowResult:
         """
         Start the reauthorization process using existing configuration entry data.
 
         Extracts the username from the entry data (using CONF_ID if CONF_USERNAME is not available for migrated entries) and advances to the reauthorization confirmation step.
         """
         # For backward compatibility: try CONF_USERNAME first, fall back to CONF_ID
-        self._username = entry_data.get(
-            CONF_USERNAME) or entry_data.get(CONF_ID)
+        self._username = entry_data.get(CONF_USERNAME) or entry_data.get(CONF_ID)
 
         return await self.async_step_reauth_confirm()
 
@@ -213,3 +219,59 @@ class GarminConnectConfigFlowHandler(ConfigFlow, domain=DOMAIN):
         self._password = user_input[CONF_PASSWORD]
 
         return await self._async_garmin_connect_login(step_id="reauth_confirm")
+
+
+class GarminConnectOptionsFlowHandler(OptionsFlow):
+    """Handle options flow for Garmin Connect integration."""
+
+    def __init__(self, config_entry: ConfigEntry) -> None:
+        """Initialize options flow."""
+        self.config_entry = config_entry
+
+    async def async_step_init(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Manage the sensor group options."""
+        if user_input is not None:
+            # Convert list to set for storage
+            enabled_groups = set(user_input.get(CONF_SENSOR_GROUPS, []))
+            return self.async_create_entry(
+                title="",
+                data={CONF_SENSOR_GROUPS: list(enabled_groups)},
+            )
+
+        # Get currently enabled groups from options, or use defaults for backward compatibility
+        current_options = self.config_entry.options.get(CONF_SENSOR_GROUPS)
+        if current_options is None:
+            # First time setup or upgraded from version without options
+            enabled_groups = get_default_enabled_groups()
+        else:
+            enabled_groups = set(current_options)
+
+        # Build the multi-select schema with descriptions
+        options_schema = vol.Schema(
+            {
+                vol.Optional(
+                    CONF_SENSOR_GROUPS,
+                    default=list(enabled_groups),
+                ): cv.multi_select(
+                    {
+                        group_id: f"{group.name} - {group.description}"
+                        for group_id, group in SENSOR_GROUPS.items()
+                    }
+                ),
+            }
+        )
+
+        return self.async_show_form(
+            step_id="init",
+            data_schema=options_schema,
+            description_placeholders={
+                "info": (
+                    "Select which sensor groups to enable. "
+                    "Individual sensors within enabled groups can still be "
+                    "disabled in the entity settings. "
+                    "Changes will be applied after reloading the integration."
+                )
+            },
+        )
