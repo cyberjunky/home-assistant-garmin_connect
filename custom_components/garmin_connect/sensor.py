@@ -162,6 +162,8 @@ async def async_setup_entry(
 class GarminConnectSensor(CoordinatorEntity, SensorEntity):
     """Representation of a Garmin Connect Sensor."""
 
+    _attr_has_entity_name = True
+
     def __init__(
         self,
         coordinator,
@@ -194,7 +196,7 @@ class GarminConnectSensor(CoordinatorEntity, SensorEntity):
     def native_value(self):
         """
         Return the current value of the sensor, applying type-specific formatting and conversions.
-        
+
         For activity and badge sensors, returns the count. For last activity, returns the activity name. HRV status and stress qualifier values are capitalized. Duration and seconds values are converted from seconds to minutes, and mass values from grams to kilograms. For alarms, returns the next active alarm if available. Timestamp values are converted to timezone-aware datetime objects. Returns None if data is unavailable.
         """
         if not self.coordinator.data:
@@ -245,7 +247,7 @@ class GarminConnectSensor(CoordinatorEntity, SensorEntity):
     def extra_state_attributes(self):
         """
         Return additional state attributes for the sensor entity.
-        
+
         Includes the last sync timestamp and, depending on the sensor type, recent activities (up to 5), badges (up to 10), alarms, or HRV status details (excluding the status string). Returns an empty dictionary if no coordinator data is available.
         """
         if not self.coordinator.data:
@@ -287,11 +289,13 @@ class GarminConnectSensor(CoordinatorEntity, SensorEntity):
     @property
     def device_info(self) -> DeviceInfo:
         """Return device information."""
-        return {
-            "identifiers": {(GARMIN_DOMAIN, self._unique_id)},
-            "name": "Garmin Connect",
-            "manufacturer": "Garmin Connect",
-        }
+        return DeviceInfo(
+            identifiers={(GARMIN_DOMAIN, self._unique_id)},
+            name="Garmin Connect",
+            manufacturer="Garmin",
+            model="Garmin Connect",
+            entry_type=None,
+        )
 
     @property
     def entity_registry_enabled_default(self) -> bool:
@@ -310,9 +314,9 @@ class GarminConnectSensor(CoordinatorEntity, SensorEntity):
     async def add_body_composition(self, **kwargs):
         """
         Add a new body composition measurement to Garmin Connect.
-        
+
         Extracts body composition metrics from keyword arguments and submits them to the Garmin Connect API. Ensures the user is logged in before attempting to add the record.
-        
+
         Raises:
             IntegrationError: If login to Garmin Connect fails.
         """
@@ -357,14 +361,14 @@ class GarminConnectSensor(CoordinatorEntity, SensorEntity):
     async def add_blood_pressure(self, **kwargs):
         """
         Add a blood pressure measurement to Garmin Connect using the provided values.
-        
+
         Parameters:
             systolic: Systolic blood pressure value.
             diastolic: Diastolic blood pressure value.
             pulse: Pulse rate.
             timestamp: Optional timestamp for the measurement.
             notes: Optional notes for the measurement.
-        
+
         Raises:
             IntegrationError: If unable to log in to Garmin Connect.
         """
@@ -393,6 +397,8 @@ class GarminConnectSensor(CoordinatorEntity, SensorEntity):
 
 class GarminConnectGearSensor(CoordinatorEntity, SensorEntity):
     """Representation of a Garmin Connect Gear Sensor."""
+
+    _attr_has_entity_name = True
 
     def __init__(
         self,
@@ -442,7 +448,7 @@ class GarminConnectGearSensor(CoordinatorEntity, SensorEntity):
     def extra_state_attributes(self):
         """
         Return additional state attributes for the gear sensor entity.
-        
+
         Includes metadata such as last sync time, total activities, creation and update dates, gear make/model/status, custom model, maximum distance, and a comma-separated list of activity types for which this gear is set as default. Returns an empty dictionary if required data is missing.
         """
         gear = self._gear()
@@ -486,11 +492,13 @@ class GarminConnectGearSensor(CoordinatorEntity, SensorEntity):
     @property
     def device_info(self) -> DeviceInfo:
         """Return device information."""
-        return {
-            "identifiers": {(GARMIN_DOMAIN, self._unique_id)},
-            "name": "Garmin Connect",
-            "manufacturer": "Garmin Connect",
-        }
+        return DeviceInfo(
+            identifiers={(GARMIN_DOMAIN, self._unique_id)},
+            name="Garmin Connect",
+            manufacturer="Garmin",
+            model="Garmin Connect",
+            entry_type=None,
+        )
 
     @property
     def entity_registry_enabled_default(self) -> bool:
@@ -517,7 +525,7 @@ class GarminConnectGearSensor(CoordinatorEntity, SensorEntity):
     def _gear_defaults(self):
         """
         Return a list of default gear settings for this gear UUID.
-        
+
         Returns:
             List of gear default dictionaries where this gear is set as the default.
         """
@@ -531,11 +539,11 @@ class GarminConnectGearSensor(CoordinatorEntity, SensorEntity):
     async def set_active_gear(self, **kwargs):
         """
         Set this gear as active or default for a specified activity type in Garmin Connect.
-        
+
         Parameters:
             activity_type (str): The activity type key for which to update the gear setting.
             setting (str): The desired gear setting, indicating whether to set as default or as the only default.
-        
+
         Raises:
             IntegrationError: If unable to log in to Garmin Connect.
         """
