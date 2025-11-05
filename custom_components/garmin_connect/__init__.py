@@ -39,14 +39,15 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         "Migrating Garmin Connect config entry from version %s", entry.version)
 
     if entry.version == 1:
-        # Check if we need to migrate (old entries have username/password, new ones have token)
+        # Scenario 1: Has USERNAME + PASSWORD but no TOKEN (old auth method)
+        # Migrate to: ID + TOKEN
         if (
             CONF_TOKEN not in entry.data
             and CONF_USERNAME in entry.data
             and CONF_PASSWORD in entry.data
         ):
             _LOGGER.info(
-                "Migrating Garmin Connect config entry to token-based authentication")
+                "Migrating Garmin Connect config entry from username/password to token-based authentication")
 
             username = entry.data[CONF_USERNAME]
             password = entry.data[CONF_PASSWORD]
@@ -84,6 +85,49 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                     err,
                 )
                 return False
+
+        # Scenario 2: Has USERNAME + TOKEN but no ID (partially migrated)
+        # Migrate to: ID + TOKEN (remove USERNAME)
+        elif (
+            CONF_ID not in entry.data
+            and CONF_USERNAME in entry.data
+            and CONF_TOKEN in entry.data
+        ):
+            _LOGGER.info(
+                "Migrating Garmin Connect config entry: converting USERNAME to ID")
+
+            username = entry.data[CONF_USERNAME]
+
+            # Create new data with ID instead of USERNAME
+            new_data = {
+                CONF_ID: username,
+                CONF_TOKEN: entry.data[CONF_TOKEN],
+            }
+
+            # Update the config entry
+            hass.config_entries.async_update_entry(entry, data=new_data)
+
+            _LOGGER.info(
+                "Successfully migrated Garmin Connect config entry from USERNAME to ID")
+            return True
+
+        # Scenario 3: Missing both TOKEN and credentials (incomplete/corrupted)
+        # Add placeholder ID to allow reauth flow
+        elif CONF_TOKEN not in entry.data:
+            if CONF_ID not in entry.data:
+                _LOGGER.info(
+                    "Config entry missing CONF_ID, adding placeholder for reauth flow")
+                new_data = {
+                    **entry.data,
+                    CONF_ID: entry.entry_id,  # Use entry_id as fallback
+                }
+                hass.config_entries.async_update_entry(entry, data=new_data)
+
+            _LOGGER.info(
+                "Garmin Connect config entry is incomplete (missing token). "
+                "Reauthentication will be required to complete setup."
+            )
+            return True
 
     return True
 
@@ -165,14 +209,17 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
         try:
             # Check if the token exists in the entry data
             if CONF_TOKEN not in self.entry.data:
-                _LOGGER.error(
-                    "Token not found in config entry. This may be an old config entry that needs migration. "
-                    "Please remove and re-add the Garmin Connect integration."
+                _LOGGER.info(
+                    "Token not found in config entry. Reauthentication required."
                 )
                 raise ConfigEntryAuthFailed(
-                    "Token not found, please re-add the integration")
+                    "Token not found in config entry. Please reauthenticate."
+                )
 
             await self.hass.async_add_executor_job(self.api.login, self.entry.data[CONF_TOKEN])
+        except ConfigEntryAuthFailed:
+            # Re-raise ConfigEntryAuthFailed without catching it in the generic handler
+            raise
         except GarminConnectAuthenticationError as err:
             _LOGGER.error(
                 "Authentication error occurred during login: %s", err.response.text)
