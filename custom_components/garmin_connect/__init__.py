@@ -210,6 +210,9 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
                 )
 
             await self.hass.async_add_executor_job(self.api.login, self.entry.data[CONF_TOKEN])
+        except ConfigEntryAuthFailed:
+            # Re-raise ConfigEntryAuthFailed without logging as "unknown error"
+            raise
         except GarminConnectAuthenticationError as err:
             _LOGGER.error(
                 "Authentication error occurred during login: %s", err.response.text)
