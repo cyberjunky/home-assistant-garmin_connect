@@ -25,6 +25,19 @@ After successful set up a standard set of sensors are enabled. You can enable mo
 
 The integration will fetch new data every 5 minutes, make sure your devices sync to the Garmin Connect website.
 
+### Reload Without Restart
+
+This integration supports **reloading without restarting Home Assistant**:
+- Go to **Settings** → **Devices & Services** → **Garmin Connect**
+- Click the **three dots (⋮)** → **Reload**
+
+This is useful after:
+- Updating the integration via HACS
+- Changing configuration options
+- Troubleshooting issues
+
+No need to restart your entire Home Assistant instance!
+
 ## Available Sensors
 
 Not every sensor holds meaningful values, it depends on the tracking and health devices you use, or the apps you have connected.
