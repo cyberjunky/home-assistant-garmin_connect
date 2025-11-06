@@ -478,8 +478,6 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
                     _LOGGER.debug("No userProfileId found in summary, skipping gear defaults fetch")
             else:
                 _LOGGER.debug("No gear data available, skipping gear stats and defaults fetch")
-            else:
-                _LOGGER.debug("No gear defaults data found")
         except GarminConnectAuthenticationError as err:
             _LOGGER.error(
                 "Authentication error occurred while fetching Gear data: %s", err.response.text
