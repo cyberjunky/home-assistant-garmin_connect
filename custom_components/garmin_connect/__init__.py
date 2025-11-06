@@ -385,10 +385,14 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
 
         # Gear data
         try:
-            gear = await self.hass.async_add_executor_job(
-                self.api.get_gear, summary[Gear.USERPROFILE_ID]
-            )
-            _LOGGER.debug("Gear data fetched: %s", gear)
+            # Check if userProfileId exists in summary before fetching gear data
+            if Gear.USERPROFILE_ID in summary:
+                gear = await self.hass.async_add_executor_job(
+                    self.api.get_gear, summary[Gear.USERPROFILE_ID]
+                )
+                _LOGGER.debug("Gear data fetched: %s", gear)
+            else:
+                _LOGGER.debug("No userProfileId found in summary, skipping gear data fetch")
 
             # Fitness age data
             fitnessage_data = await self.hass.async_add_executor_job(
@@ -438,36 +442,34 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
             return {}
 
         try:
-            # Gear data like shoes, bike, etc.
-            gear = await self.hass.async_add_executor_job(
-                self.api.get_gear, summary[Gear.USERPROFILE_ID]
-            )
+            # Use gear data from the first fetch if available
             if gear:
-                _LOGGER.debug("Gear data fetched: %s", gear)
-            else:
-                _LOGGER.debug("No gear data found")
+                # Gear stats data like distance, time, etc.
+                tasks: list[Awaitable] = [
+                    self.hass.async_add_executor_job(
+                        self.api.get_gear_stats, gear_item[Gear.UUID]
+                    )
+                    for gear_item in gear
+                ]
+                gear_stats = await asyncio.gather(*tasks)
+                if gear_stats:
+                    _LOGGER.debug("Gear statistics data fetched: %s", gear_stats)
+                else:
+                    _LOGGER.debug("No gear statistics data found")
 
-            # Gear stats data like distance, time, etc.
-            tasks: list[Awaitable] = [
-                self.hass.async_add_executor_job(
-                    self.api.get_gear_stats, gear_item[Gear.UUID]
-                )
-                for gear_item in gear
-            ]
-            gear_stats = await asyncio.gather(*tasks)
-            if gear_stats:
-                _LOGGER.debug("Gear statistics data fetched: %s", gear_stats)
+                # Gear defaults data like shoe, bike, etc.
+                if Gear.USERPROFILE_ID in summary:
+                    gear_defaults = await self.hass.async_add_executor_job(
+                        self.api.get_gear_defaults, summary[Gear.USERPROFILE_ID]
+                    )
+                    if gear_defaults:
+                        _LOGGER.debug("Gear defaults data fetched: %s", gear_defaults)
+                    else:
+                        _LOGGER.debug("No gear defaults data found")
+                else:
+                    _LOGGER.debug("No userProfileId found in summary, skipping gear defaults fetch")
             else:
-                _LOGGER.debug("No gear statistics data found")
-
-            # Gear defaults data like shoe, bike, etc.
-            gear_defaults = await self.hass.async_add_executor_job(
-                self.api.get_gear_defaults, summary[Gear.USERPROFILE_ID]
-            )
-            if gear_defaults:
-                _LOGGER.debug("Gear defaults data fetched: %s", gear_defaults)
-            else:
-                _LOGGER.debug("No gear defaults data found")
+                _LOGGER.debug("No gear data available, skipping gear stats and defaults fetch")
         except GarminConnectAuthenticationError as err:
             _LOGGER.error(
                 "Authentication error occurred while fetching Gear data: %s", err.response.text)
