@@ -1028,7 +1028,7 @@ def get_default_enabled_groups() -> set[str]:
     Get the set of sensor groups that should be enabled by default.
     
     Returns:
-        Set of group IDs that are enabled by default.
+    Set of group IDs that are enabled by default.
     """
     return {
         group_id
