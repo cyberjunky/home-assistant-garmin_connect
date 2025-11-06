@@ -1003,14 +1003,14 @@ SENSOR_GROUP_MAPPING: dict[str, tuple[GarminConnectSensorEntityDescription, ...]
 def get_sensors_for_groups(
     enabled_groups: set[str] | None = None,
 ) -> tuple[GarminConnectSensorEntityDescription, ...]:
-    """
-    Get sensor descriptions based on enabled sensor groups.
-    
+    """Get sensor descriptions based on enabled sensor groups.
+
     Args:
         enabled_groups: Set of enabled group IDs. If None, returns all sensors.
-        
+
     Returns:
         Tuple of sensor descriptions for the enabled groups.
+
     """
     if enabled_groups is None:
         return ALL_SENSOR_DESCRIPTIONS
@@ -1024,11 +1024,11 @@ def get_sensors_for_groups(
 
 
 def get_default_enabled_groups() -> set[str]:
-    """
-    Get the set of sensor groups that should be enabled by default.
+    """Get the set of sensor groups that should be enabled by default.
     
     Returns:
         Set of group IDs that are enabled by default.
+
     """
     return {
         group_id
