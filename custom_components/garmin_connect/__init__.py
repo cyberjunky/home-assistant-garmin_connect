@@ -5,20 +5,20 @@ from collections.abc import Awaitable
 from datetime import datetime, timedelta
 import logging
 from zoneinfo import ZoneInfo
-import requests
+
 from garminconnect import (
     Garmin,
     GarminConnectAuthenticationError,
     GarminConnectConnectionError,
     GarminConnectTooManyRequestsError,
 )
-import requests
-
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_ID, CONF_PASSWORD, CONF_TOKEN, CONF_USERNAME
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+import requests
+
 from .const import (
     DATA_COORDINATOR,
     DAY_TO_NUMBER,
@@ -147,7 +147,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
+    # Register update listener to reload integration when options change
+    entry.async_on_unload(entry.add_update_listener(async_reload_entry))
+
     return True
+
+
+async def async_reload_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Reload the config entry when options change."""
+    await hass.config_entries.async_reload(entry.entry_id)
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
@@ -156,6 +164,12 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
     if unload_ok:
         hass.data[DOMAIN].pop(entry.entry_id)
     return unload_ok
+
+
+async def async_reload_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Reload config entry."""
+    await async_unload_entry(hass, entry)
+    await async_setup_entry(hass, entry)
 
 
 class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
@@ -205,13 +219,12 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
                     "Token not found in config entry. Reauthentication required."
                 )
                 raise ConfigEntryAuthFailed(
-                    "Token not found in config entry. This may be an old or incomplete configuration. "
-                    "A reauthentication flow will be initiated. Please check your notifications."
+                    "Token not found in config entry. Please reauthenticate."
                 )
 
             await self.hass.async_add_executor_job(self.api.login, self.entry.data[CONF_TOKEN])
         except ConfigEntryAuthFailed:
-            # Re-raise ConfigEntryAuthFailed without logging as "unknown error"
+            # Re-raise ConfigEntryAuthFailed without catching it in the generic handler
             raise
         except GarminConnectAuthenticationError as err:
             _LOGGER.error(
@@ -223,8 +236,7 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
             return False
         except GarminConnectConnectionError as err:
             _LOGGER.error(
-                "Connection error occurred during Garmin Connect login request: %s", err
-            )
+                "Connection error occurred during Garmin Connect login request: %s", err)
             raise ConfigEntryNotReady from err
         except requests.exceptions.HTTPError as err:
             if err.response.status_code == 401:
@@ -233,14 +245,13 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
                 raise ConfigEntryAuthFailed from err
             if err.response.status_code == 429:
                 _LOGGER.error(
-                    "Too many requests error occurred during login: %s", err.response.text)
+                    "Too many requests error occurred during login: %s", err.response.text
+                )
                 return False
-            _LOGGER.error(
-                "Unknown HTTP error occurred during login: %s", err)
+            _LOGGER.error("Unknown HTTP error occurred during login: %s", err)
             return False
         except Exception as err:  # pylint: disable=broad-except
-            _LOGGER.exception(
-                "Unknown error occurred during login: %s", err)
+            _LOGGER.exception("Unknown error occurred during login: %s", err)
             return False
 
         return True
@@ -421,8 +432,7 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
                 "Too many request error occurred during update: %s", err)
             return {}
         except GarminConnectConnectionError as err:
-            _LOGGER.error(
-                "Connection error occurred during update: %s", err)
+            _LOGGER.error("Connection error occurred during update: %s", err)
             raise ConfigEntryNotReady from err
         except requests.exceptions.HTTPError as err:
             if err.response.status_code == 401:
@@ -431,14 +441,13 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
                 raise ConfigEntryAuthFailed from err
             if err.response.status_code == 429:
                 _LOGGER.error(
-                    "Too many requests error occurred during update: %s", err.response.text)
+                    "Too many requests error occurred during update: %s", err.response.text
+                )
                 return {}
-            _LOGGER.error(
-                "Unknown HTTP error occurred during update: %s", err)
+            _LOGGER.error("Unknown HTTP error occurred during update: %s", err)
             return False
         except Exception as err:  # pylint: disable=broad-except
-            _LOGGER.exception(
-                "Unknown error occurred during update: %s", err)
+            _LOGGER.exception("Unknown error occurred during update: %s", err)
             return {}
 
         try:
@@ -447,8 +456,7 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
                 # Gear stats data like distance, time, etc.
                 tasks: list[Awaitable] = [
                     self.hass.async_add_executor_job(
-                        self.api.get_gear_stats, gear_item[Gear.UUID]
-                    )
+                        self.api.get_gear_stats, gear_item[Gear.UUID])
                     for gear_item in gear
                 ]
                 gear_stats = await asyncio.gather(*tasks)
@@ -472,7 +480,8 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
                 _LOGGER.debug("No gear data available, skipping gear stats and defaults fetch")
         except GarminConnectAuthenticationError as err:
             _LOGGER.error(
-                "Authentication error occurred while fetching Gear data: %s", err.response.text)
+                "Authentication error occurred while fetching Gear data: %s", err.response.text
+            )
             raise ConfigEntryAuthFailed from err
         except GarminConnectTooManyRequestsError as err:
             _LOGGER.error(
@@ -485,13 +494,15 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
         except requests.exceptions.HTTPError as err:
             if err.response.status_code == 401:
                 _LOGGER.error(
-                    "Authentication error while fetching Gear data: %s", err.response.text)
+                    "Authentication error while fetching Gear data: %s", err.response.text
+                )
             elif err.response.status_code == 404:
                 _LOGGER.error(
                     "URL not found error while fetching Gear data: %s", err.response.text)
             elif err.response.status_code == 429:
                 _LOGGER.error(
-                    "Too many requests error while fetching Gear data: %s", err.response.text)
+                    "Too many requests error while fetching Gear data: %s", err.response.text
+                )
             else:
                 _LOGGER.error(
                     "Unknown HTTP error occurred while fetching Gear data: %s", err)

@@ -4,12 +4,19 @@ from datetime import timedelta
 from typing import NamedTuple
 
 from homeassistant.components.sensor import SensorDeviceClass, SensorStateClass
-from homeassistant.const import PERCENTAGE, UnitOfLength, UnitOfMass, UnitOfTime, UnitOfVolume
+from homeassistant.const import (
+    PERCENTAGE,
+    UnitOfLength,
+    UnitOfMass,
+    UnitOfTime,
+    UnitOfVolume,
+)
 
 DOMAIN = "garmin_connect"
 DATA_COORDINATOR = "coordinator"
 DEFAULT_UPDATE_INTERVAL = timedelta(minutes=5)
 CONF_MFA = "mfa_code"
+CONF_SENSOR_GROUPS = "sensor_groups"
 DAY_TO_NUMBER = {
     "Mo": 1,
     "M": 1,
