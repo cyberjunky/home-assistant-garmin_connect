@@ -486,9 +486,12 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
             if err.response.status_code == 401:
                 _LOGGER.error(
                     "Authentication error while fetching Gear data: %s", err.response.text)
+            elif err.response.status_code == 403:
+                _LOGGER.debug(
+                    "Access forbidden while fetching Gear data (user may not have gear configured): %s", err.response.text)
             elif err.response.status_code == 404:
-                _LOGGER.error(
-                    "URL not found error while fetching Gear data: %s", err.response.text)
+                _LOGGER.debug(
+                    "Gear data not found (user may not have gear configured): %s", err.response.text)
             elif err.response.status_code == 429:
                 _LOGGER.error(
                     "Too many requests error while fetching Gear data: %s", err.response.text)
