@@ -196,8 +196,13 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
 
         self.api = Garmin(is_cn=self._in_china)
 
-        super().__init__(hass, _LOGGER, name=DOMAIN,
-                         update_interval=DEFAULT_UPDATE_INTERVAL)
+        super().__init__(
+            hass,
+            _LOGGER,
+            name=DOMAIN,
+            update_interval=DEFAULT_UPDATE_INTERVAL,
+            config_entry=entry,
+        )
 
     async def async_login(self) -> bool:
         """
@@ -403,7 +408,8 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
                 )
                 _LOGGER.debug("Gear data fetched: %s", gear)
             else:
-                _LOGGER.debug("No userProfileId found in summary, skipping gear data fetch")
+                _LOGGER.debug(
+                    "No userProfileId found in summary, skipping gear data fetch")
 
             # Fitness age data
             fitnessage_data = await self.hass.async_add_executor_job(
@@ -461,7 +467,8 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
                 ]
                 gear_stats = await asyncio.gather(*tasks)
                 if gear_stats:
-                    _LOGGER.debug("Gear statistics data fetched: %s", gear_stats)
+                    _LOGGER.debug(
+                        "Gear statistics data fetched: %s", gear_stats)
                 else:
                     _LOGGER.debug("No gear statistics data found")
 
@@ -471,15 +478,16 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
                         self.api.get_gear_defaults, summary[Gear.USERPROFILE_ID]
                     )
                     if gear_defaults:
-                        _LOGGER.debug("Gear defaults data fetched: %s", gear_defaults)
+                        _LOGGER.debug(
+                            "Gear defaults data fetched: %s", gear_defaults)
                     else:
                         _LOGGER.debug("No gear defaults data found")
                 else:
-                    _LOGGER.debug("No userProfileId found in summary, skipping gear defaults fetch")
+                    _LOGGER.debug(
+                        "No userProfileId found in summary, skipping gear defaults fetch")
             else:
-                _LOGGER.debug("No gear data available, skipping gear stats and defaults fetch")
-            else:
-                _LOGGER.debug("No gear defaults data found")
+                _LOGGER.debug(
+                    "No gear data available, skipping gear stats and defaults fetch")
         except GarminConnectAuthenticationError as err:
             _LOGGER.error(
                 "Authentication error occurred while fetching Gear data: %s", err.response.text
