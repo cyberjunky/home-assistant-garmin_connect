@@ -18,6 +18,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import IntegrationError
 from homeassistant.helpers import entity_platform
 from homeassistant.helpers.entity import DeviceInfo
+from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.helpers.update_coordinator import (
     CoordinatorEntity,
     DataUpdateCoordinator,
@@ -140,7 +141,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
     )
 
 
-class GarminConnectSensor(GarminConnectEntity, SensorEntity):
+class GarminConnectSensor(GarminConnectEntity, SensorEntity, RestoreEntity):
     """Representation of a Garmin Connect Sensor."""
 
     def __init__(
@@ -153,11 +154,22 @@ class GarminConnectSensor(GarminConnectEntity, SensorEntity):
         super().__init__(coordinator, unique_id)
         self.entity_description = description
         self._attr_unique_id = f"{unique_id}_{description.key}"
+        self._last_known_value: str | int | float | None = None
+
+    async def async_added_to_hass(self) -> None:
+        """Restore last known value when added to hass."""
+        await super().async_added_to_hass()
+        if (last_state := await self.async_get_last_state()) is not None:
+            if last_state.state not in ("unknown", "unavailable"):
+                self._last_known_value = last_state.state
 
     @property
     def native_value(self):
         """Return the state of the sensor."""
         if not self.coordinator.data:
+            # Only return last known value if preserve_value is enabled
+            if self.entity_description.preserve_value:
+                return self._last_known_value
             return None
 
         # Use custom value function if provided in description
@@ -167,6 +179,9 @@ class GarminConnectSensor(GarminConnectEntity, SensorEntity):
             value = self.coordinator.data.get(self.entity_description.key)
 
         if value is None:
+            # Return last known value if preserve_value enabled (e.g., weight at midnight)
+            if self.entity_description.preserve_value:
+                return self._last_known_value
             return None
 
         # Handle timestamp device class
@@ -178,13 +193,17 @@ class GarminConnectSensor(GarminConnectEntity, SensorEntity):
 
         # Preserve int types, only round floats
         if isinstance(value, int):
+            self._last_known_value = value
             return value
         if isinstance(value, float):
             # Round floats to 1 decimal place, but return int if it's a whole number
             rounded = round(value, 1)
             if rounded == int(rounded):
+                self._last_known_value = int(rounded)
                 return int(rounded)
+            self._last_known_value = rounded
             return rounded
+        self._last_known_value = value
         return value
 
     @property

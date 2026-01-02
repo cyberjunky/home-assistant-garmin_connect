@@ -28,6 +28,9 @@ class GarminConnectSensorEntityDescription(SensorEntityDescription):
     attributes_fn: Callable[[dict[str, Any]], dict[str, Any]] | None = None
     """Function to extract attributes from coordinator data."""
 
+    preserve_value: bool = False
+    """If True, preserve last known value when API returns None (for weight, BMI, etc)."""
+
 
 
 # Activity & Steps Sensors
@@ -353,7 +356,7 @@ BODY_COMPOSITION_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         icon="mdi:weight-kilogram",
         value_fn=lambda data: round(
             data.get("weight", 0) / 1000, 2) if data.get("weight") else None,
-
+        preserve_value=True,
     ),
     GarminConnectSensorEntityDescription(
         key="bmi",
@@ -361,7 +364,7 @@ BODY_COMPOSITION_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement="BMI",
         icon="mdi:human",
-
+        preserve_value=True,
     ),
     GarminConnectSensorEntityDescription(
         key="bodyFat",
@@ -369,7 +372,7 @@ BODY_COMPOSITION_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement=PERCENTAGE,
         icon="mdi:percent",
-
+        preserve_value=True,
     ),
     GarminConnectSensorEntityDescription(
         key="bodyWater",
@@ -377,7 +380,7 @@ BODY_COMPOSITION_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement=PERCENTAGE,
         icon="mdi:water-percent",
-
+        preserve_value=True,
     ),
     GarminConnectSensorEntityDescription(
         key="boneMass",
@@ -388,7 +391,7 @@ BODY_COMPOSITION_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         icon="mdi:bone",
         value_fn=lambda data: round(
             data.get("boneMass", 0) / 1000, 2) if data.get("boneMass") else None,
-
+        preserve_value=True,
     ),
     GarminConnectSensorEntityDescription(
         key="muscleMass",
@@ -399,7 +402,7 @@ BODY_COMPOSITION_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         icon="mdi:dumbbell",
         value_fn=lambda data: round(
             data.get("muscleMass", 0) / 1000, 2) if data.get("muscleMass") else None,
-
+        preserve_value=True,
     ),
 )
 
@@ -611,7 +614,7 @@ FITNESS_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement=UnitOfTime.YEARS,
         icon="mdi:calendar-heart",
-
+        preserve_value=True,
     ),
     GarminConnectSensorEntityDescription(
         key="enduranceScore",
@@ -630,7 +633,7 @@ FITNESS_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         translation_key="physique_rating",
         state_class=SensorStateClass.MEASUREMENT,
         icon="mdi:numeric",
-
+        preserve_value=True,
     ),
     GarminConnectSensorEntityDescription(
         key="visceralFat",
@@ -638,7 +641,7 @@ FITNESS_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement=PERCENTAGE,
         icon="mdi:food",
-
+        preserve_value=True,
     ),
 )
 
