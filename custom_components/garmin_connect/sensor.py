@@ -7,6 +7,7 @@ import logging
 from numbers import Number
 from zoneinfo import ZoneInfo
 
+import voluptuous as vol
 from homeassistant.components.sensor import (
     SensorDeviceClass,
     SensorEntity,
@@ -22,14 +23,15 @@ from homeassistant.helpers.update_coordinator import (
     CoordinatorEntity,
     DataUpdateCoordinator,
 )
-import voluptuous as vol
 
 from .const import (
     DATA_COORDINATOR,
-    DOMAIN as GARMIN_DOMAIN,
     GEAR_ICONS,
     Gear,
     ServiceSetting,
+)
+from .const import (
+    DOMAIN as GARMIN_DOMAIN,
 )
 from .entity import GarminConnectEntity
 from .sensor_descriptions import (
@@ -175,7 +177,9 @@ class GarminConnectSensor(GarminConnectEntity, SensorEntity):
                     tzinfo=ZoneInfo(self.coordinator.time_zone)
                 )
 
-        return round(value, 2) if isinstance(value, Number) else value
+        if isinstance(value, Number):
+            return round(float(value), 2)  # type: ignore[arg-type]
+        return value
 
     @property
     def extra_state_attributes(self):
@@ -370,7 +374,7 @@ class GarminConnectGearSensor(CoordinatorEntity, SensorEntity):
     @property
     def available(self) -> bool:
         """Return True if entity is available."""
-        return super().available and self.coordinator.data and self._gear()
+        return bool(super().available and self.coordinator.data and self._gear())
 
     def _stats(self):
         """Get gear statistics from garmin"""

@@ -1,7 +1,6 @@
 """Constants for the Garmin Connect integration."""
 
 from datetime import timedelta
-from typing import NamedTuple
 
 DOMAIN = "garmin_connect"
 DATA_COORDINATOR = "coordinator"
@@ -42,7 +41,7 @@ GEAR_ICONS = {
 }
 
 
-class ServiceSetting(NamedTuple):
+class ServiceSetting:
     """Options for the service settings."""
 
     ONLY_THIS_AS_DEFAULT = "set this as default, unset others"
@@ -50,7 +49,7 @@ class ServiceSetting(NamedTuple):
     UNSET_DEFAULT = "unset default"
 
 
-class Gear(NamedTuple):
+class Gear:
     """Gear attribute keys."""
 
     UUID = "uuid"
@@ -58,3 +57,4 @@ class Gear(NamedTuple):
     TYPE_ID = "typeId"
     USERPROFILE_ID = "userProfileId"
     ACTIVITY_TYPE_PK = "activityTypePk"
+

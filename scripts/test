@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# Run pytest with coverage
+
+set -e
+
+cd "$(dirname "$0")/.."
+
+# Activate virtual environment if present
+if [ -f ".venv/bin/activate" ]; then
+	# shellcheck disable=SC1091
+	. .venv/bin/activate
+fi
+
+pytest tests/ \
+	--cov=custom_components.garmin_connect \
+	--cov-report=term-missing \
+	--cov-report=html \
+	-v \
+	"$@"

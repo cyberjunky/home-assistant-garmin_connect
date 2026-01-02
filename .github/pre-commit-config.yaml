@@ -10,9 +10,7 @@ repos:
         args:
           - --quiet-level=2
           - --ignore-words-list=hass,ba,fo
-          - --skip=tests/fixtures/*,custom_components/hvcgroep/translations/*
-
-      # isort hook removed to avoid conflicts with ruff formatting
+          - --skip=tests/fixtures/*,custom_components/garmin_connect/translations/*
 
       - id: pyupgrade
         name: Run pyupgrade
@@ -22,7 +20,7 @@ repos:
         entry: pyupgrade
         files: ^.*.py$
         args:
-          - "--py39-plus"
+          - "--py311-plus"
 
       - id: ruff-check
         name: Run ruff check
@@ -34,7 +32,25 @@ repos:
           - check
         files: ^((action|custom_components|script|tests)/.+)?[^/]+\.py$
 
-      # ruff-format removed to avoid conflicts with isort; isort + ruff-check used instead
+      - id: mypy
+        name: Run mypy type checker
+        language: system
+        types: [python]
+        stages: [commit-msg, post-commit, manual]
+        entry: mypy
+        args:
+          - --ignore-missing-imports
+          - --check-untyped-defs
+        files: ^custom_components/.+\.py$
+
+      - id: check-yaml
+        name: Check YAML files
+        language: system
+        types: [yaml]
+        stages: [commit-msg, post-commit, manual]
+        entry: check-yaml
+        args:
+          - --unsafe
 
       - id: check-executables-have-shebangs
         name: Check that executables have shebangs
@@ -66,10 +82,11 @@ repos:
         entry: check-ast
 
       - id: mixed-line-ending
-        name: Check line nedings
+        name: Check line endings
         language: system
         types: [text]
         stages: [commit-msg, post-commit, manual]
         entry: mixed-line-ending
         args:
           - --fix=lf
+

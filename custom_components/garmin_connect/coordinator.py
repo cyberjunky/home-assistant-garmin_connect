@@ -1,11 +1,13 @@
 """DataUpdateCoordinator for Garmin Connect integration."""
 
 import asyncio
+import logging
 from collections.abc import Awaitable
 from datetime import datetime, timedelta
-import logging
+from typing import Any
 from zoneinfo import ZoneInfo
 
+import requests
 from garminconnect import (
     Garmin,
     GarminConnectAuthenticationError,
@@ -17,7 +19,6 @@ from homeassistant.const import CONF_TOKEN
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
-import requests
 
 from .const import (
     DAY_TO_NUMBER,
@@ -91,7 +92,7 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
         body = {}
         alarms = {}
         gear = {}
-        gear_stats = {}
+        gear_stats: list[Any] = []
         gear_defaults = {}
         activity_types = {}
         last_activities = []
@@ -102,7 +103,7 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
         hrv_status = {"status": "unknown"}
         endurance_data = {}
         endurance_status = {"overallScore": None}
-        next_alarms = []
+        next_alarms: list[str] | None = []
 
         today = datetime.now(ZoneInfo(self.time_zone)).date()
 
@@ -261,9 +262,9 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
         }
 
 
-def calculate_next_active_alarms(alarms, time_zone):
+def calculate_next_active_alarms(alarms: Any, time_zone: str) -> list[str] | None:
     """Calculate the next scheduled active alarms."""
-    active_alarms = []
+    active_alarms: list[str] = []
 
     if not alarms:
         return active_alarms

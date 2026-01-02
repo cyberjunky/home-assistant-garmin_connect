@@ -3,7 +3,14 @@ mypy==1.19.1
 pre-commit==4.5.1
 pre-commit-hooks==6.0.0
 pylint==4.0.4
+pytest
+pytest-asyncio
+pytest-cov
+pytest-homeassistant-custom-component
 pyupgrade==3.21.2
 ruff==0.14.10
 types-pytz==2025.2.0.20251108
+types-requests
 vulture==2.14
+
+

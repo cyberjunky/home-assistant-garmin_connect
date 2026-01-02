@@ -1,27 +1,27 @@
 """Config flow for Garmin Connect integration."""
 
-from collections.abc import Mapping
 import logging
+from collections.abc import Mapping
 from typing import Any, cast
 
+import garth
+import requests
+import voluptuous as vol
 from garminconnect import (
     Garmin,
     GarminConnectAuthenticationError,
     GarminConnectConnectionError,
     GarminConnectTooManyRequestsError,
 )
-import garth
 from homeassistant.config_entries import ConfigFlow, ConfigFlowResult
 from homeassistant.const import CONF_ID, CONF_PASSWORD, CONF_TOKEN, CONF_USERNAME
-import requests
-import voluptuous as vol
 
 from .const import CONF_MFA, DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
 
-class GarminConnectConfigFlowHandler(ConfigFlow, domain=DOMAIN):
+class GarminConnectConfigFlowHandler(ConfigFlow, domain=DOMAIN):  # type: ignore[call-arg]
     """Handle a config flow for Garmin Connect."""
 
     VERSION = 1
@@ -60,7 +60,7 @@ class GarminConnectConfigFlowHandler(ConfigFlow, domain=DOMAIN):
 
         try:
             self._login_result1, self._login_result2 = (
-                await self.hass.async_add_executor_job(self._api.login)
+                await self.hass.async_add_executor_job(self._api.login)  # type: ignore[attr-defined]
             )
 
             if self._login_result1 == "needs_mfa":
@@ -96,7 +96,7 @@ class GarminConnectConfigFlowHandler(ConfigFlow, domain=DOMAIN):
         """Complete MFA authentication."""
         try:
             await self.hass.async_add_executor_job(
-                self._api.resume_login, self._login_result2, self._mfa_code
+                self._api.resume_login, self._login_result2, self._mfa_code  # type: ignore[attr-defined]
             )
         except garth.exc.GarthException as err:
             _LOGGER.error("MFA login error: %s", err)
@@ -112,7 +112,7 @@ class GarminConnectConfigFlowHandler(ConfigFlow, domain=DOMAIN):
         """Create the config entry."""
         config_data = {
             CONF_ID: self._username,
-            CONF_TOKEN: self._api.garth.dumps(),
+            CONF_TOKEN: self._api.garth.dumps(),  # type: ignore[attr-defined]
         }
         existing_entry = await self.async_set_unique_id(self._username)
 

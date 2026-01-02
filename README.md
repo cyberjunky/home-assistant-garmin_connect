@@ -20,7 +20,8 @@ Integrate your Garmin Connect fitness data with Home Assistant. Access **97+ sen
 
 ## Available Sensors
 
-> **Note:** All sensors are enabled by default. Sensor values depend on your Garmin devices and connected apps.
+> **Note:** All sensors are enabled by default. You can disable sensors using Home Assistant's sensor configuration.
+Sensor values depend on your Garmin devices and connected apps.
 
 ### Activity & Steps
 
@@ -120,7 +121,7 @@ Gear sensors are dynamically created for each piece of equipment registered in G
 ## Requirements
 
 - A Garmin Connect account.
-- A Garmin device that syncs to the Garmin Connect website.
+- A device that syncs to the Garmin Connect website.
 
 ### HACS (Recommended)
 
