@@ -1,2 +1,3 @@
+homeassistant>=2025.12.4
 colorlog==6.10.1
 setuptools==80.9.0

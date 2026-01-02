@@ -14,6 +14,7 @@ class GarminConnectEntity(CoordinatorEntity):
     def __init__(self, coordinator, unique_id: str) -> None:
         """Initialize Garmin Connect entity."""
         super().__init__(coordinator)
+        self._unique_id = unique_id
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, unique_id)},
             name="Garmin Connect",

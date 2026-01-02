@@ -326,16 +326,5 @@
                 "name": "Wellness calories"
             }
         }
-    },
-    "options": {
-        "step": {
-            "init": {
-                "title": "Configure Sensor Groups",
-                "description": "Select which sensor groups to enable. Individual sensors within enabled groups can still be disabled in the entity settings. Changes will be applied after reloading the integration.",
-                "data": {
-                    "sensor_groups": "Enabled Sensor Groups"
-                }
-            }
-        }
     }
 }

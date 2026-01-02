@@ -1,6 +1,6 @@
 {
-  "name": "cyberjunky/home-assistant-garmin_connect",
-  "image": "mcr.microsoft.com/devcontainers/python:1-3.12",
+  "name": "HVC Groep Integration",
+  "image": "mcr.microsoft.com/devcontainers/python:1-3.13",
   "postCreateCommand": "scripts/setup",
   "forwardPorts": [
     8123

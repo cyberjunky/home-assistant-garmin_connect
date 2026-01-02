@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass
 from collections.abc import Callable
-from typing import Any, NamedTuple
+from typing import Any
 
 from homeassistant.components.sensor import (
     SensorDeviceClass,
@@ -29,88 +29,6 @@ class GarminConnectSensorEntityDescription(SensorEntityDescription):
     attributes_fn: Callable[[dict[str, Any]], dict[str, Any]] | None = None
     """Function to extract attributes from coordinator data."""
 
-
-class SensorGroup(NamedTuple):
-    """Definition of a sensor group."""
-
-    name: str
-    """Display name of the sensor group."""
-
-    description: str
-    """Description of what sensors are in this group."""
-
-    enabled_by_default: bool = True
-    """Whether this group should be enabled by default."""
-
-
-# Sensor group definitions for configuration
-SENSOR_GROUPS: dict[str, SensorGroup] = {
-    "activity": SensorGroup(
-        "Activity & Steps",
-        "Step counts, distance, floors climbed, and daily goals",
-        True,
-    ),
-    "calories": SensorGroup(
-        "Calories & Nutrition",
-        "Calorie tracking including active, burned, consumed, and remaining",
-        True,
-    ),
-    "heart_rate": SensorGroup(
-        "Heart Rate",
-        "Heart rate monitoring including resting, min/max, and HRV status",
-        True,
-    ),
-    "stress": SensorGroup(
-        "Stress",
-        "Stress levels and duration tracking",
-        True,
-    ),
-    "sleep": SensorGroup(
-        "Sleep",
-        "Sleep duration, quality scores, and sleep stages",
-        True,
-    ),
-    "body_battery": SensorGroup(
-        "Body Battery",
-        "Garmin Body Battery energy monitoring",
-        True,
-    ),
-    "body_composition": SensorGroup(
-        "Body Composition",
-        "Weight, BMI, body fat, muscle mass, and bone mass",
-        False,  # Disabled by default - requires compatible scale
-    ),
-    "hydration": SensorGroup(
-        "Hydration",
-        "Water intake tracking and hydration goals",
-        True,
-    ),
-    "intensity": SensorGroup(
-        "Intensity & Activity Time",
-        "Active time, sedentary time, and intensity minutes",
-        True,
-    ),
-    "health_monitoring": SensorGroup(
-        "Health Monitoring",
-        "SpO2 (blood oxygen), respiration rate, and altitude",
-        True,
-    ),
-    "fitness": SensorGroup(
-        "Fitness & Performance",
-        "Fitness age, endurance score, and metabolic age",
-        True,
-    ),
-    "activity_tracking": SensorGroup(
-        "Activity Tracking",
-        "Recent activities, badges, points, and gamification",
-        False,  # Disabled by default - less commonly used
-    ),
-    "advanced": SensorGroup(
-        "Advanced Sensors",
-        "Additional detailed metrics and alternative measurements",
-        False,  # Disabled by default - advanced/redundant sensors
-    ),
-}
 
 
 # Activity & Steps Sensors
@@ -199,7 +117,7 @@ CALORIES_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         state_class=SensorStateClass.TOTAL,
         native_unit_of_measurement="kcal",
         icon="mdi:food",
-        entity_registry_enabled_default=False,
+        
     ),
     GarminConnectSensorEntityDescription(
         key="remainingKilocalories",
@@ -207,7 +125,7 @@ CALORIES_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         state_class=SensorStateClass.TOTAL,
         native_unit_of_measurement="kcal",
         icon="mdi:food",
-        entity_registry_enabled_default=False,
+        
     ),
 )
 
@@ -241,7 +159,7 @@ HEART_RATE_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         native_unit_of_measurement="bpm",
         icon="mdi:heart-pulse",
         entity_category=EntityCategory.DIAGNOSTIC,
-        entity_registry_enabled_default=False,
+        
     ),
     GarminConnectSensorEntityDescription(
         key="hrvStatus",
@@ -276,7 +194,7 @@ STRESS_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         icon="mdi:emoticon",
         value_fn=lambda data: data.get("stressQualifier", "").capitalize(
         ) if data.get("stressQualifier") else None,
-        entity_registry_enabled_default=False,
+        
     ),
     GarminConnectSensorEntityDescription(
         key="totalStressDuration",
@@ -440,7 +358,7 @@ BODY_COMPOSITION_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         icon="mdi:weight-kilogram",
         value_fn=lambda data: round(
             data.get("weight", 0) / 1000, 2) if data.get("weight") else None,
-        entity_registry_enabled_default=False,
+        
     ),
     GarminConnectSensorEntityDescription(
         key="bmi",
@@ -448,7 +366,7 @@ BODY_COMPOSITION_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement="BMI",
         icon="mdi:human",
-        entity_registry_enabled_default=False,
+        
     ),
     GarminConnectSensorEntityDescription(
         key="bodyFat",
@@ -456,7 +374,7 @@ BODY_COMPOSITION_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement=PERCENTAGE,
         icon="mdi:percent",
-        entity_registry_enabled_default=False,
+        
     ),
     GarminConnectSensorEntityDescription(
         key="bodyWater",
@@ -464,7 +382,7 @@ BODY_COMPOSITION_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement=PERCENTAGE,
         icon="mdi:water-percent",
-        entity_registry_enabled_default=False,
+        
     ),
     GarminConnectSensorEntityDescription(
         key="boneMass",
@@ -475,7 +393,7 @@ BODY_COMPOSITION_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         icon="mdi:bone",
         value_fn=lambda data: round(
             data.get("boneMass", 0) / 1000, 2) if data.get("boneMass") else None,
-        entity_registry_enabled_default=False,
+        
     ),
     GarminConnectSensorEntityDescription(
         key="muscleMass",
@@ -486,7 +404,7 @@ BODY_COMPOSITION_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         icon="mdi:dumbbell",
         value_fn=lambda data: round(
             data.get("muscleMass", 0) / 1000, 2) if data.get("muscleMass") else None,
-        entity_registry_enabled_default=False,
+        
     ),
 )
 
@@ -551,7 +469,7 @@ INTENSITY_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         icon="mdi:fire",
         value_fn=lambda data: round(data.get(
             "highlyActiveSeconds", 0) / 60, 2) if data.get("highlyActiveSeconds") else None,
-        entity_registry_enabled_default=False,
+        
     ),
     GarminConnectSensorEntityDescription(
         key="sedentarySeconds",
@@ -570,7 +488,7 @@ INTENSITY_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         state_class=SensorStateClass.TOTAL,
         native_unit_of_measurement=UnitOfTime.MINUTES,
         icon="mdi:flash-alert",
-        entity_registry_enabled_default=False,
+        
     ),
     GarminConnectSensorEntityDescription(
         key="vigorousIntensityMinutes",
@@ -579,7 +497,7 @@ INTENSITY_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         state_class=SensorStateClass.TOTAL,
         native_unit_of_measurement=UnitOfTime.MINUTES,
         icon="mdi:run-fast",
-        entity_registry_enabled_default=False,
+        
     ),
     GarminConnectSensorEntityDescription(
         key="intensityMinutesGoal",
@@ -589,7 +507,7 @@ INTENSITY_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         native_unit_of_measurement=UnitOfTime.MINUTES,
         icon="mdi:target",
         entity_category=EntityCategory.DIAGNOSTIC,
-        entity_registry_enabled_default=False,
+        
     ),
 )
 
@@ -621,7 +539,7 @@ HEALTH_MONITORING_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         translation_key="latest_spo2_time",
         device_class=SensorDeviceClass.TIMESTAMP,
         icon="mdi:clock",
-        entity_registry_enabled_default=False,
+        
     ),
     GarminConnectSensorEntityDescription(
         key="highestRespirationValue",
@@ -629,7 +547,7 @@ HEALTH_MONITORING_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement="brpm",
         icon="mdi:progress-clock",
-        entity_registry_enabled_default=False,
+        
     ),
     GarminConnectSensorEntityDescription(
         key="lowestRespirationValue",
@@ -637,7 +555,7 @@ HEALTH_MONITORING_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement="brpm",
         icon="mdi:progress-clock",
-        entity_registry_enabled_default=False,
+        
     ),
     GarminConnectSensorEntityDescription(
         key="latestRespirationValue",
@@ -645,14 +563,14 @@ HEALTH_MONITORING_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement="brpm",
         icon="mdi:progress-clock",
-        entity_registry_enabled_default=False,
+        
     ),
     GarminConnectSensorEntityDescription(
         key="latestRespirationTimeGMT",
         translation_key="latest_respiration_time",
         device_class=SensorDeviceClass.TIMESTAMP,
         icon="mdi:clock",
-        entity_registry_enabled_default=False,
+        
     ),
     GarminConnectSensorEntityDescription(
         key="averageMonitoringEnvironmentAltitude",
@@ -660,7 +578,7 @@ HEALTH_MONITORING_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         state_class=SensorStateClass.TOTAL,
         native_unit_of_measurement=PERCENTAGE,
         icon="mdi:image-filter-hdr",
-        entity_registry_enabled_default=False,
+        
     ),
 )
 
@@ -700,21 +618,26 @@ FITNESS_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement=UnitOfTime.YEARS,
         icon="mdi:calendar-heart",
-        entity_registry_enabled_default=False,
+        
     ),
     GarminConnectSensorEntityDescription(
         key="enduranceScore",
         translation_key="endurance_score",
         state_class=SensorStateClass.MEASUREMENT,
         icon="mdi:run",
-        entity_registry_enabled_default=False,
+        
+        value_fn=lambda data: data.get("enduranceScore", {}).get("overallScore"),
+        attributes_fn=lambda data: {
+            "last_synced": data.get("lastSyncTimestampGMT"),
+            **{k: v for k, v in data.get("enduranceScore", {}).items() if k != "overallScore"},
+        },
     ),
     GarminConnectSensorEntityDescription(
         key="physiqueRating",
         translation_key="physique_rating",
         state_class=SensorStateClass.MEASUREMENT,
         icon="mdi:numeric",
-        entity_registry_enabled_default=False,
+        
     ),
     GarminConnectSensorEntityDescription(
         key="visceralFat",
@@ -722,7 +645,7 @@ FITNESS_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement=PERCENTAGE,
         icon="mdi:food",
-        entity_registry_enabled_default=False,
+        
     ),
 )
 
@@ -733,40 +656,66 @@ ACTIVITY_TRACKING_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         translation_key="next_alarm",
         device_class=SensorDeviceClass.TIMESTAMP,
         icon="mdi:alarm",
+        value_fn=lambda data: data.get("nextAlarm", [None])[0] if data.get("nextAlarm") else None,
+        attributes_fn=lambda data: {
+            "last_synced": data.get("lastSyncTimestampGMT"),
+            "next_alarms": data.get("nextAlarm"),
+        },
     ),
     GarminConnectSensorEntityDescription(
         key="lastActivity",
         translation_key="last_activity",
         icon="mdi:walk",
-        entity_registry_enabled_default=False,
+        
+        value_fn=lambda data: data.get("lastActivity", {}).get("activityName"),
+        attributes_fn=lambda data: {
+            "last_synced": data.get("lastSyncTimestampGMT"),
+            **data.get("lastActivity", {}),
+        },
     ),
     GarminConnectSensorEntityDescription(
         key="lastActivities",
         translation_key="last_activities",
         state_class=SensorStateClass.TOTAL,
         icon="mdi:numeric",
-        entity_registry_enabled_default=False,
+        
+        value_fn=lambda data: len(data.get("lastActivities", [])),
+        attributes_fn=lambda data: {
+            "last_synced": data.get("lastSyncTimestampGMT"),
+            "last_activities": sorted(
+                data.get("lastActivities", []),
+                key=lambda x: x.get("activityId", 0),
+            )[-5:],
+        },
     ),
     GarminConnectSensorEntityDescription(
         key="badges",
         translation_key="badges",
         state_class=SensorStateClass.TOTAL,
         icon="mdi:medal",
-        entity_registry_enabled_default=False,
+        
+        value_fn=lambda data: len(data.get("badges", [])),
+        attributes_fn=lambda data: {
+            "last_synced": data.get("lastSyncTimestampGMT"),
+            "badges": sorted(
+                data.get("badges", []),
+                key=lambda x: x.get("badgeEarnedDate", ""),
+            )[-10:],
+        },
     ),
     GarminConnectSensorEntityDescription(
         key="userPoints",
         translation_key="user_points",
         state_class=SensorStateClass.TOTAL,
         icon="mdi:counter",
-        entity_registry_enabled_default=False,
+        
     ),
     GarminConnectSensorEntityDescription(
         key="userLevel",
         translation_key="user_level",
         state_class=SensorStateClass.TOTAL,
         icon="mdi:star-four-points-circle",
-        entity_registry_enabled_default=False,
+        
     ),
 )
 
@@ -778,7 +727,7 @@ ADDITIONAL_HEART_RATE_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] 
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement="bpm",
         icon="mdi:heart-pulse",
-        entity_registry_enabled_default=False,
+        
     ),
     GarminConnectSensorEntityDescription(
         key="maxAvgHeartRate",
@@ -786,14 +735,14 @@ ADDITIONAL_HEART_RATE_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] 
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement="bpm",
         icon="mdi:heart-pulse",
-        entity_registry_enabled_default=False,
+        
     ),
     GarminConnectSensorEntityDescription(
         key="abnormalHeartRateAlertsCount",
         translation_key="abnormal_hr_alerts",
         state_class=SensorStateClass.TOTAL,
         icon="mdi:heart-pulse",
-        entity_registry_enabled_default=False,
+        
     ),
 )
 
@@ -805,7 +754,7 @@ STRESS_PERCENTAGE_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement=PERCENTAGE,
         icon="mdi:flash-alert",
-        entity_registry_enabled_default=False,
+        
     ),
     GarminConnectSensorEntityDescription(
         key="restStressPercentage",
@@ -813,7 +762,7 @@ STRESS_PERCENTAGE_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement=PERCENTAGE,
         icon="mdi:flash-alert",
-        entity_registry_enabled_default=False,
+        
     ),
     GarminConnectSensorEntityDescription(
         key="activityStressPercentage",
@@ -821,7 +770,7 @@ STRESS_PERCENTAGE_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement=PERCENTAGE,
         icon="mdi:flash-alert",
-        entity_registry_enabled_default=False,
+        
     ),
     GarminConnectSensorEntityDescription(
         key="uncategorizedStressPercentage",
@@ -829,7 +778,7 @@ STRESS_PERCENTAGE_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement=PERCENTAGE,
         icon="mdi:flash-alert",
-        entity_registry_enabled_default=False,
+        
     ),
     GarminConnectSensorEntityDescription(
         key="lowStressPercentage",
@@ -837,7 +786,7 @@ STRESS_PERCENTAGE_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement=PERCENTAGE,
         icon="mdi:flash-alert",
-        entity_registry_enabled_default=False,
+        
     ),
     GarminConnectSensorEntityDescription(
         key="mediumStressPercentage",
@@ -845,7 +794,7 @@ STRESS_PERCENTAGE_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement=PERCENTAGE,
         icon="mdi:flash-alert",
-        entity_registry_enabled_default=False,
+        
     ),
     GarminConnectSensorEntityDescription(
         key="highStressPercentage",
@@ -853,7 +802,7 @@ STRESS_PERCENTAGE_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement=PERCENTAGE,
         icon="mdi:flash-alert",
-        entity_registry_enabled_default=False,
+        
     ),
 )
 
@@ -878,7 +827,7 @@ ADDITIONAL_STRESS_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         icon="mdi:flash-alert",
         value_fn=lambda data: round(
             data.get("stressDuration", 0) / 60, 2) if data.get("stressDuration") else None,
-        entity_registry_enabled_default=False,
+        
     ),
 )
 
@@ -891,7 +840,7 @@ ADDITIONAL_DISTANCE_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = 
         state_class=SensorStateClass.TOTAL,
         native_unit_of_measurement=UnitOfLength.METERS,
         icon="mdi:stairs-up",
-        entity_registry_enabled_default=False,
+        
     ),
     GarminConnectSensorEntityDescription(
         key="floorsDescendedInMeters",
@@ -900,7 +849,7 @@ ADDITIONAL_DISTANCE_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = 
         state_class=SensorStateClass.TOTAL,
         native_unit_of_measurement=UnitOfLength.METERS,
         icon="mdi:stairs-down",
-        entity_registry_enabled_default=False,
+        
     ),
 )
 
@@ -911,21 +860,21 @@ WELLNESS_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         translation_key="wellness_start_time",
         device_class=SensorDeviceClass.TIMESTAMP,
         icon="mdi:clock",
-        entity_registry_enabled_default=False,
+        
     ),
     GarminConnectSensorEntityDescription(
         key="wellnessEndTimeLocal",
         translation_key="wellness_end_time",
         device_class=SensorDeviceClass.TIMESTAMP,
         icon="mdi:clock",
-        entity_registry_enabled_default=False,
+        
     ),
     GarminConnectSensorEntityDescription(
         key="wellnessDescription",
         translation_key="wellness_description",
         state_class=SensorStateClass.TOTAL,
         icon="mdi:text",
-        entity_registry_enabled_default=False,
+        
     ),
     GarminConnectSensorEntityDescription(
         key="wellnessDistanceMeters",
@@ -934,7 +883,7 @@ WELLNESS_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         state_class=SensorStateClass.TOTAL,
         native_unit_of_measurement=UnitOfLength.METERS,
         icon="mdi:walk",
-        entity_registry_enabled_default=False,
+        
     ),
     GarminConnectSensorEntityDescription(
         key="wellnessActiveKilocalories",
@@ -942,7 +891,7 @@ WELLNESS_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         state_class=SensorStateClass.TOTAL,
         native_unit_of_measurement="kcal",
         icon="mdi:fire",
-        entity_registry_enabled_default=False,
+        
     ),
     GarminConnectSensorEntityDescription(
         key="wellnessKilocalories",
@@ -950,7 +899,7 @@ WELLNESS_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         state_class=SensorStateClass.TOTAL,
         native_unit_of_measurement="kcal",
         icon="mdi:fire",
-        entity_registry_enabled_default=False,
+        
     ),
 )
 
@@ -976,63 +925,4 @@ ALL_SENSOR_DESCRIPTIONS: tuple[GarminConnectSensorEntityDescription, ...] = (
 )
 
 
-# Mapping of sensor groups to their sensor tuples
-SENSOR_GROUP_MAPPING: dict[str, tuple[GarminConnectSensorEntityDescription, ...]] = {
-    "activity": ACTIVITY_SENSORS,
-    "calories": CALORIES_SENSORS,
-    "heart_rate": HEART_RATE_SENSORS,
-    "stress": STRESS_SENSORS,
-    "sleep": SLEEP_SENSORS,
-    "body_battery": BODY_BATTERY_SENSORS,
-    "body_composition": BODY_COMPOSITION_SENSORS,
-    "hydration": HYDRATION_SENSORS,
-    "intensity": INTENSITY_SENSORS,
-    "health_monitoring": HEALTH_MONITORING_SENSORS,
-    "fitness": FITNESS_SENSORS,
-    "activity_tracking": ACTIVITY_TRACKING_SENSORS,
-    "advanced": (
-        *ADDITIONAL_HEART_RATE_SENSORS,
-        *ADDITIONAL_STRESS_SENSORS,
-        *STRESS_PERCENTAGE_SENSORS,
-        *ADDITIONAL_DISTANCE_SENSORS,
-        *WELLNESS_SENSORS,
-    ),
-}
-
-
-def get_sensors_for_groups(
-    enabled_groups: set[str] | None = None,
-) -> tuple[GarminConnectSensorEntityDescription, ...]:
-    """
-    Get sensor descriptions based on enabled sensor groups.
-    
-    Args:
-        enabled_groups: Set of enabled group IDs. If None, returns all sensors.
-        
-    Returns:
-        Tuple of sensor descriptions for the enabled groups.
-    """
-    if enabled_groups is None:
-        return ALL_SENSOR_DESCRIPTIONS
-    
-    sensors = []
-    for group_id in enabled_groups:
-        if group_id in SENSOR_GROUP_MAPPING:
-            sensors.extend(SENSOR_GROUP_MAPPING[group_id])
-    
-    return tuple(sensors)
-
-
-def get_default_enabled_groups() -> set[str]:
-    """
-    Get the set of sensor groups that should be enabled by default.
-    
-    Returns:
-        Set of group IDs that are enabled by default.
-    """
-    return {
-        group_id
-        for group_id, group in SENSOR_GROUPS.items()
-        if group.enabled_by_default
-    }
 

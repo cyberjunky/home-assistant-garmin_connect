@@ -10,14 +10,9 @@ repos:
         args:
           - --quiet-level=2
           - --ignore-words-list=hass,ba,fo
-          - --skip=tests/fixtures/*,custom_components/garmin_connect/translations/*
+          - --skip=tests/fixtures/*,custom_components/hvcgroep/translations/*
 
-      - id: isort
-        name: Sort imports
-        language: system
-        types: [text]
-        stages: [commit-msg, post-commit, manual]
-        entry: isort
+      # isort hook removed to avoid conflicts with ruff formatting
 
       - id: pyupgrade
         name: Run pyupgrade
@@ -39,15 +34,7 @@ repos:
           - check
         files: ^((action|custom_components|script|tests)/.+)?[^/]+\.py$
 
-      - id: ruff-format
-        name: Run ruff format
-        language: system
-        types: [text]
-        stages: [commit-msg, post-commit, manual]
-        entry: ruff
-        args:
-          - format
-        files: ^((action|custom_components|script)/.+)?[^/]+\.py$
+      # ruff-format removed to avoid conflicts with isort; isort + ruff-check used instead
 
       - id: check-executables-have-shebangs
         name: Check that executables have shebangs

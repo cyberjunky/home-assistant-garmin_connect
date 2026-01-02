@@ -1,19 +1,15 @@
 set_active_gear:
-  name: Set active gear for activity
-  description: Set active gear for activity.
+  name: Set active gear
+  description: Set gear as active/default for an activity type.
+  target:
+    entity:
+      integration: garmin_connect
+      domain: sensor
   fields:
-    entity_id:
-      name: entity
-      description: entity
-      required: true
-      selector:
-        entity:
-          integration: garmin_connect
-          device_class: garmin_gear
     activity_type:
+      name: Activity type
+      description: The activity type for which to set the gear as default.
       required: true
-      name: activity type
-      description: garmin activity type
       example: running
       default: running
       selector:
@@ -22,13 +18,13 @@ set_active_gear:
             - running
             - cycling
             - hiking
-            - other
             - walking
             - swimming
+            - other
     setting:
+      name: Setting
+      description: The gear setting to apply.
       required: true
-      name: setting
-      description: gear setting to apply
       default: set this as default, unset others
       selector:
         select:
@@ -38,117 +34,202 @@ set_active_gear:
             - unset default
 
 add_body_composition:
-  name: Adds updated body composition metrics
-  description: Adds updated body composition metrics.
+  name: Add body composition
+  description: Add body composition metrics to Garmin Connect.
+  target:
+    entity:
+      integration: garmin_connect
+      domain: sensor
   fields:
-    entity_id:
-      name: entity
-      description: entity
-      required: true
-      selector:
-        entity:
-          integration: garmin_connect
-          device_class: weight
     weight:
-      required: true
       name: Weight
-      description: Weight in KG
+      description: Weight in kilograms.
+      required: true
       example: 82.3
+      selector:
+        number:
+          min: 0
+          max: 500
+          step: 0.1
+          unit_of_measurement: kg
     timestamp:
-      required: false
       name: Timestamp
-      description: Datetime string of when the measurements were recorded. Defaults to now.
-      example: 2023-12-30T07:34:00
+      description: When the measurement was recorded (defaults to now).
+      required: false
+      example: "2024-01-15T08:30:00"
+      selector:
+        text:
     bmi:
+      name: BMI
+      description: Body Mass Index based on weight and height.
       required: false
-      name: BMI (Body Mass Index)
-      description: Body mass index is based on weight and height.
       example: 24.7
+      selector:
+        number:
+          min: 0
+          max: 100
+          step: 0.1
     percent_fat:
+      name: Body fat percentage
+      description: Percentage of body fat.
       required: false
-      name: Percent Fat
-      description: Percent body fat
       example: 23.6
+      selector:
+        number:
+          min: 0
+          max: 100
+          step: 0.1
+          unit_of_measurement: "%"
     percent_hydration:
+      name: Hydration percentage
+      description: Percentage of body hydration.
       required: false
-      name: Percent Hydration
-      description: Percent body hydration
       example: 51.2
+      selector:
+        number:
+          min: 0
+          max: 100
+          step: 0.1
+          unit_of_measurement: "%"
     visceral_fat_mass:
+      name: Visceral fat mass
+      description: Estimated mass of visceral fat in kilograms.
       required: false
-      name: Visceral Fat Mass
-      description: Estimated mass of visceral fat in KG
-      example: 45.3
+      example: 2.5
+      selector:
+        number:
+          min: 0
+          max: 50
+          step: 0.1
+          unit_of_measurement: kg
     bone_mass:
+      name: Bone mass
+      description: Estimated mass of bones in kilograms.
       required: false
-      name: Bone Mass
-      description: Estimated mass of bones in KG
-      example: 10.1
+      example: 3.2
+      selector:
+        number:
+          min: 0
+          max: 20
+          step: 0.1
+          unit_of_measurement: kg
     muscle_mass:
+      name: Muscle mass
+      description: Estimated mass of muscle in kilograms.
       required: false
-      name: Muscle Mass
-      description: Estimated mass of muscle in KG
-      example: 15.2
+      example: 35.5
+      selector:
+        number:
+          min: 0
+          max: 100
+          step: 0.1
+          unit_of_measurement: kg
     basal_met:
+      name: Basal metabolism
+      description: Basal metabolic rate in kcal.
       required: false
-      name: Basel Metabolism
-      description: Basel metabolism
       example: 1900
+      selector:
+        number:
+          min: 0
+          max: 5000
+          step: 1
+          unit_of_measurement: kcal
     active_met:
+      name: Active metabolism
+      description: Active metabolic rate in kcal.
       required: false
-      name: Active Metabolism
-      description: Active metabolism
       example: 840
+      selector:
+        number:
+          min: 0
+          max: 5000
+          step: 1
+          unit_of_measurement: kcal
     physique_rating:
+      name: Physique rating
+      description: Body physique rating (1-9 scale).
       required: false
-      name: Physique Rating
-      description: Physique Rating
-      example: 28
+      example: 5
+      selector:
+        number:
+          min: 1
+          max: 9
+          step: 1
     metabolic_age:
+      name: Metabolic age
+      description: Estimated metabolic age in years.
       required: false
-      name: Metabolic Age
-      description: Metabolic Age
       example: 37
+      selector:
+        number:
+          min: 1
+          max: 120
+          step: 1
+          unit_of_measurement: years
     visceral_fat_rating:
+      name: Visceral fat rating
+      description: Visceral fat rating (1-59 scale).
       required: false
-      name: Visceral Fat Rating
-      description: Visceral Fat Rating
       example: 10
+      selector:
+        number:
+          min: 1
+          max: 59
+          step: 1
 
 add_blood_pressure:
-  name: Adds updated blood pressure metrics
-  description: Adds updated blood pressure metrics.
+  name: Add blood pressure
+  description: Add blood pressure measurement to Garmin Connect.
+  target:
+    entity:
+      integration: garmin_connect
+      domain: sensor
   fields:
-    entity_id:
-      name: entity
-      description: entity
-      required: true
-      selector:
-        entity:
-          integration: garmin_connect
-          device_class: min_heart_rate
     systolic:
-      required: true
       name: Systolic
-      description: Systolic value
+      description: Systolic blood pressure value.
+      required: true
       example: 120
+      selector:
+        number:
+          min: 60
+          max: 250
+          step: 1
+          unit_of_measurement: mmHg
     diastolic:
-      required: true
       name: Diastolic
-      description: Diastolic value
-      example: 80
-    pulse:
+      description: Diastolic blood pressure value.
       required: true
+      example: 80
+      selector:
+        number:
+          min: 40
+          max: 150
+          step: 1
+          unit_of_measurement: mmHg
+    pulse:
       name: Pulse
-      description: Pulse
+      description: Pulse rate.
+      required: true
       example: 60
+      selector:
+        number:
+          min: 30
+          max: 220
+          step: 1
+          unit_of_measurement: bpm
     timestamp:
-      required: false
       name: Timestamp
-      description: Datetime string of when the measurements were recorded. Defaults to now.
-      example: 2023-12-30T07:34:00
-    notes:
+      description: When the measurement was recorded (defaults to now).
       required: false
+      example: "2024-01-15T08:30:00"
+      selector:
+        text:
+    notes:
       name: Notes
-      description: Add notes to the measurement
-      example: 'Measured with Beurer BC54'
+      description: Additional notes for the measurement.
+      required: false
+      example: "Measured with Beurer BC54"
+      selector:
+        text:

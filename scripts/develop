@@ -4,20 +4,26 @@ set -e
 
 cd "$(dirname "$0")/.."
 
+# Determine the Home Assistant command to use
+if command -v hass &> /dev/null; then
+  HASS_CMD="hass"
+else
+  HASS_CMD="python3 -m homeassistant"
+fi
+
 if [ ! -f "${PWD}/config/configuration.yaml" ]; then
   mkdir -p "${PWD}/config"
-  hass --config "${PWD}/config" --script ensure_config
+  ${HASS_CMD} --config "${PWD}/config" --script ensure_config
   echo "Updating default configuration."
   echo "
 logger:
   default: info
   logs:
-    custom_components.garmin_connect: debug
-" >> "${PWD}/config/configuration.yaml"
+    custom_components.garmin_connect: debug"
 fi
 
 # Set the python path to include our custom_components directory
 export PYTHONPATH="${PYTHONPATH}:${PWD}/custom_components"
 
 # Start Home Assistant
-hass --config "${PWD}/config" --debug
+${HASS_CMD} --config "${PWD}/config" --debug

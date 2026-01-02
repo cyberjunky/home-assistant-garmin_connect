@@ -1,9 +1,6 @@
-# Translation files
-custom_components/garmin_connect/translations
-!custom_components/garmin_connect/translations/en.json
-
-# Home Assistant configuration
-config
+# Custom
+config/*
+!config/configuration.yaml
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

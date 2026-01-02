@@ -24,3 +24,6 @@ updates:
       interval: weekly
       time: "06:00"
     open-pull-requests-limit: 10
+    ignore:
+      # Dependabot should not update Home Assistant as that should match the homeassistant key in hacs.json
+      - dependency-name: "homeassistant"

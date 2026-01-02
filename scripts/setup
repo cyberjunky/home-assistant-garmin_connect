@@ -9,4 +9,9 @@ scripts/install/pip_packages setuptools wheel
 scripts/install/pip_packages --requirement requirements_lint.txt
 scripts/install/core
 
+# Fix pycares compatibility issue with aiodns 3.5.0 on Python 3.13
+# Home Assistant requires aiodns==3.5.0, but pycares 5.0.0 is incompatible
+# Downgrade to pycares 4.11.0 which is compatible
+python3 -m pip install --upgrade "pycares<5,>=4.9.0" 2>/dev/null || true
+
 pre-commit  install --config .github/pre-commit-config.yaml

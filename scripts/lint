@@ -4,7 +4,36 @@ set -e
 
 cd "$(dirname "$0")/.."
 
-pre-commit install-hooks --config .github/pre-commit-config.yaml;
-pre-commit run --hook-stage manual --all-files --config .github/pre-commit-config.yaml;
+# Activate local virtual environment if present (so hooks use .venv executables)
+if [ -f ".venv/bin/activate" ]; then
+	# shellcheck disable=SC1091
+	. .venv/bin/activate
+fi
 
-vulture . --min-confidence 75 --ignore-names policy
+pre-commit install-hooks --config .github/pre-commit-config.yaml;
+# Run pre-commit; if hooks modify files they return non-zero — retry a few times
+set +e
+max_attempts=3
+attempt=1
+rc=0
+while [ $attempt -le $max_attempts ]; do
+	pre-commit run --hook-stage manual --all-files --config .github/pre-commit-config.yaml
+	rc=$?
+	if [ $rc -eq 0 ]; then
+		break
+	fi
+	if [ $attempt -lt $max_attempts ]; then
+		echo "pre-commit modified files or reported issues; re-running (attempt $attempt/$max_attempts)"
+		git add -A || true
+		attempt=$((attempt+1))
+		continue
+	fi
+	break
+done
+set -e
+if [ $rc -ne 0 ]; then
+	echo "pre-commit failed after $max_attempts attempts (exit code: $rc)"
+	exit $rc
+fi
+
+vulture . --min-confidence 75 --ignore-names policy --exclude .venv

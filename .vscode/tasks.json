@@ -4,25 +4,36 @@
       "command": "scripts/develop",
       "label": "Run Home Assistant",
       "problemMatcher": [],
-      "type": "shell"
+      "type": "shell",
+      "detail": "Runs Home Assistant"
     },
     {
       "command": "scripts/setup",
       "label": "Upgrade environment",
       "problemMatcher": [],
-      "type": "shell"
+      "type": "shell",
+      "detail": "Upgrades the environment"
     },
     {
       "command": "scripts/test",
       "label": "Run tests",
       "problemMatcher": [],
-      "type": "shell"
+      "type": "shell",
+      "detail": "Runs tests"
     },
     {
       "command": "scripts/lint",
       "label": "Run lint checks",
       "problemMatcher": [],
-      "type": "shell"
+      "type": "shell",
+      "detail": "Runs lint checks"
+    },
+    {
+      "label": "Rebuild and Reopen Container (Instructions)",
+      "type": "shell",
+      "command": "echo 'To rebuild container: Press Ctrl+Shift+P and run Dev Containers: Rebuild and Reopen in Container'",
+      "problemMatcher": [],
+      "detail": "Prints instructions for rebuilding the container"
     }
   ],
   "version": "2.0.0"
