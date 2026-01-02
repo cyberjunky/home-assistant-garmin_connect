@@ -1,0 +1,38 @@
+# Garmin Connect Quality Scale
+
+# This file tracks the integration quality scale for Home Assistant Core.
+# See: https://developers.home-assistant.io/docs/core/integration-quality-scale/
+
+rules:
+  # Bronze tier (minimum for Core)
+  config-flow: done
+  unique-config-entry: done
+  entity-unique-id: done
+  has-entity-name: done
+  appropriate-polling: done
+  action-exceptions: todo
+  test-before-configure: done
+  runtime-data: todo
+
+  # Silver tier
+  reauthentication-flow: done
+  entity-translations: done
+  parallel-updates: todo
+  config-entry-unloading: done
+  log-when-unavailable: todo
+  entity-unavailable: todo
+
+  # Gold tier
+  entity-device-class: done
+  reconfiguration-flow: todo
+  dynamic-devices: exempt  # Single cloud account, not device-based
+  discovery: exempt  # Cloud service, not discoverable
+  diagnostics: todo
+  exception-translations: todo
+  icon-translations: todo
+  stale-devices: exempt  # Single device per config entry
+
+  # Platinum tier
+  async-dependency: todo
+  inject-websession: todo
+  strict-typing: todo

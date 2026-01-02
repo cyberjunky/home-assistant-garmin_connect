@@ -2,7 +2,7 @@
     "config": {
         "step": {
             "user": {
-                "title": "Enter your Garmin Connect credentials",
+                "title": "Garmin Connect login",
                 "data": {
                     "password": "Password",
                     "username": "Username"
@@ -10,13 +10,13 @@
                 "description": "Enter your credentials."
             },
             "mfa": {
-                "title": "Enter your Garmin Connect MFA code",
+                "title": "Garmin Connect MFA code",
                 "data": {
                     "mfa_code": "MFA code (6-digits)"
                 }
             },
             "reauth_confirm": {
-                "title": "Enter your Garmin Connect credentials",
+                "title": "Garmin Connect reauthentication",
                 "data": {
                     "password": "Password",
                     "username": "Username"

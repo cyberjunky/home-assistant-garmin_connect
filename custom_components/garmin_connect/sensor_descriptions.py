@@ -11,7 +11,6 @@ from homeassistant.components.sensor import (
 )
 from homeassistant.const import (
     PERCENTAGE,
-    EntityCategory,
     UnitOfLength,
     UnitOfMass,
     UnitOfTime,
@@ -46,7 +45,6 @@ ACTIVITY_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         state_class=SensorStateClass.TOTAL,
         native_unit_of_measurement="steps",
         icon="mdi:target",
-        entity_category=EntityCategory.DIAGNOSTIC,
     ),
     GarminConnectSensorEntityDescription(
         key="totalDistanceMeters",
@@ -76,7 +74,6 @@ ACTIVITY_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         state_class=SensorStateClass.TOTAL,
         native_unit_of_measurement="floors",
         icon="mdi:target",
-        entity_category=EntityCategory.DIAGNOSTIC,
     ),
 )
 
@@ -102,7 +99,6 @@ CALORIES_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         state_class=SensorStateClass.TOTAL,
         native_unit_of_measurement="kcal",
         icon="mdi:fire-circle",
-        entity_category=EntityCategory.DIAGNOSTIC,
     ),
     GarminConnectSensorEntityDescription(
         key="burnedKilocalories",
@@ -158,7 +154,6 @@ HEART_RATE_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement="bpm",
         icon="mdi:heart-pulse",
-        entity_category=EntityCategory.DIAGNOSTIC,
 
     ),
     GarminConnectSensorEntityDescription(
@@ -423,7 +418,6 @@ HYDRATION_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement=UnitOfVolume.MILLILITERS,
         icon="mdi:water-check",
-        entity_category=EntityCategory.DIAGNOSTIC,
     ),
     GarminConnectSensorEntityDescription(
         key="dailyAverageInML",
@@ -506,7 +500,6 @@ INTENSITY_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         state_class=SensorStateClass.TOTAL,
         native_unit_of_measurement=UnitOfTime.MINUTES,
         icon="mdi:target",
-        entity_category=EntityCategory.DIAGNOSTIC,
 
     ),
 )
