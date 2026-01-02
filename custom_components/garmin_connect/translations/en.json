@@ -43,6 +43,18 @@
             "daily_step_goal": {
                 "name": "Daily step goal"
             },
+            "yesterday_steps": {
+                "name": "Yesterday steps"
+            },
+            "weekly_step_avg": {
+                "name": "Weekly step average"
+            },
+            "yesterday_distance": {
+                "name": "Yesterday distance"
+            },
+            "weekly_distance_avg": {
+                "name": "Weekly distance average"
+            },
             "total_distance": {
                 "name": "Total distance"
             },
@@ -102,6 +114,18 @@
             },
             "hrv_status": {
                 "name": "HRV status"
+            },
+            "hrv_weekly_avg": {
+                "name": "HRV weekly average"
+            },
+            "hrv_last_night_avg": {
+                "name": "HRV last night average"
+            },
+            "hrv_last_night_5min_high": {
+                "name": "HRV last night 5-min high"
+            },
+            "hrv_baseline": {
+                "name": "HRV baseline"
             },
             "avg_stress_level": {
                 "name": "Avg stress level"
@@ -171,6 +195,18 @@
             },
             "sleep_score": {
                 "name": "Sleep score"
+            },
+            "deep_sleep": {
+                "name": "Deep sleep"
+            },
+            "light_sleep": {
+                "name": "Light sleep"
+            },
+            "rem_sleep": {
+                "name": "REM sleep"
+            },
+            "awake_sleep": {
+                "name": "Awake during sleep"
             },
             "body_battery_most_recent": {
                 "name": "Body battery (most recent)"

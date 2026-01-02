@@ -25,12 +25,14 @@ You need a Garmin Connect account with at least one Garmin device that syncs dat
 
 ## Sensors
 
-This integration provides **100+ sensors** covering various health and fitness metrics. Sensors are grouped into the following categories:
+This integration provides **110+ sensors** covering various health and fitness metrics. Sensors are grouped into the following categories:
 
 ### Activity & Steps
 
 - **Total Steps** - Daily step count
 - **Daily Step Goal** - Your configured step target
+- **Yesterday Steps/Distance** - Previous day's complete totals
+- **Weekly Step/Distance Avg** - 7-day averages
 - **Total Distance** - Distance walked/run
 - **Floors Ascended/Descended** - Floors climbed
 
@@ -45,6 +47,9 @@ This integration provides **100+ sensors** covering various health and fitness m
 - **Resting Heart Rate** - Daily resting HR
 - **Min/Max Heart Rate** - Daily HR range
 - **Last 7 Days Avg HR** - Weekly average
+- **HRV Weekly Average** - 7-day HRV average (ms)
+- **HRV Last Night Average** - Last night's HRV (ms)
+- **HRV Baseline** - Personal HRV baseline with range
 
 ### Stress & Recovery
 
@@ -56,6 +61,9 @@ This integration provides **100+ sensors** covering various health and fitness m
 - **Sleep Score** - Overall sleep quality score
 - **Sleep Duration** - Time asleep
 - **Awake Duration** - Time awake during sleep
+- **Deep Sleep** - Time in deep sleep
+- **Light Sleep** - Time in light sleep
+- **REM Sleep** - Time in REM sleep
 
 ### Body Battery
 

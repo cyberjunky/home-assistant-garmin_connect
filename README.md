@@ -8,7 +8,7 @@
 
 # Garmin Connect
 
-Integrate your Garmin Connect fitness data with Home Assistant. Access **100+ sensors** covering health metrics, activities, body composition, and gear tracking—plus add measurements directly to Garmin Connect via services.
+Integrate your Garmin Connect fitness data with Home Assistant. Access **110+ sensors** covering health metrics, activities, body composition, and gear tracking—plus add measurements directly to Garmin Connect via services.
 
 ## Supported Features
 
@@ -29,6 +29,8 @@ Sensor values depend on your Garmin devices and connected apps.
 |--------|-------------|
 | Total Steps | Daily step count |
 | Daily Step Goal | Your configured step target |
+| Yesterday Steps/Distance | Previous day's complete totals |
+| Weekly Step/Distance Avg | 7-day averages |
 | Total Distance | Distance walked/run in meters |
 | Floors Ascended/Descended | Floors climbed |
 
@@ -46,6 +48,8 @@ Sensor values depend on your Garmin devices and connected apps.
 | Resting Heart Rate | Daily resting HR |
 | Min/Max Heart Rate | Daily HR range |
 | Last 7 Days Avg HR | Weekly average |
+| HRV Weekly/Nightly Avg | Heart rate variability metrics |
+| HRV Baseline | Personal HRV baseline |
 
 ### Stress & Recovery
 
@@ -60,6 +64,9 @@ Sensor values depend on your Garmin devices and connected apps.
 |--------|-------------|
 | Sleep Score | Overall sleep quality score |
 | Sleep/Awake Duration | Time asleep and awake |
+| Deep Sleep | Time in deep sleep |
+| Light Sleep | Time in light sleep |
+| REM Sleep | Time in REM sleep |
 
 ### Body Battery
 

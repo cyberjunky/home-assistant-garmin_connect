@@ -96,9 +96,18 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
         gear_defaults = {}
         activity_types = {}
         last_activities = []
+        daily_steps: list[dict[str, Any]] = []
+        yesterday_steps = None
+        yesterday_distance = None
+        weekly_step_avg = None
+        weekly_distance_avg = None
         sleep_data = {}
         sleep_score = None
         sleep_time_seconds = None
+        deep_sleep_seconds = None
+        light_sleep_seconds = None
+        rem_sleep_seconds = None
+        awake_sleep_seconds = None
         hrv_data = {}
         hrv_status = {"status": "unknown"}
         endurance_data = {}
@@ -112,6 +121,29 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
             summary = await self.hass.async_add_executor_job(
                 self.api.get_user_summary, today.isoformat()
             )
+
+            # Fetch last 7 days steps for weekly average and yesterday's final count
+            week_ago = (today - timedelta(days=7)).isoformat()
+            yesterday = (today - timedelta(days=1)).isoformat()
+            daily_steps = await self.hass.async_add_executor_job(
+                self.api.get_daily_steps, week_ago, yesterday
+            )
+
+            # Process daily steps for yesterday values and weekly averages
+            if daily_steps:
+                # Yesterday is the last item in the list
+                if daily_steps:
+                    yesterday_data = daily_steps[-1]
+                    yesterday_steps = yesterday_data.get("totalSteps")
+                    yesterday_distance = yesterday_data.get("totalDistance")
+
+                # Calculate weekly averages
+                total_steps = sum(d.get("totalSteps", 0) for d in daily_steps)
+                total_distance = sum(d.get("totalDistance", 0) for d in daily_steps)
+                days_count = len(daily_steps)
+                if days_count > 0:
+                    weekly_step_avg = round(total_steps / days_count)
+                    weekly_distance_avg = round(total_distance / days_count)
 
             body = await self.hass.async_add_executor_job(
                 self.api.get_body_composition, today.isoformat()
@@ -163,13 +195,11 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
                 menstrual_data = await self.hass.async_add_executor_job(
                     self.api.get_menstrual_data_for_date, today.isoformat()
                 )
-                _LOGGER.debug("Menstrual data: %s", menstrual_data)
                 # API returns None when not enabled - convert to empty dict
                 if menstrual_data is None:
                     menstrual_data = {}
-            except Exception as err:  # pylint: disable=broad-except
+            except Exception:  # pylint: disable=broad-except
                 # Menstrual data not available for this user
-                _LOGGER.debug("Menstrual data error: %s", err)
                 menstrual_data = {}
 
         except (
@@ -248,6 +278,26 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
             pass
 
         try:
+            deep_sleep_seconds = sleep_data["dailySleepDTO"]["deepSleepSeconds"]
+        except KeyError:
+            pass
+
+        try:
+            light_sleep_seconds = sleep_data["dailySleepDTO"]["lightSleepSeconds"]
+        except KeyError:
+            pass
+
+        try:
+            rem_sleep_seconds = sleep_data["dailySleepDTO"]["remSleepSeconds"]
+        except KeyError:
+            pass
+
+        try:
+            awake_sleep_seconds = sleep_data["dailySleepDTO"]["awakeSleepSeconds"]
+        except KeyError:
+            pass
+
+        try:
             if hrv_data and "hrvSummary" in hrv_data:
                 hrv_status = hrv_data["hrvSummary"]
         except KeyError:
@@ -269,6 +319,14 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
             "gearDefaults": gear_defaults,
             "sleepScore": sleep_score,
             "sleepTimeSeconds": sleep_time_seconds,
+            "deepSleepSeconds": deep_sleep_seconds,
+            "lightSleepSeconds": light_sleep_seconds,
+            "remSleepSeconds": rem_sleep_seconds,
+            "awakeSleepSeconds": awake_sleep_seconds,
+            "yesterdaySteps": yesterday_steps,
+            "yesterdayDistance": yesterday_distance,
+            "weeklyStepAvg": weekly_step_avg,
+            "weeklyDistanceAvg": weekly_distance_avg,
             "hrvStatus": hrv_status,
             "enduranceScore": endurance_status,
             **fitnessage_data,

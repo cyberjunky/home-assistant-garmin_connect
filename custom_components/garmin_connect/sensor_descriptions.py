@@ -50,6 +50,36 @@ ACTIVITY_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         icon="mdi:target",
     ),
     GarminConnectSensorEntityDescription(
+        key="yesterdaySteps",
+        translation_key="yesterday_steps",
+        state_class=SensorStateClass.TOTAL,
+        native_unit_of_measurement="steps",
+        icon="mdi:walk",
+    ),
+    GarminConnectSensorEntityDescription(
+        key="weeklyStepAvg",
+        translation_key="weekly_step_avg",
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement="steps",
+        icon="mdi:chart-line",
+    ),
+    GarminConnectSensorEntityDescription(
+        key="yesterdayDistance",
+        translation_key="yesterday_distance",
+        device_class=SensorDeviceClass.DISTANCE,
+        state_class=SensorStateClass.TOTAL,
+        native_unit_of_measurement=UnitOfLength.METERS,
+        icon="mdi:map-marker-distance",
+    ),
+    GarminConnectSensorEntityDescription(
+        key="weeklyDistanceAvg",
+        translation_key="weekly_distance_avg",
+        device_class=SensorDeviceClass.DISTANCE,
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=UnitOfLength.METERS,
+        icon="mdi:chart-line",
+    ),
+    GarminConnectSensorEntityDescription(
         key="totalDistanceMeters",
         translation_key="total_distance",
         device_class=SensorDeviceClass.DISTANCE,
@@ -167,6 +197,40 @@ HEART_RATE_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
             "status", "").capitalize() if data.get("hrvStatus") else None,
         attributes_fn=lambda data: {k: v for k, v in data.get(
             "hrvStatus", {}).items() if k != "status"} if data.get("hrvStatus") else {},
+    ),
+    GarminConnectSensorEntityDescription(
+        key="hrvWeeklyAvg",
+        translation_key="hrv_weekly_avg",
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement="ms",
+        icon="mdi:heart-pulse",
+        value_fn=lambda data: data.get("hrvStatus", {}).get("weeklyAvg"),
+    ),
+    GarminConnectSensorEntityDescription(
+        key="hrvLastNightAvg",
+        translation_key="hrv_last_night_avg",
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement="ms",
+        icon="mdi:heart-pulse",
+        value_fn=lambda data: data.get("hrvStatus", {}).get("lastNightAvg"),
+    ),
+    GarminConnectSensorEntityDescription(
+        key="hrvLastNight5MinHigh",
+        translation_key="hrv_last_night_5min_high",
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement="ms",
+        icon="mdi:heart-pulse",
+        value_fn=lambda data: data.get("hrvStatus", {}).get("lastNight5MinHigh"),
+    ),
+    GarminConnectSensorEntityDescription(
+        key="hrvBaseline",
+        translation_key="hrv_baseline",
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement="ms",
+        icon="mdi:heart-pulse",
+        value_fn=lambda data: data.get("hrvStatus", {}).get("baseline", {}).get(
+            "lowUpper") if data.get("hrvStatus", {}).get("baseline") else None,
+        attributes_fn=lambda data: data.get("hrvStatus", {}).get("baseline", {}),
     ),
 )
 
@@ -303,6 +367,46 @@ SLEEP_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         translation_key="sleep_score",
         state_class=SensorStateClass.MEASUREMENT,
         icon="mdi:sleep",
+    ),
+    GarminConnectSensorEntityDescription(
+        key="deepSleepSeconds",
+        translation_key="deep_sleep",
+        device_class=SensorDeviceClass.DURATION,
+        state_class=SensorStateClass.TOTAL,
+        native_unit_of_measurement=UnitOfTime.MINUTES,
+        icon="mdi:sleep",
+        value_fn=lambda data: round(data.get(
+            "deepSleepSeconds", 0) / 60, 2) if data.get("deepSleepSeconds") else None,
+    ),
+    GarminConnectSensorEntityDescription(
+        key="lightSleepSeconds",
+        translation_key="light_sleep",
+        device_class=SensorDeviceClass.DURATION,
+        state_class=SensorStateClass.TOTAL,
+        native_unit_of_measurement=UnitOfTime.MINUTES,
+        icon="mdi:sleep",
+        value_fn=lambda data: round(data.get(
+            "lightSleepSeconds", 0) / 60, 2) if data.get("lightSleepSeconds") else None,
+    ),
+    GarminConnectSensorEntityDescription(
+        key="remSleepSeconds",
+        translation_key="rem_sleep",
+        device_class=SensorDeviceClass.DURATION,
+        state_class=SensorStateClass.TOTAL,
+        native_unit_of_measurement=UnitOfTime.MINUTES,
+        icon="mdi:sleep",
+        value_fn=lambda data: round(data.get(
+            "remSleepSeconds", 0) / 60, 2) if data.get("remSleepSeconds") else None,
+    ),
+    GarminConnectSensorEntityDescription(
+        key="awakeSleepSeconds",
+        translation_key="awake_sleep",
+        device_class=SensorDeviceClass.DURATION,
+        state_class=SensorStateClass.TOTAL,
+        native_unit_of_measurement=UnitOfTime.MINUTES,
+        icon="mdi:sleep-off",
+        value_fn=lambda data: round(data.get(
+            "awakeSleepSeconds", 0) / 60, 2) if data.get("awakeSleepSeconds") else None,
     ),
 )
 
