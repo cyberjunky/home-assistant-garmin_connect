@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import datetime
 import logging
-from numbers import Number
 from zoneinfo import ZoneInfo
 
 import voluptuous as vol
@@ -177,8 +176,15 @@ class GarminConnectSensor(GarminConnectEntity, SensorEntity):
                     tzinfo=ZoneInfo(self.coordinator.time_zone)
                 )
 
-        if isinstance(value, Number):
-            return round(float(value), 2)  # type: ignore[arg-type]
+        # Preserve int types, only round floats
+        if isinstance(value, int):
+            return value
+        if isinstance(value, float):
+            # Round floats to 1 decimal place, but return int if it's a whole number
+            rounded = round(value, 1)
+            if rounded == int(rounded):
+                return int(rounded)
+            return rounded
         return value
 
     @property
