@@ -897,6 +897,64 @@ WELLNESS_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
 )
 
 # All sensor descriptions grouped
+# Menstrual Cycle Sensors
+MENSTRUAL_CYCLE_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
+    GarminConnectSensorEntityDescription(
+        key="menstrualCyclePhase",
+        translation_key="menstrual_cycle_phase",
+        icon="mdi:calendar-heart",
+        value_fn=lambda data: data.get("menstrualData", {}).get("currentPhase"),
+        attributes_fn=lambda data: {
+            "last_synced": data.get("lastSyncTimestampGMT"),
+            **{k: v for k, v in data.get("menstrualData", {}).items()
+               if k not in ("currentPhase",)},
+        },
+    ),
+    GarminConnectSensorEntityDescription(
+        key="menstrualCycleDay",
+        translation_key="menstrual_cycle_day",
+        icon="mdi:calendar-today",
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fn=lambda data: data.get("menstrualData", {}).get("dayOfCycle"),
+        attributes_fn=lambda data: {
+            "last_synced": data.get("lastSyncTimestampGMT"),
+        },
+    ),
+    GarminConnectSensorEntityDescription(
+        key="menstrualPeriodDay",
+        translation_key="menstrual_period_day",
+        icon="mdi:water",
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fn=lambda data: data.get("menstrualData", {}).get("dayOfPeriod"),
+        attributes_fn=lambda data: {
+            "last_synced": data.get("lastSyncTimestampGMT"),
+        },
+    ),
+    GarminConnectSensorEntityDescription(
+        key="menstrualCycleLength",
+        translation_key="menstrual_cycle_length",
+        icon="mdi:calendar-range",
+        native_unit_of_measurement=UnitOfTime.DAYS,
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fn=lambda data: data.get("menstrualData", {}).get("cycleLength"),
+        attributes_fn=lambda data: {
+            "last_synced": data.get("lastSyncTimestampGMT"),
+        },
+    ),
+    GarminConnectSensorEntityDescription(
+        key="menstrualPeriodLength",
+        translation_key="menstrual_period_length",
+        icon="mdi:calendar-clock",
+        native_unit_of_measurement=UnitOfTime.DAYS,
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fn=lambda data: data.get("menstrualData", {}).get("periodLength"),
+        attributes_fn=lambda data: {
+            "last_synced": data.get("lastSyncTimestampGMT"),
+        },
+    ),
+)
+
+
 ALL_SENSOR_DESCRIPTIONS: tuple[GarminConnectSensorEntityDescription, ...] = (
     *ACTIVITY_SENSORS,
     *CALORIES_SENSORS,
@@ -915,6 +973,7 @@ ALL_SENSOR_DESCRIPTIONS: tuple[GarminConnectSensorEntityDescription, ...] = (
     *ACTIVITY_TRACKING_SENSORS,
     *ADDITIONAL_DISTANCE_SENSORS,
     *WELLNESS_SENSORS,
+    *MENSTRUAL_CYCLE_SENSORS,
 )
 
 

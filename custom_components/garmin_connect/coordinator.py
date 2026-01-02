@@ -103,6 +103,7 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
         hrv_status = {"status": "unknown"}
         endurance_data = {}
         endurance_status = {"overallScore": None}
+        menstrual_data = {}
         next_alarms: list[str] | None = []
 
         today = datetime.now(ZoneInfo(self.time_zone)).date()
@@ -157,6 +158,19 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
             endurance_data = await self.hass.async_add_executor_job(
                 self.api.get_endurance_score, today.isoformat()
             )
+
+            try:
+                menstrual_data = await self.hass.async_add_executor_job(
+                    self.api.get_menstrual_data_for_date, today.isoformat()
+                )
+                _LOGGER.debug("Menstrual data: %s", menstrual_data)
+                # API returns None when not enabled - convert to empty dict
+                if menstrual_data is None:
+                    menstrual_data = {}
+            except Exception as err:  # pylint: disable=broad-except
+                # Menstrual data not available for this user
+                _LOGGER.debug("Menstrual data error: %s", err)
+                menstrual_data = {}
 
         except (
             GarminConnectAuthenticationError,
@@ -259,6 +273,7 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
             "enduranceScore": endurance_status,
             **fitnessage_data,
             **hydration_data,
+            **menstrual_data,
         }
 
 

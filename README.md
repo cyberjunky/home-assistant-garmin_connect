@@ -6,9 +6,9 @@
 [![Donate via PayPal](https://img.shields.io/badge/Donate-PayPal-blue.svg?style=for-the-badge&logo=paypal)](https://www.paypal.me/cyberjunkynl/)
 [![Sponsor on GitHub](https://img.shields.io/badge/Sponsor-GitHub-red.svg?style=for-the-badge&logo=github)](https://github.com/sponsors/cyberjunky)
 
-# Garmin Connect Integration
+# Garmin Connect
 
-Integrate your Garmin Connect fitness data with Home Assistant. Access **97+ sensors** covering health metrics, activities, body composition, and gear tracking—plus add measurements directly to Garmin Connect via services.
+Integrate your Garmin Connect fitness data with Home Assistant. Access **100+ sensors** covering health metrics, activities, body composition, and gear tracking—plus add measurements directly to Garmin Connect via services.
 
 ## Supported Features
 
@@ -109,6 +109,18 @@ Sensor values depend on your Garmin devices and connected apps.
 | Next Alarm | Next scheduled alarm time |
 | Last Activity/Activities | Recent activity info |
 | Badges/User Points/Level | Gamification metrics |
+
+### Menstrual Cycle Tracking
+
+| Sensor | Description |
+|--------|-------------|
+| Cycle Phase | Current menstrual phase |
+| Cycle Day | Day of the current cycle |
+| Period Day | Day of the period |
+| Cycle Length | Total cycle length (days) |
+| Period Length | Period length (days) |
+
+> **Note:** Menstrual cycle sensors are only available if tracking is enabled in your Garmin Connect account.
 
 ### Gear Tracking
 

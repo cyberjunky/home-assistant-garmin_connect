@@ -324,6 +324,21 @@
             },
             "wellness_calories": {
                 "name": "Wellness calories"
+            },
+            "menstrual_cycle_phase": {
+                "name": "Menstrual cycle phase"
+            },
+            "menstrual_cycle_day": {
+                "name": "Menstrual cycle day"
+            },
+            "menstrual_period_day": {
+                "name": "Menstrual period day"
+            },
+            "menstrual_cycle_length": {
+                "name": "Menstrual cycle length"
+            },
+            "menstrual_period_length": {
+                "name": "Menstrual period length"
             }
         }
     }

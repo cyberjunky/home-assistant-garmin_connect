@@ -205,11 +205,9 @@ class GarminConnectSensor(GarminConnectEntity, SensorEntity):
     @property
     def available(self) -> bool:
         """Return True if entity is available."""
-        return (
-            super().available
-            and self.coordinator.data
-            and self.entity_description.key in self.coordinator.data
-        )
+        # Entity is available if coordinator has data
+        # Individual sensors will show "Unknown" if their value is None
+        return bool(super().available and self.coordinator.data)
 
     async def add_body_composition(self, **kwargs):
         """Add a body composition measurement to Garmin Connect."""

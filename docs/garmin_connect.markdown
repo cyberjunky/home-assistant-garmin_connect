@@ -25,7 +25,7 @@ You need a Garmin Connect account with at least one Garmin device that syncs dat
 
 ## Sensors
 
-This integration provides **97+ sensors** covering various health and fitness metrics. Sensors are grouped into the following categories:
+This integration provides **100+ sensors** covering various health and fitness metrics. Sensors are grouped into the following categories:
 
 ### Activity & Steps
 
@@ -85,6 +85,15 @@ This integration provides **97+ sensors** covering various health and fitness me
 
 - **Fitness Age** - Estimated fitness age
 - **Endurance Score** - Overall endurance rating
+
+### Menstrual Cycle Tracking
+
+- **Cycle Phase** - Current menstrual phase
+- **Cycle Day** - Day of the current cycle
+- **Period Day** - Day of the period
+- **Cycle/Period Length** - Cycle and period lengths in days
+
+> **Note:** Menstrual cycle sensors are only available if tracking is enabled in your Garmin Connect account.
 
 ### Gear Tracking
 
