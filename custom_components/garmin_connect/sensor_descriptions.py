@@ -1079,6 +1079,7 @@ BLOOD_PRESSURE_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         native_unit_of_measurement="mmHg",
         state_class=SensorStateClass.MEASUREMENT,
         icon="mdi:heart-pulse",
+        preserve_value=True,
     ),
     GarminConnectSensorEntityDescription(
         key="bpDiastolic",
@@ -1086,6 +1087,7 @@ BLOOD_PRESSURE_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         native_unit_of_measurement="mmHg",
         state_class=SensorStateClass.MEASUREMENT,
         icon="mdi:heart-pulse",
+        preserve_value=True,
     ),
     GarminConnectSensorEntityDescription(
         key="bpPulse",
@@ -1093,6 +1095,7 @@ BLOOD_PRESSURE_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         native_unit_of_measurement="bpm",
         state_class=SensorStateClass.MEASUREMENT,
         icon="mdi:heart",
+        preserve_value=True,
     ),
     GarminConnectSensorEntityDescription(
         key="bpMeasurementTime",
@@ -1100,6 +1103,7 @@ BLOOD_PRESSURE_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         device_class=SensorDeviceClass.TIMESTAMP,
         icon="mdi:clock-outline",
         value_fn=lambda data: data.get("bpMeasurementTime"),
+        preserve_value=True,
     ),
 )
 

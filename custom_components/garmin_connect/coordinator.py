@@ -261,10 +261,6 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
                     (today - timedelta(days=30)).isoformat(),
                     today.isoformat(),
                 )
-                _LOGGER.debug(
-                    "Blood pressure API response: type=%s",
-                    type(bp_response).__name__,
-                )
                 # API returns dict with measurementSummaries containing measurements
                 if bp_response and isinstance(bp_response, dict):
                     summaries = bp_response.get("measurementSummaries", [])
@@ -282,9 +278,6 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
                                     "measurementTimestampLocal"
                                 ),
                             }
-                            _LOGGER.debug(
-                                "Blood pressure data parsed: %s", blood_pressure_data
-                            )
             except Exception as err:
                 _LOGGER.debug("Blood pressure data not available: %s", err)
 
