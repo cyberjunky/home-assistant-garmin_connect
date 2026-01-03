@@ -197,7 +197,7 @@ data:
 
 See the action template for other available values to add.
 
-**Full Automation Example (Withings to Garmin):**
+**Withings scale data to Garmin**
 
 ```yaml
 alias: WithingsToGarmin
@@ -229,7 +229,7 @@ mode: single
 ```yaml
 action: garmin_connect.set_active_gear
 target:
-  entity_id: sensor.garmin_connect_adidas_running_shoes
+  entity_id: sensor.garmin_connect_adidas
 data:
   activity_type: running
   setting: set as default
@@ -247,7 +247,7 @@ data:
   notes: Measured with Beurer BC54
 ```
 
-### Create Activity
+**Create Activity**
 
 Creates an activity in Garmin Connect:
 
@@ -261,14 +261,43 @@ data:
   distance_km: 5.0
 ```
 
-### Upload Activity
+**Upload Activity**
 
 Uploads an activity file (FIT, GPX, TCX) to Garmin Connect:
 
 ```yaml
 action: garmin_connect.upload_activity
 data:
-  file_path: "/config/activities/run.fit"
+  file_path: "morning_run.fit"
+```
+
+**Add Gear to Activity**
+
+Associates gear (shoes, bike, etc.) with a specific activity:
+
+```yaml
+action: garmin_connect.add_gear_to_activity
+data:
+  activity_id: 12345678901
+  gear_uuid: "abc12345-def6-7890-ghij-klmn12345678"
+```
+
+**Automatically assign alternate running shoes after a run**
+
+```yaml
+automation:
+  - alias: "Assign alternate shoes to last running activity"
+    trigger:
+      - platform: state
+        entity_id: sensor.garmin_connect_last_activity
+    condition:
+      - condition: template
+        value_template: "{{ state_attr('sensor.garmin_connect_last_activity', 'activityType') == 'running' }}"
+    action:
+      - service: garmin_connect.add_gear_to_activity
+        data:
+          activity_id: "{{ state_attr('sensor.garmin_connect_last_activity', 'activityId') }}"
+          gear_uuid: "{{ state_attr('sensor.garmnin_connect_adidas', 'gear_uuid') }}"
 ```
 
 ### Enable Debug Logging

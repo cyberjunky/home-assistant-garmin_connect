@@ -68,6 +68,14 @@ UPLOAD_ACTIVITY_SCHEMA = vol.Schema(
     }
 )
 
+SERVICE_ADD_GEAR_TO_ACTIVITY = "add_gear_to_activity"
+ADD_GEAR_TO_ACTIVITY_SCHEMA = vol.Schema(
+    {
+        vol.Required("activity_id"): vol.Coerce(int),
+        vol.Required("gear_uuid"): cv.string,
+    }
+)
+
 
 def _get_coordinator(hass: HomeAssistant) -> GarminConnectDataUpdateCoordinator:
     """Get the first available coordinator from config entries."""
@@ -243,6 +251,32 @@ async def async_setup_services(hass: HomeAssistant) -> None:
                 translation_placeholders={"error": str(err)},
             ) from err
 
+    async def handle_add_gear_to_activity(call: ServiceCall) -> None:
+        """Handle add_gear_to_activity service call."""
+        coordinator = _get_coordinator(hass)
+
+        activity_id = call.data.get("activity_id")
+        gear_uuid = call.data.get("gear_uuid")
+
+        if not await coordinator.async_login():
+            raise HomeAssistantError(
+                translation_domain=DOMAIN,
+                translation_key="login_failed",
+            )
+
+        try:
+            await hass.async_add_executor_job(
+                coordinator.api.add_gear_to_activity,
+                gear_uuid,
+                activity_id,
+            )
+        except Exception as err:
+            raise HomeAssistantError(
+                translation_domain=DOMAIN,
+                translation_key="add_gear_to_activity_failed",
+                translation_placeholders={"error": str(err)},
+            ) from err
+
     # Register services
     hass.services.async_register(
         DOMAIN,
@@ -272,6 +306,13 @@ async def async_setup_services(hass: HomeAssistant) -> None:
         schema=UPLOAD_ACTIVITY_SCHEMA,
     )
 
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_ADD_GEAR_TO_ACTIVITY,
+        handle_add_gear_to_activity,
+        schema=ADD_GEAR_TO_ACTIVITY_SCHEMA,
+    )
+
 
 async def async_unload_services(hass: HomeAssistant) -> None:
     """Unload Garmin Connect services."""
@@ -279,3 +320,4 @@ async def async_unload_services(hass: HomeAssistant) -> None:
     hass.services.async_remove(DOMAIN, SERVICE_ADD_BLOOD_PRESSURE)
     hass.services.async_remove(DOMAIN, SERVICE_CREATE_ACTIVITY)
     hass.services.async_remove(DOMAIN, SERVICE_UPLOAD_ACTIVITY)
+    hass.services.async_remove(DOMAIN, SERVICE_ADD_GEAR_TO_ACTIVITY)

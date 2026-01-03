@@ -267,6 +267,7 @@ class GarminConnectGearSensor(CoordinatorEntity, SensorEntity):
             return {}
 
         attributes = {
+            "gear_uuid": self._uuid,
             "last_synced": self.coordinator.data["lastSyncTimestampGMT"],
             "total_activities": stats["totalActivities"],
             "create_date": stats["createDate"],

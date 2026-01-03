@@ -301,3 +301,24 @@ upload_activity:
       example: "/config/activities/run.fit"
       selector:
         text:
+
+add_gear_to_activity:
+  name: Add gear to activity
+  description: Associate gear (shoes, bike, etc.) with a specific activity.
+  fields:
+    activity_id:
+      name: Activity ID
+      description: The ID of the activity to add the gear to.
+      required: true
+      example: 12345678901
+      selector:
+        number:
+          min: 1
+          mode: box
+    gear_uuid:
+      name: Gear UUID
+      description: The UUID of the gear to add. Find this in the gear sensor attributes.
+      required: true
+      example: "abc12345-def6-7890-ghij-klmn12345678"
+      selector:
+        text:

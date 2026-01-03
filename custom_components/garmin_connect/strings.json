@@ -61,6 +61,9 @@
     },
     "file_not_found": {
       "message": "File not found: {file_path}"
+    },
+    "add_gear_to_activity_failed": {
+      "message": "Failed to add gear to activity: {error}"
     }
   }
 }
