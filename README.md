@@ -300,6 +300,36 @@ automation:
           gear_uuid: "{{ state_attr('sensor.garmnin_connect_adidas', 'gear_uuid') }}"
 ```
 
+### Template Sensor Examples
+
+**Daily Running Distance** - Track how far you run each day:
+
+```yaml
+template:
+  - sensor:
+      - name: "Today's Running Distance"
+        unit_of_measurement: "km"
+        state: >
+          {% set today = now().strftime('%Y-%m-%d') %}
+          {% set activities = state_attr('sensor.garmin_connect_last_activities', 'last_activities') | default([]) %}
+          {% set running = namespace(total=0) %}
+          {% for a in activities if a.activityType == 'running' and today in a.startTimeLocal %}
+            {% set running.total = running.total + a.distance %}
+          {% endfor %}
+          {{ (running.total / 1000) | round(2) }}
+
+      - name: "Today's Cycling Distance"
+        unit_of_measurement: "km"
+        state: >
+          {% set today = now().strftime('%Y-%m-%d') %}
+          {% set activities = state_attr('sensor.garmin_connect_last_activities', 'last_activities') | default([]) %}
+          {% set cycling = namespace(total=0) %}
+          {% for a in activities if a.activityType == 'cycling' and today in a.startTimeLocal %}
+            {% set cycling.total = cycling.total + a.distance %}
+          {% endfor %}
+          {{ (cycling.total / 1000) | round(2) }}
+```
+
 ### Enable Debug Logging
 
 Add the relevant lines below to the `configuration.yaml`:
