@@ -196,6 +196,33 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
             badges = await self.hass.async_add_executor_job(self.api.get_earned_badges)
             summary["badges"] = badges
 
+            # Fetch training readiness
+            try:
+                training_readiness = await self.hass.async_add_executor_job(
+                    self.api.get_training_readiness, today.isoformat()
+                )
+                summary["trainingReadiness"] = training_readiness
+            except Exception:
+                summary["trainingReadiness"] = {}
+
+            # Fetch training status
+            try:
+                training_status = await self.hass.async_add_executor_job(
+                    self.api.get_training_status, today.isoformat()
+                )
+                summary["trainingStatus"] = training_status
+            except Exception:
+                summary["trainingStatus"] = {}
+
+            # Fetch lactate threshold
+            try:
+                lactate_threshold = await self.hass.async_add_executor_job(
+                    self.api.get_lactate_threshold
+                )
+                summary["lactateThreshold"] = lactate_threshold
+            except Exception:
+                summary["lactateThreshold"] = {}
+
             user_points = sum(
                 badge["badgePoints"] * badge["badgeEarnedNumber"] for badge in badges
             )

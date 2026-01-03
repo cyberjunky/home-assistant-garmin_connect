@@ -862,6 +862,53 @@ ACTIVITY_TRACKING_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         },
     ),
     GarminConnectSensorEntityDescription(
+        key="trainingReadiness",
+        translation_key="training_readiness",
+        icon="mdi:run-fast",
+        native_unit_of_measurement=PERCENTAGE,
+
+        value_fn=lambda data: data.get("trainingReadiness", {}).get("score")
+        if isinstance(data.get("trainingReadiness"), dict)
+        else (data.get("trainingReadiness", [{}])[0].get("score")
+              if isinstance(data.get("trainingReadiness"), list) and data.get("trainingReadiness")
+              else None),
+        attributes_fn=lambda data: data.get("trainingReadiness", {})
+        if isinstance(data.get("trainingReadiness"), dict)
+        else (data.get("trainingReadiness", [{}])[0]
+              if isinstance(data.get("trainingReadiness"), list) and data.get("trainingReadiness")
+              else {}),
+    ),
+    GarminConnectSensorEntityDescription(
+        key="trainingStatus",
+        translation_key="training_status",
+        icon="mdi:chart-line",
+
+        value_fn=lambda data: data.get("trainingStatus", {}).get("trainingStatusPhrase"),
+        attributes_fn=lambda data: data.get("trainingStatus", {}),
+    ),
+    GarminConnectSensorEntityDescription(
+        key="lactateThresholdHeartRate",
+        translation_key="lactate_threshold_hr",
+        icon="mdi:heart-pulse",
+        native_unit_of_measurement="bpm",
+
+        value_fn=lambda data: data.get("lactateThreshold", {}).get(
+            "speed_and_heart_rate", {}
+        ).get("heartRate"),
+        attributes_fn=lambda data: data.get("lactateThreshold", {}),
+    ),
+    GarminConnectSensorEntityDescription(
+        key="lactateThresholdSpeed",
+        translation_key="lactate_threshold_speed",
+        icon="mdi:speedometer",
+        native_unit_of_measurement="m/s",
+
+        value_fn=lambda data: data.get("lactateThreshold", {}).get(
+            "speed_and_heart_rate", {}
+        ).get("speed"),
+        attributes_fn=lambda data: data.get("lactateThreshold", {}),
+    ),
+    GarminConnectSensorEntityDescription(
         key="badges",
         translation_key="badges",
         state_class=SensorStateClass.TOTAL,

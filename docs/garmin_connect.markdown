@@ -100,6 +100,10 @@ This integration provides **110+ sensors** covering various health and fitness m
 
 - **Fitness Age** - Estimated fitness age
 - **Endurance Score** - Overall endurance rating
+- **Training Readiness** - Training readiness score (%)
+- **Training Status** - Current training status phrase
+- **Lactate Threshold HR** - Lactate threshold heart rate (bpm)
+- **Lactate Threshold Speed** - Lactate threshold running pace (m/s)
 
 ### Workouts
 

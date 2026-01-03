@@ -117,6 +117,10 @@ Sensor values depend on your Garmin devices and connected apps.
 | Fitness Age | Estimated fitness age |
 | Chronological Age | Your actual age |
 | Endurance Score | Overall endurance rating |
+| Training Readiness | Training readiness score (%) |
+| Training Status | Current training status phrase |
+| Lactate Threshold HR | Lactate threshold heart rate (bpm) |
+| Lactate Threshold Speed | Lactate threshold running pace (m/s) |
 
 ### Activity Tracking
 

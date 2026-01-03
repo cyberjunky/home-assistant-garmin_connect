@@ -343,6 +343,18 @@
             "last_workouts": {
                 "name": "Last workouts"
             },
+            "training_readiness": {
+                "name": "Training readiness"
+            },
+            "training_status": {
+                "name": "Training status"
+            },
+            "lactate_threshold_hr": {
+                "name": "Lactate threshold heart rate"
+            },
+            "lactate_threshold_speed": {
+                "name": "Lactate threshold speed"
+            },
             "badges": {
                 "name": "Badges"
             },
