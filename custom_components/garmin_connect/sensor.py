@@ -24,13 +24,10 @@ from homeassistant.helpers.update_coordinator import (
 )
 
 from .const import (
-    DATA_COORDINATOR,
+    DOMAIN,
     GEAR_ICONS,
     Gear,
     ServiceSetting,
-)
-from .const import (
-    DOMAIN as GARMIN_DOMAIN,
 )
 from .entity import GarminConnectEntity
 from .sensor_descriptions import (
@@ -39,10 +36,13 @@ from .sensor_descriptions import (
 
 _LOGGER = logging.getLogger(__name__)
 
+# Limit parallel updates to prevent API rate limiting
+PARALLEL_UPDATES = 1
+
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities) -> None:
     """Set up Garmin Connect sensor based on a config entry."""
-    coordinator: DataUpdateCoordinator = hass.data[GARMIN_DOMAIN][entry.entry_id][DATA_COORDINATOR]
+    coordinator: DataUpdateCoordinator = entry.runtime_data
     unique_id = entry.data[CONF_ID]
 
     entities = []
@@ -105,38 +105,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
             vol.Required("setting"): str,
         },
         "set_active_gear",
-    )
-
-    platform.async_register_entity_service(
-        "add_body_composition",
-        {
-            vol.Required("weight"): vol.Coerce(float),
-            vol.Optional("timestamp"): str,
-            vol.Optional("percent_fat"): vol.Coerce(float),
-            vol.Optional("percent_hydration"): vol.Coerce(float),
-            vol.Optional("visceral_fat_mass"): vol.Coerce(float),
-            vol.Optional("bone_mass"): vol.Coerce(float),
-            vol.Optional("muscle_mass"): vol.Coerce(float),
-            vol.Optional("basal_met"): vol.Coerce(float),
-            vol.Optional("active_met"): vol.Coerce(float),
-            vol.Optional("physique_rating"): vol.Coerce(float),
-            vol.Optional("metabolic_age"): vol.Coerce(float),
-            vol.Optional("visceral_fat_rating"): vol.Coerce(float),
-            vol.Optional("bmi"): vol.Coerce(float),
-        },
-        "add_body_composition",
-    )
-
-    platform.async_register_entity_service(
-        "add_blood_pressure",
-        {
-            vol.Required("systolic"): int,
-            vol.Required("diastolic"): int,
-            vol.Required("pulse"): int,
-            vol.Optional("timestamp"): str,
-            vol.Optional("notes"): str,
-        },
-        "add_blood_pressure",
     )
 
 
@@ -235,68 +203,6 @@ class GarminConnectSensor(GarminConnectEntity, SensorEntity, RestoreEntity):
         # Individual sensors will show "Unknown" if their value is None
         return bool(super().available and self.coordinator.data)
 
-    async def add_body_composition(self, **kwargs):
-        """Add a body composition measurement to Garmin Connect."""
-        weight = kwargs.get("weight")
-        timestamp = kwargs.get("timestamp")
-        percent_fat = kwargs.get("percent_fat")
-        percent_hydration = kwargs.get("percent_hydration")
-        visceral_fat_mass = kwargs.get("visceral_fat_mass")
-        bone_mass = kwargs.get("bone_mass")
-        muscle_mass = kwargs.get("muscle_mass")
-        basal_met = kwargs.get("basal_met")
-        active_met = kwargs.get("active_met")
-        physique_rating = kwargs.get("physique_rating")
-        metabolic_age = kwargs.get("metabolic_age")
-        visceral_fat_rating = kwargs.get("visceral_fat_rating")
-        bmi = kwargs.get("bmi")
-
-        """Check for login."""
-        if not await self.coordinator.async_login():
-            raise IntegrationError(
-                "Failed to login to Garmin Connect, unable to update")
-
-        """Record a weigh in/body composition."""
-        await self.hass.async_add_executor_job(
-            self.coordinator.api.add_body_composition,
-            timestamp,
-            weight,
-            percent_fat,
-            percent_hydration,
-            visceral_fat_mass,
-            bone_mass,
-            muscle_mass,
-            basal_met,
-            active_met,
-            physique_rating,
-            metabolic_age,
-            visceral_fat_rating,
-            bmi,
-        )
-
-    async def add_blood_pressure(self, **kwargs):
-        """Add a blood pressure measurement to Garmin Connect."""
-        timestamp = kwargs.get("timestamp")
-        systolic = kwargs.get("systolic")
-        diastolic = kwargs.get("diastolic")
-        pulse = kwargs.get("pulse")
-        notes = kwargs.get("notes")
-
-        """Check for login."""
-        if not await self.coordinator.async_login():
-            raise IntegrationError(
-                "Failed to login to Garmin Connect, unable to update")
-
-        """Record a blood pressure measurement."""
-        await self.hass.async_add_executor_job(
-            self.coordinator.api.set_blood_pressure,
-            systolic,
-            diastolic,
-            pulse,
-            timestamp,
-            notes,
-        )
-
 
 class GarminConnectGearSensor(CoordinatorEntity, SensorEntity):
     """Representation of a Garmin Connect Gear Sensor."""
@@ -389,7 +295,7 @@ class GarminConnectGearSensor(CoordinatorEntity, SensorEntity):
     def device_info(self) -> DeviceInfo:
         """Return device information."""
         return DeviceInfo(
-            identifiers={(GARMIN_DOMAIN, self._unique_id)},
+            identifiers={(DOMAIN, self._unique_id)},
             name="Garmin Connect",
             manufacturer="Garmin",
             model="Garmin Connect",
@@ -432,48 +338,51 @@ class GarminConnectGearSensor(CoordinatorEntity, SensorEntity):
         activity_type = kwargs.get("activity_type")
         setting = kwargs.get("setting")
 
-        """Check for login."""
         if not await self.coordinator.async_login():
             raise IntegrationError(
                 "Failed to login to Garmin Connect, unable to update")
 
-        """Update Garmin Gear settings."""
-        activity_type_id = next(
-            filter(
-                lambda a: a[Gear.TYPE_KEY] == activity_type,
-                self.coordinator.data["activityTypes"],
-            )
-        )[Gear.TYPE_ID]
-        if setting != ServiceSetting.ONLY_THIS_AS_DEFAULT:
-            await self.hass.async_add_executor_job(
-                self.coordinator.api.set_gear_default,
-                activity_type_id,
-                self._uuid,
-                setting == ServiceSetting.DEFAULT,
-            )
-        else:
-            old_default_state = await self.hass.async_add_executor_job(
-                self.coordinator.api.get_gear_defaults,
-                self.coordinator.data[Gear.USERPROFILE_ID],
-            )
-            to_deactivate = list(
+        try:
+            activity_type_id = next(
                 filter(
-                    lambda o: o[Gear.ACTIVITY_TYPE_PK] == activity_type_id
-                    and o[Gear.UUID] != self._uuid,
-                    old_default_state,
+                    lambda a: a[Gear.TYPE_KEY] == activity_type,
+                    self.coordinator.data["activityTypes"],
                 )
-            )
-
-            for active_gear in to_deactivate:
+            )[Gear.TYPE_ID]
+            if setting != ServiceSetting.ONLY_THIS_AS_DEFAULT:
                 await self.hass.async_add_executor_job(
                     self.coordinator.api.set_gear_default,
                     activity_type_id,
-                    active_gear[Gear.UUID],
-                    False,
+                    self._uuid,
+                    setting == ServiceSetting.DEFAULT,
                 )
-            await self.hass.async_add_executor_job(
-                self.coordinator.api.set_gear_default,
-                activity_type_id,
-                self._uuid,
-                True,
-            )
+            else:
+                old_default_state = await self.hass.async_add_executor_job(
+                    self.coordinator.api.get_gear_defaults,
+                    self.coordinator.data[Gear.USERPROFILE_ID],
+                )
+                to_deactivate = list(
+                    filter(
+                        lambda o: o[Gear.ACTIVITY_TYPE_PK] == activity_type_id
+                        and o[Gear.UUID] != self._uuid,
+                        old_default_state,
+                    )
+                )
+
+                for active_gear in to_deactivate:
+                    await self.hass.async_add_executor_job(
+                        self.coordinator.api.set_gear_default,
+                        activity_type_id,
+                        active_gear[Gear.UUID],
+                        False,
+                    )
+                await self.hass.async_add_executor_job(
+                    self.coordinator.api.set_gear_default,
+                    activity_type_id,
+                    self._uuid,
+                    True,
+                )
+        except Exception as err:
+            raise IntegrationError(
+                f"Failed to set active gear: {err}"
+            ) from err

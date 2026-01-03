@@ -180,8 +180,6 @@ Alternatively:
 
 ```yaml
 action: garmin_connect.add_body_composition
-target:
-  entity_id: sensor.garmin_connect_weight
 data:
   weight: 87
   bmi: 25.5
@@ -189,8 +187,6 @@ data:
 ```
 
 See the action template for other available values to add.
-
-> **Note:** You need to enable the Weight entity first.
 
 **Full Automation Example (Withings to Garmin):**
 
@@ -208,8 +204,6 @@ conditions:
     below: 100
 actions:
   - action: garmin_connect.add_body_composition
-    target:
-      entity_id: sensor.garmin_connect_weight
     data:
       weight: "{{ states('sensor.withings_weight') }}"
       timestamp: "{{ now().isoformat() }}"
@@ -236,8 +230,6 @@ data:
 
 ```yaml
 action: garmin_connect.add_blood_pressure
-target:
-  entity_id: sensor.garmin_connect_resting_heart_rate
 data:
   systolic: 120
   diastolic: 80

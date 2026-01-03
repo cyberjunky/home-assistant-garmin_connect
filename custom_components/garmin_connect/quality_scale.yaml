@@ -10,17 +10,17 @@ rules:
   entity-unique-id: done
   has-entity-name: done
   appropriate-polling: done
-  action-exceptions: todo
+  action-exceptions: done
   test-before-configure: done
-  runtime-data: todo
+  runtime-data: done
 
   # Silver tier
   reauthentication-flow: done
   entity-translations: done
-  parallel-updates: todo
+  parallel-updates: done
   config-entry-unloading: done
-  log-when-unavailable: todo
-  entity-unavailable: todo
+  log-when-unavailable: done
+  entity-unavailable: done
 
   # Gold tier
   entity-device-class: done

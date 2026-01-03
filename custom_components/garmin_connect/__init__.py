@@ -7,7 +7,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_ID, CONF_PASSWORD, CONF_TOKEN, CONF_USERNAME
 from homeassistant.core import HomeAssistant
 
-from .const import DATA_COORDINATOR, DOMAIN
+from .const import DOMAIN
 from .coordinator import GarminConnectDataUpdateCoordinator
 
 _LOGGER = logging.getLogger(__name__)
@@ -85,6 +85,8 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Garmin Connect from a config entry."""
+    from .services import async_setup_services
+
     coordinator = GarminConnectDataUpdateCoordinator(hass, entry=entry)
 
     if not await coordinator.async_login():
@@ -92,17 +94,26 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     await coordinator.async_config_entry_first_refresh()
 
-    hass.data.setdefault(DOMAIN, {})
-    hass.data[DOMAIN][entry.entry_id] = {DATA_COORDINATOR: coordinator}
+    # Use runtime_data pattern (modern approach)
+    entry.runtime_data = coordinator
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+
+    # Register integration-level services (only once for first entry)
+    if len(hass.config_entries.async_entries(DOMAIN)) == 1:
+        await async_setup_services(hass)
 
     return True
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
+    from .services import async_unload_services
+
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
-    if unload_ok:
-        hass.data[DOMAIN].pop(entry.entry_id)
+
+    # Unload services only if this is the last entry
+    if unload_ok and len(hass.config_entries.async_entries(DOMAIN)) == 1:
+        await async_unload_services(hass)
+
     return bool(unload_ok)

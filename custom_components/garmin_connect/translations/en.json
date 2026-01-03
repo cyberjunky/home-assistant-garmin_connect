@@ -379,8 +379,8 @@
             "menstrual_period_length": {
                 "name": "Menstrual period length"
             },
-            "last_synced": {
-                "name": "Last synced"
+            "device_last_synced": {
+                "name": "Device last synced"
             }
         }
     }

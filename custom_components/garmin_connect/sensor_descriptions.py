@@ -1075,7 +1075,7 @@ MENSTRUAL_CYCLE_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
 DIAGNOSTIC_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
     GarminConnectSensorEntityDescription(
         key="lastSyncTimestampGMT",
-        translation_key="last_synced",
+        translation_key="device_last_synced",
         device_class=SensorDeviceClass.TIMESTAMP,
         entity_category=EntityCategory.DIAGNOSTIC,
         icon="mdi:sync",
