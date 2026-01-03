@@ -18,6 +18,52 @@ from homeassistant.const import (
     UnitOfVolume,
 )
 
+# Essential keys to keep when trimming activity data for attributes
+# This reduces ~3KB per activity to ~500 bytes to stay under HA's 16KB limit
+ACTIVITY_ESSENTIAL_KEYS = {
+    # Identity
+    "activityId",
+    "activityName",
+    # Time
+    "startTimeLocal",
+    "startTimeGMT",
+    "duration",
+    "movingDuration",
+    "elapsedDuration",
+    # Distance/Speed
+    "distance",
+    "averageSpeed",
+    "maxSpeed",
+    # Location
+    "locationName",
+    "startLatitude",
+    "startLongitude",
+    "endLatitude",
+    "endLongitude",
+    # Heart Rate
+    "averageHR",
+    "maxHR",
+    # Stats
+    "calories",
+    "steps",
+    "elevationGain",
+    "elevationLoss",
+    # Cadence
+    "averageRunningCadenceInStepsPerMinute",
+    "maxRunningCadenceInStepsPerMinute",
+    # Type (simplified)
+    "activityType",
+}
+
+
+def _trim_activity(activity: dict) -> dict:
+    """Trim activity to essential fields only to reduce attribute size."""
+    trimmed = {k: v for k, v in activity.items() if k in ACTIVITY_ESSENTIAL_KEYS}
+    # Simplify activityType to just typeKey
+    if "activityType" in trimmed and isinstance(trimmed["activityType"], dict):
+        trimmed["activityType"] = trimmed["activityType"].get("typeKey", "unknown")
+    return trimmed
+
 
 @dataclass(frozen=True, kw_only=True)
 class GarminConnectSensorEntityDescription(SensorEntityDescription):
@@ -778,10 +824,7 @@ ACTIVITY_TRACKING_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         icon="mdi:walk",
 
         value_fn=lambda data: data.get("lastActivity", {}).get("activityName"),
-        attributes_fn=lambda data: {
-
-            **data.get("lastActivity", {}),
-        },
+        attributes_fn=lambda data: _trim_activity(data.get("lastActivity", {})),
     ),
     GarminConnectSensorEntityDescription(
         key="lastActivities",
@@ -791,11 +834,12 @@ ACTIVITY_TRACKING_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
 
         value_fn=lambda data: len(data.get("lastActivities", [])),
         attributes_fn=lambda data: {
-
-            "last_activities": sorted(
-                data.get("lastActivities", []),
-                key=lambda x: x.get("activityId", 0),
-            )[-5:],
+            "last_activities": [
+                _trim_activity(a) for a in sorted(
+                    data.get("lastActivities", []),
+                    key=lambda x: x.get("activityId", 0),
+                )[-10:]
+            ],
         },
     ),
     GarminConnectSensorEntityDescription(
