@@ -247,6 +247,30 @@ data:
   notes: Measured with Beurer BC54
 ```
 
+### Create Activity
+
+Creates an activity in Garmin Connect:
+
+```yaml
+action: garmin_connect.create_activity
+data:
+  activity_name: "Morning Run"
+  activity_type: running
+  start_datetime: "2025-01-21T08:30:00"
+  duration_min: 30
+  distance_km: 5.0
+```
+
+### Upload Activity
+
+Uploads an activity file (FIT, GPX, TCX) to Garmin Connect:
+
+```yaml
+action: garmin_connect.upload_activity
+data:
+  file_path: "/config/activities/run.fit"
+```
+
 ### Enable Debug Logging
 
 Add the relevant lines below to the `configuration.yaml`:

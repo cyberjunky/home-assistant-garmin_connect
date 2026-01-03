@@ -154,6 +154,27 @@ Set a gear item as the default for an activity type.
 | `activity_type` | Yes | Activity type (e.g., running, cycling) |
 | `setting` | Yes | Setting option (set as default, unset default, set this as default unset others) |
 
+### Create activity
+
+Create an activity in Garmin Connect.
+
+| Data attribute | Required | Description |
+| ---------------------- | -------- | ----------- |
+| `activity_name` | Yes | Name of the activity |
+| `activity_type` | Yes | Activity type (e.g., running, cycling, walking) |
+| `start_datetime` | Yes | Start time (ISO format) |
+| `duration_min` | Yes | Duration in minutes |
+| `distance_km` | No | Distance in kilometers |
+| `time_zone` | No | Time zone (defaults to HA timezone) |
+
+### Upload activity
+
+Upload an activity file (FIT, GPX, TCX) to Garmin Connect.
+
+| Data attribute | Required | Description |
+| ---------------------- | -------- | ----------- |
+| `file_path` | Yes | Path to activity file on HA system |
+
 ## Data updates
 
 Data is polled from Garmin Connect every 5 minutes. Due to API rate limits, more frequent polling is not recommended.

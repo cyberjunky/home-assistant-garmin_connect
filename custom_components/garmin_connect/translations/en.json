@@ -395,5 +395,34 @@
                 "name": "Device last synced"
             }
         }
+    },
+    "exceptions": {
+        "login_failed": {
+            "message": "Failed to login to Garmin Connect, unable to update"
+        },
+        "add_body_composition_failed": {
+            "message": "Failed to add body composition: {error}"
+        },
+        "add_blood_pressure_failed": {
+            "message": "Failed to add blood pressure: {error}"
+        },
+        "set_active_gear_failed": {
+            "message": "Failed to set active gear: {error}"
+        },
+        "no_integration_configured": {
+            "message": "No Garmin Connect integration configured"
+        },
+        "integration_not_loaded": {
+            "message": "Garmin Connect integration not fully loaded"
+        },
+        "create_activity_failed": {
+            "message": "Failed to create activity: {error}"
+        },
+        "upload_activity_failed": {
+            "message": "Failed to upload activity: {error}"
+        },
+        "file_not_found": {
+            "message": "File not found: {file_path}"
+        }
     }
 }

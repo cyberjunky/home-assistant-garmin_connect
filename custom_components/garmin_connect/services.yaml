@@ -225,3 +225,79 @@ add_blood_pressure:
       example: "Measured with Beurer BC54"
       selector:
         text:
+
+create_activity:
+  name: Create activity
+  description: Create an activity in Garmin Connect.
+  fields:
+    activity_name:
+      name: Activity name
+      description: Name of the activity.
+      required: true
+      example: "Morning Run"
+      selector:
+        text:
+    activity_type:
+      name: Activity type
+      description: Type of activity (e.g., running, cycling, walking).
+      required: true
+      example: running
+      default: running
+      selector:
+        select:
+          options:
+            - running
+            - cycling
+            - walking
+            - hiking
+            - swimming
+            - fitness_equipment
+            - other
+    start_datetime:
+      name: Start date and time
+      description: When the activity started (ISO format).
+      required: true
+      example: "2024-01-15T08:30:00"
+      selector:
+        text:
+    duration_min:
+      name: Duration
+      description: Duration of the activity in minutes.
+      required: true
+      example: 30
+      selector:
+        number:
+          min: 1
+          max: 1440
+          step: 1
+          unit_of_measurement: min
+    distance_km:
+      name: Distance
+      description: Distance covered in kilometers (optional).
+      required: false
+      example: 5.0
+      selector:
+        number:
+          min: 0
+          max: 1000
+          step: 0.1
+          unit_of_measurement: km
+    time_zone:
+      name: Time zone
+      description: Time zone for the activity (defaults to HA's configured timezone).
+      required: false
+      example: "Europe/Amsterdam"
+      selector:
+        text:
+
+upload_activity:
+  name: Upload activity
+  description: Upload an activity file (FIT, GPX, TCX) to Garmin Connect.
+  fields:
+    file_path:
+      name: File path
+      description: Path to the activity file on the Home Assistant system.
+      required: true
+      example: "/config/activities/run.fit"
+      selector:
+        text:
