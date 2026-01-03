@@ -83,6 +83,13 @@ This integration provides **110+ sensors** covering various health and fitness m
 - **Hydration Goal** - Target intake
 - **Sweat Loss** - Estimated fluid loss
 
+### Blood Pressure
+
+- **Systolic** - Systolic blood pressure (mmHg)
+- **Diastolic** - Diastolic blood pressure (mmHg)
+- **Pulse** - Pulse from blood pressure reading (bpm)
+- **Measurement Time** - When the BP was measured
+
 ### Health Monitoring
 
 - **SpO2** - Blood oxygen levels (average, lowest, latest)

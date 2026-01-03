@@ -379,6 +379,18 @@
             "menstrual_period_length": {
                 "name": "Menstrual period length"
             },
+            "bp_systolic": {
+                "name": "Blood pressure systolic"
+            },
+            "bp_diastolic": {
+                "name": "Blood pressure diastolic"
+            },
+            "bp_pulse": {
+                "name": "Blood pressure pulse"
+            },
+            "bp_measurement_time": {
+                "name": "Blood pressure measurement time"
+            },
             "device_last_synced": {
                 "name": "Device last synced"
             }

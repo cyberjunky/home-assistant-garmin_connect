@@ -253,6 +253,41 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
                 self.api.get_hydration_data, today.isoformat()
             )
 
+            # Fetch blood pressure data (last 30 days for latest reading)
+            blood_pressure_data = {}
+            try:
+                bp_response = await self.hass.async_add_executor_job(
+                    self.api.get_blood_pressure,
+                    (today - timedelta(days=30)).isoformat(),
+                    today.isoformat(),
+                )
+                _LOGGER.debug(
+                    "Blood pressure API response: type=%s",
+                    type(bp_response).__name__,
+                )
+                # API returns dict with measurementSummaries containing measurements
+                if bp_response and isinstance(bp_response, dict):
+                    summaries = bp_response.get("measurementSummaries", [])
+                    if summaries:
+                        # Get measurements from the most recent day
+                        latest_summary = summaries[-1]
+                        measurements = latest_summary.get("measurements", [])
+                        if measurements:
+                            latest_bp = measurements[-1]
+                            blood_pressure_data = {
+                                "bpSystolic": latest_bp.get("systolic"),
+                                "bpDiastolic": latest_bp.get("diastolic"),
+                                "bpPulse": latest_bp.get("pulse"),
+                                "bpMeasurementTime": latest_bp.get(
+                                    "measurementTimestampLocal"
+                                ),
+                            }
+                            _LOGGER.debug(
+                                "Blood pressure data parsed: %s", blood_pressure_data
+                            )
+            except Exception as err:
+                _LOGGER.debug("Blood pressure data not available: %s", err)
+
         except GarminConnectAuthenticationError as err:
             raise ConfigEntryAuthFailed from err
         except GarminConnectTooManyRequestsError:
@@ -367,6 +402,7 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
             **fitnessage_data,
             **hydration_data,
             **menstrual_data,
+            **blood_pressure_data,
         }
 
 

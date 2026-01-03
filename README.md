@@ -93,6 +93,15 @@ Sensor values depend on your Garmin devices and connected apps.
 | Hydration Goal | Target intake |
 | Sweat Loss | Estimated fluid loss |
 
+### Blood Pressure
+
+| Sensor | Description |
+|--------|-------------|
+| Systolic | Systolic blood pressure (mmHg) |
+| Diastolic | Diastolic blood pressure (mmHg) |
+| Pulse | Pulse from blood pressure reading (bpm) |
+| Measurement Time | When the BP was measured |
+
 ### Health Monitoring
 
 | Sensor | Description |

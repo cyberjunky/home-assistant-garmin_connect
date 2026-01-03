@@ -99,8 +99,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
-    # Register integration-level services (only once for first entry)
-    if len(hass.config_entries.async_entries(DOMAIN)) == 1:
+    # Register integration-level services (only once)
+    if not hass.services.has_service(DOMAIN, "add_body_composition"):
         await async_setup_services(hass)
 
     return True
@@ -112,8 +112,9 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
 
-    # Unload services only if this is the last entry
-    if unload_ok and len(hass.config_entries.async_entries(DOMAIN)) == 1:
+    # Unload services only if this is the last entry (no entries remaining after unload)
+    remaining_entries = len(hass.config_entries.async_entries(DOMAIN))
+    if unload_ok and remaining_entries == 1:  # This entry is being unloaded
         await async_unload_services(hass)
 
     return bool(unload_ok)

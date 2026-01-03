@@ -36,10 +36,6 @@ set_active_gear:
 add_body_composition:
   name: Add body composition
   description: Add body composition metrics to Garmin Connect.
-  target:
-    entity:
-      integration: garmin_connect
-      domain: sensor
   fields:
     weight:
       name: Weight
@@ -181,10 +177,6 @@ add_body_composition:
 add_blood_pressure:
   name: Add blood pressure
   description: Add blood pressure measurement to Garmin Connect.
-  target:
-    entity:
-      integration: garmin_connect
-      domain: sensor
   fields:
     systolic:
       name: Systolic

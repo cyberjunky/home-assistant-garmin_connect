@@ -1071,6 +1071,38 @@ MENSTRUAL_CYCLE_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
     ),
 )
 
+# Blood Pressure Sensors
+BLOOD_PRESSURE_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
+    GarminConnectSensorEntityDescription(
+        key="bpSystolic",
+        translation_key="bp_systolic",
+        native_unit_of_measurement="mmHg",
+        state_class=SensorStateClass.MEASUREMENT,
+        icon="mdi:heart-pulse",
+    ),
+    GarminConnectSensorEntityDescription(
+        key="bpDiastolic",
+        translation_key="bp_diastolic",
+        native_unit_of_measurement="mmHg",
+        state_class=SensorStateClass.MEASUREMENT,
+        icon="mdi:heart-pulse",
+    ),
+    GarminConnectSensorEntityDescription(
+        key="bpPulse",
+        translation_key="bp_pulse",
+        native_unit_of_measurement="bpm",
+        state_class=SensorStateClass.MEASUREMENT,
+        icon="mdi:heart",
+    ),
+    GarminConnectSensorEntityDescription(
+        key="bpMeasurementTime",
+        translation_key="bp_measurement_time",
+        device_class=SensorDeviceClass.TIMESTAMP,
+        icon="mdi:clock-outline",
+        value_fn=lambda data: data.get("bpMeasurementTime"),
+    ),
+)
+
 # Diagnostic Sensors
 DIAGNOSTIC_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
     GarminConnectSensorEntityDescription(
@@ -1103,6 +1135,7 @@ ALL_SENSOR_DESCRIPTIONS: tuple[GarminConnectSensorEntityDescription, ...] = (
     *ADDITIONAL_DISTANCE_SENSORS,
     *WELLNESS_SENSORS,
     *MENSTRUAL_CYCLE_SENSORS,
+    *BLOOD_PRESSURE_SENSORS,
     *DIAGNOSTIC_SENSORS,
 )
 
