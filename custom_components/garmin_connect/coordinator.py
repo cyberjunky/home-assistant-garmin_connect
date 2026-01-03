@@ -182,6 +182,17 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
             summary["lastActivities"] = last_activities
             summary["lastActivity"] = last_activities[0] if last_activities else {}
 
+            # Fetch workouts (scheduled/planned training sessions)
+            try:
+                workouts = await self.hass.async_add_executor_job(
+                    self.api.get_workouts, 0, 10
+                )
+                summary["workouts"] = workouts.get("workouts", []) if isinstance(workouts, dict) else workouts
+                summary["lastWorkout"] = summary["workouts"][0] if summary["workouts"] else {}
+            except Exception:
+                summary["workouts"] = []
+                summary["lastWorkout"] = {}
+
             badges = await self.hass.async_add_executor_job(self.api.get_earned_badges)
             summary["badges"] = badges
 

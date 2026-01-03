@@ -101,6 +101,11 @@ This integration provides **110+ sensors** covering various health and fitness m
 - **Fitness Age** - Estimated fitness age
 - **Endurance Score** - Overall endurance rating
 
+### Workouts
+
+- **Last Workout** - Name of most recent scheduled workout
+- **Last Workouts** - Count of recent workouts (details in attributes)
+
 ### Menstrual Cycle Tracking
 
 - **Cycle Phase** - Current menstrual phase

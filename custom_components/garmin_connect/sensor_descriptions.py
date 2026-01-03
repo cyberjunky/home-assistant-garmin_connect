@@ -843,6 +843,25 @@ ACTIVITY_TRACKING_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         },
     ),
     GarminConnectSensorEntityDescription(
+        key="lastWorkout",
+        translation_key="last_workout",
+        icon="mdi:dumbbell",
+
+        value_fn=lambda data: data.get("lastWorkout", {}).get("workoutName"),
+        attributes_fn=lambda data: data.get("lastWorkout", {}),
+    ),
+    GarminConnectSensorEntityDescription(
+        key="lastWorkouts",
+        translation_key="last_workouts",
+        state_class=SensorStateClass.TOTAL,
+        icon="mdi:dumbbell",
+
+        value_fn=lambda data: len(data.get("workouts", [])),
+        attributes_fn=lambda data: {
+            "last_workouts": data.get("workouts", [])[-10:],
+        },
+    ),
+    GarminConnectSensorEntityDescription(
         key="badges",
         translation_key="badges",
         state_class=SensorStateClass.TOTAL,

@@ -124,6 +124,7 @@ Sensor values depend on your Garmin devices and connected apps.
 |--------|-------------|
 | Next Alarm | Next scheduled alarm time |
 | Last Activity/Activities | Recent activity info |
+| Last Workout/Workouts | Scheduled/planned training sessions |
 | Badges/User Points/Level | Gamification metrics |
 
 ### Menstrual Cycle Tracking
@@ -360,6 +361,26 @@ pip install -r requirements_lint.txt
 # or: ruff check .
 # to auto-fix: ruff check . --fix
 ```
+
+### Discovering New API Endpoints
+
+Want to add support for new Garmin features? Here's how to find the API endpoints:
+
+1. **Login to [Garmin Connect](https://connect.garmin.com)** in your browser
+2. **Open Developer Tools** (F12 or Right-click → Inspect)
+3. Go to the **Network** tab
+4. **Filter by "Fetch/XHR"** to see API calls only
+5. **Navigate through the feature** you want to capture
+6. **Look for API calls** - they typically go to:
+   - `connect.garmin.com/proxy/*`
+   - `connect.garmin.com/activity-service/*`
+   - `connect.garmin.com/metrics-service/*`
+   - `connect.garmin.com/*-service/*`
+7. **Click on a request** to see the full URL and response data
+
+**Share your findings** in a GitHub issue with:
+- The full API URL path
+- Example response data (redact personal info)
 
 ## 💖 Support This Project
 

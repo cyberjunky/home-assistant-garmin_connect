@@ -337,6 +337,12 @@
             "last_activities": {
                 "name": "Last activities"
             },
+            "last_workout": {
+                "name": "Last workout"
+            },
+            "last_workouts": {
+                "name": "Last workouts"
+            },
             "badges": {
                 "name": "Badges"
             },
