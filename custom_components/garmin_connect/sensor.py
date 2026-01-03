@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import datetime
 import logging
-from zoneinfo import ZoneInfo
 
 import voluptuous as vol
 from homeassistant.components.sensor import (
@@ -187,9 +186,17 @@ class GarminConnectSensor(GarminConnectEntity, SensorEntity, RestoreEntity):
         # Handle timestamp device class
         if self.entity_description.device_class == SensorDeviceClass.TIMESTAMP:
             if value:
-                value = datetime.datetime.fromisoformat(value).replace(
-                    tzinfo=ZoneInfo(self.coordinator.time_zone)
-                )
+                try:
+                    # Parse ISO format timestamp and set to UTC (GMT)
+                    parsed = datetime.datetime.fromisoformat(value)
+                    # If naive, assume UTC since Garmin returns GMT timestamps
+                    if parsed.tzinfo is None:
+                        value = parsed.replace(tzinfo=datetime.UTC)
+                    else:
+                        value = parsed
+                except (ValueError, TypeError):
+                    _LOGGER.debug("Could not parse timestamp: %s", value)
+                    value = None
 
         # Preserve int types, only round floats
         if isinstance(value, int):

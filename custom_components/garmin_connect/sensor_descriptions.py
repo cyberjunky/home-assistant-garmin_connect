@@ -11,6 +11,7 @@ from homeassistant.components.sensor import (
 )
 from homeassistant.const import (
     PERCENTAGE,
+    EntityCategory,
     UnitOfLength,
     UnitOfMass,
     UnitOfTime,
@@ -728,8 +729,17 @@ FITNESS_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
 
         value_fn=lambda data: data.get("enduranceScore", {}).get("overallScore"),
         attributes_fn=lambda data: {
-            "last_synced": data.get("lastSyncTimestampGMT"),
             **{k: v for k, v in data.get("enduranceScore", {}).items() if k != "overallScore"},
+        },
+    ),
+    GarminConnectSensorEntityDescription(
+        key="hillScore",
+        translation_key="hill_score",
+        state_class=SensorStateClass.MEASUREMENT,
+        icon="mdi:terrain",
+        value_fn=lambda data: data.get("hillScore", {}).get("overallScore"),
+        attributes_fn=lambda data: {
+            **{k: v for k, v in data.get("hillScore", {}).items() if k != "overallScore"},
         },
     ),
     GarminConnectSensorEntityDescription(
@@ -758,7 +768,7 @@ ACTIVITY_TRACKING_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         icon="mdi:alarm",
         value_fn=lambda data: data.get("nextAlarm", [None])[0] if data.get("nextAlarm") else None,
         attributes_fn=lambda data: {
-            "last_synced": data.get("lastSyncTimestampGMT"),
+
             "next_alarms": data.get("nextAlarm"),
         },
     ),
@@ -769,7 +779,7 @@ ACTIVITY_TRACKING_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
 
         value_fn=lambda data: data.get("lastActivity", {}).get("activityName"),
         attributes_fn=lambda data: {
-            "last_synced": data.get("lastSyncTimestampGMT"),
+
             **data.get("lastActivity", {}),
         },
     ),
@@ -781,7 +791,7 @@ ACTIVITY_TRACKING_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
 
         value_fn=lambda data: len(data.get("lastActivities", [])),
         attributes_fn=lambda data: {
-            "last_synced": data.get("lastSyncTimestampGMT"),
+
             "last_activities": sorted(
                 data.get("lastActivities", []),
                 key=lambda x: x.get("activityId", 0),
@@ -796,7 +806,7 @@ ACTIVITY_TRACKING_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
 
         value_fn=lambda data: len(data.get("badges", [])),
         attributes_fn=lambda data: {
-            "last_synced": data.get("lastSyncTimestampGMT"),
+
             "badges": sorted(
                 data.get("badges", []),
                 key=lambda x: x.get("badgeEarnedDate", ""),
@@ -1012,7 +1022,7 @@ MENSTRUAL_CYCLE_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         icon="mdi:calendar-heart",
         value_fn=lambda data: data.get("menstrualData", {}).get("currentPhase"),
         attributes_fn=lambda data: {
-            "last_synced": data.get("lastSyncTimestampGMT"),
+
             **{k: v for k, v in data.get("menstrualData", {}).items()
                if k not in ("currentPhase",)},
         },
@@ -1024,7 +1034,7 @@ MENSTRUAL_CYCLE_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         state_class=SensorStateClass.MEASUREMENT,
         value_fn=lambda data: data.get("menstrualData", {}).get("dayOfCycle"),
         attributes_fn=lambda data: {
-            "last_synced": data.get("lastSyncTimestampGMT"),
+
         },
     ),
     GarminConnectSensorEntityDescription(
@@ -1034,7 +1044,7 @@ MENSTRUAL_CYCLE_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         state_class=SensorStateClass.MEASUREMENT,
         value_fn=lambda data: data.get("menstrualData", {}).get("dayOfPeriod"),
         attributes_fn=lambda data: {
-            "last_synced": data.get("lastSyncTimestampGMT"),
+
         },
     ),
     GarminConnectSensorEntityDescription(
@@ -1045,7 +1055,7 @@ MENSTRUAL_CYCLE_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         state_class=SensorStateClass.MEASUREMENT,
         value_fn=lambda data: data.get("menstrualData", {}).get("cycleLength"),
         attributes_fn=lambda data: {
-            "last_synced": data.get("lastSyncTimestampGMT"),
+
         },
     ),
     GarminConnectSensorEntityDescription(
@@ -1056,11 +1066,23 @@ MENSTRUAL_CYCLE_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         state_class=SensorStateClass.MEASUREMENT,
         value_fn=lambda data: data.get("menstrualData", {}).get("periodLength"),
         attributes_fn=lambda data: {
-            "last_synced": data.get("lastSyncTimestampGMT"),
+
         },
     ),
 )
 
+# Diagnostic Sensors
+DIAGNOSTIC_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
+    GarminConnectSensorEntityDescription(
+        key="lastSyncTimestampGMT",
+        translation_key="last_synced",
+        device_class=SensorDeviceClass.TIMESTAMP,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        icon="mdi:sync",
+        # Value is already an ISO timestamp string, just pass it through
+        value_fn=lambda data: data.get("lastSyncTimestampGMT"),
+    ),
+)
 
 ALL_SENSOR_DESCRIPTIONS: tuple[GarminConnectSensorEntityDescription, ...] = (
     *ACTIVITY_SENSORS,
@@ -1081,6 +1103,7 @@ ALL_SENSOR_DESCRIPTIONS: tuple[GarminConnectSensorEntityDescription, ...] = (
     *ADDITIONAL_DISTANCE_SENSORS,
     *WELLNESS_SENSORS,
     *MENSTRUAL_CYCLE_SENSORS,
+    *DIAGNOSTIC_SENSORS,
 )
 
 

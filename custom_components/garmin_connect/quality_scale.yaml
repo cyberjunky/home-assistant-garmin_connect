@@ -27,7 +27,7 @@ rules:
   reconfiguration-flow: todo
   dynamic-devices: exempt  # Single cloud account, not device-based
   discovery: exempt  # Cloud service, not discoverable
-  diagnostics: todo
+  diagnostics: done
   exception-translations: todo
   icon-translations: todo
   stale-devices: exempt  # Single device per config entry

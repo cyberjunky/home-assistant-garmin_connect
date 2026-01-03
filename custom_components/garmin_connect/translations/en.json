@@ -325,6 +325,9 @@
             "endurance_score": {
                 "name": "Endurance score"
             },
+            "hill_score": {
+                "name": "Hill score"
+            },
             "next_alarm": {
                 "name": "Next alarm"
             },
@@ -375,6 +378,9 @@
             },
             "menstrual_period_length": {
                 "name": "Menstrual period length"
+            },
+            "last_synced": {
+                "name": "Last synced"
             }
         }
     }

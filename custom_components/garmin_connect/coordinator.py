@@ -112,14 +112,38 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
         hrv_status = {"status": "unknown"}
         endurance_data = {}
         endurance_status = {"overallScore": None}
+        hill_data = {}
+        hill_status = {"overallScore": None}
         menstrual_data = {}
         next_alarms: list[str] | None = []
 
         today = datetime.now(ZoneInfo(self.time_zone)).date()
+        current_hour = datetime.now(ZoneInfo(self.time_zone)).hour
+        yesterday_date = (today - timedelta(days=1)).isoformat()
+        _LOGGER.debug("Fetching data for date: %s (timezone: %s, hour: %s)", today.isoformat(), self.time_zone, current_hour)
 
         try:
             summary = await self.hass.async_add_executor_job(
                 self.api.get_user_summary, today.isoformat()
+            )
+
+            # Midnight fallback: During 0:00-2:00 window, if today's data is empty/None,
+            # fallback to yesterday's data to avoid gaps due to UTC/GMT timezone differences
+            if current_hour < 2 and (not summary or summary.get("totalSteps") in (None, 0)):
+                _LOGGER.debug("Midnight fallback: Today's data empty, fetching yesterday's data")
+                yesterday_summary = await self.hass.async_add_executor_job(
+                    self.api.get_user_summary, yesterday_date
+                )
+                if yesterday_summary and yesterday_summary.get("totalSteps"):
+                    summary = yesterday_summary
+                    _LOGGER.debug("Using yesterday's summary data as fallback")
+
+            _LOGGER.debug(
+                "Summary data for %s: totalSteps=%s, dailyStepGoal=%s, lastSync=%s",
+                today.isoformat(),
+                summary.get("totalSteps"),
+                summary.get("dailyStepGoal"),
+                summary.get("lastSyncTimestampGMT"),
             )
 
             # Fetch last 7 days steps for weekly average and yesterday's final count
@@ -189,6 +213,10 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
 
             endurance_data = await self.hass.async_add_executor_job(
                 self.api.get_endurance_score, today.isoformat()
+            )
+
+            hill_data = await self.hass.async_add_executor_job(
+                self.api.get_hill_score, today.isoformat()
             )
 
             try:
@@ -309,6 +337,12 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
         except KeyError:
             pass
 
+        try:
+            if hill_data and "overallScore" in hill_data:
+                hill_status = hill_data
+        except KeyError:
+            pass
+
         return {
             **summary,
             **body["totalAverage"],
@@ -329,6 +363,7 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
             "weeklyDistanceAvg": weekly_distance_avg,
             "hrvStatus": hrv_status,
             "enduranceScore": endurance_status,
+            "hillScore": hill_status,
             **fitnessage_data,
             **hydration_data,
             **menstrual_data,
