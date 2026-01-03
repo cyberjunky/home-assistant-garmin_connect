@@ -49,12 +49,12 @@ def _get_coordinator(hass: HomeAssistant):
     entries = hass.config_entries.async_entries(DOMAIN)
     if not entries:
         raise HomeAssistantError("No Garmin Connect integration configured")
-    
+
     # Use the first config entry's coordinator
     entry = entries[0]
     if not hasattr(entry, "runtime_data") or entry.runtime_data is None:
         raise HomeAssistantError("Garmin Connect integration not fully loaded")
-    
+
     return entry.runtime_data
 
 
@@ -64,7 +64,7 @@ async def async_setup_services(hass: HomeAssistant) -> None:
     async def handle_add_body_composition(call: ServiceCall) -> None:
         """Handle add_body_composition service call."""
         coordinator = _get_coordinator(hass)
-        
+
         weight = call.data.get("weight")
         timestamp = call.data.get("timestamp")
         percent_fat = call.data.get("percent_fat")
@@ -109,7 +109,7 @@ async def async_setup_services(hass: HomeAssistant) -> None:
     async def handle_add_blood_pressure(call: ServiceCall) -> None:
         """Handle add_blood_pressure service call."""
         coordinator = _get_coordinator(hass)
-        
+
         systolic = call.data.get("systolic")
         diastolic = call.data.get("diastolic")
         pulse = call.data.get("pulse")
@@ -142,7 +142,7 @@ async def async_setup_services(hass: HomeAssistant) -> None:
         handle_add_body_composition,
         schema=ADD_BODY_COMPOSITION_SCHEMA,
     )
-    
+
     hass.services.async_register(
         DOMAIN,
         SERVICE_ADD_BLOOD_PRESSURE,

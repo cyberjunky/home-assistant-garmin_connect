@@ -24,7 +24,7 @@ rules:
 
   # Gold tier
   entity-device-class: done
-  reconfiguration-flow: todo
+  reconfiguration-flow: exempt  # Credentials handled by reauthentication flow
   dynamic-devices: exempt  # Single cloud account, not device-based
   discovery: exempt  # Cloud service, not discoverable
   diagnostics: done
