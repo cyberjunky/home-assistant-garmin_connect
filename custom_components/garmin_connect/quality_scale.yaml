@@ -28,8 +28,8 @@ rules:
   dynamic-devices: exempt  # Single cloud account, not device-based
   discovery: exempt  # Cloud service, not discoverable
   diagnostics: done
-  exception-translations: todo
-  icon-translations: todo
+  exception-translations: done
+  icon-translations: done
   stale-devices: exempt  # Single device per config entry
 
   # Platinum tier

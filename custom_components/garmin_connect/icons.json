@@ -1,0 +1,60 @@
+{
+    "entity": {
+        "sensor": {
+            "steps": {
+                "default": "mdi:shoe-print"
+            },
+            "daily_step_goal": {
+                "default": "mdi:flag-checkered"
+            },
+            "yesterday_steps": {
+                "default": "mdi:shoe-print"
+            },
+            "weekly_step_average": {
+                "default": "mdi:chart-line"
+            },
+            "floors_ascended": {
+                "default": "mdi:stairs-up"
+            },
+            "floors_descended": {
+                "default": "mdi:stairs-down"
+            },
+            "floors_goal": {
+                "default": "mdi:flag-checkered"
+            },
+            "total_calories": {
+                "default": "mdi:food"
+            },
+            "active_calories": {
+                "default": "mdi:fire"
+            },
+            "resting_heart_rate": {
+                "default": "mdi:heart-pulse"
+            },
+            "max_heart_rate": {
+                "default": "mdi:heart-flash"
+            },
+            "min_heart_rate": {
+                "default": "mdi:heart-minus"
+            },
+            "stress_level": {
+                "default": "mdi:head-snowflake"
+            },
+            "body_battery": {
+                "default": "mdi:battery-heart"
+            },
+            "sleep_duration": {
+                "default": "mdi:sleep"
+            },
+            "weight": {
+                "default": "mdi:scale-bathroom"
+            },
+            "bmi": {
+                "default": "mdi:human"
+            },
+            "device_last_synced": {
+                "default": "mdi:sync"
+            }
+        }
+    }
+}

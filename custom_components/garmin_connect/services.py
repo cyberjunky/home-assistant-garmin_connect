@@ -48,12 +48,18 @@ def _get_coordinator(hass: HomeAssistant):
     """Get the first available coordinator from config entries."""
     entries = hass.config_entries.async_entries(DOMAIN)
     if not entries:
-        raise HomeAssistantError("No Garmin Connect integration configured")
+        raise HomeAssistantError(
+            translation_domain=DOMAIN,
+            translation_key="no_integration_configured",
+        )
 
     # Use the first config entry's coordinator
     entry = entries[0]
     if not hasattr(entry, "runtime_data") or entry.runtime_data is None:
-        raise HomeAssistantError("Garmin Connect integration not fully loaded")
+        raise HomeAssistantError(
+            translation_domain=DOMAIN,
+            translation_key="integration_not_loaded",
+        )
 
     return entry.runtime_data
 
@@ -81,7 +87,8 @@ async def async_setup_services(hass: HomeAssistant) -> None:
 
         if not await coordinator.async_login():
             raise HomeAssistantError(
-                "Failed to login to Garmin Connect, unable to update"
+                translation_domain=DOMAIN,
+                translation_key="login_failed",
             )
 
         try:
@@ -103,7 +110,9 @@ async def async_setup_services(hass: HomeAssistant) -> None:
             )
         except Exception as err:
             raise HomeAssistantError(
-                f"Failed to add body composition: {err}"
+                translation_domain=DOMAIN,
+                translation_key="add_body_composition_failed",
+                translation_placeholders={"error": str(err)},
             ) from err
 
     async def handle_add_blood_pressure(call: ServiceCall) -> None:
@@ -118,7 +127,8 @@ async def async_setup_services(hass: HomeAssistant) -> None:
 
         if not await coordinator.async_login():
             raise HomeAssistantError(
-                "Failed to login to Garmin Connect, unable to update"
+                translation_domain=DOMAIN,
+                translation_key="login_failed",
             )
 
         try:
@@ -132,7 +142,9 @@ async def async_setup_services(hass: HomeAssistant) -> None:
             )
         except Exception as err:
             raise HomeAssistantError(
-                f"Failed to add blood pressure: {err}"
+                translation_domain=DOMAIN,
+                translation_key="add_blood_pressure_failed",
+                translation_placeholders={"error": str(err)},
             ) from err
 
     # Register services
