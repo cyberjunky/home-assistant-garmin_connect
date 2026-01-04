@@ -105,6 +105,12 @@ class GarminPolylineCard extends HTMLElement {
     const mapContainer = this.shadowRoot.getElementById('map');
     if (!mapContainer || !window.L) return;
 
+    // If map already exists, remove it first
+    if (this._map) {
+      this._map.remove();
+      this._map = null;
+    }
+
     // Create map
     this._map = L.map(mapContainer, {
       zoomControl: true,

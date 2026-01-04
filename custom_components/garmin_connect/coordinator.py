@@ -58,9 +58,7 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
                     "Token not found in config entry. Please reauthenticate."
                 )
 
-            await self.hass.async_add_executor_job(
-                self.api.login, self.entry.data[CONF_TOKEN]
-            )
+            await self.hass.async_add_executor_job(self.api.login, self.entry.data[CONF_TOKEN])
         except ConfigEntryAuthFailed:
             raise
         except GarminConnectAuthenticationError as err:
@@ -120,7 +118,12 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
         today = datetime.now(ZoneInfo(self.time_zone)).date()
         current_hour = datetime.now(ZoneInfo(self.time_zone)).hour
         yesterday_date = (today - timedelta(days=1)).isoformat()
-        _LOGGER.debug("Fetching data for date: %s (timezone: %s, hour: %s)", today.isoformat(), self.time_zone, current_hour)
+        _LOGGER.debug(
+            "Fetching data for date: %s (timezone: %s, hour: %s)",
+            today.isoformat(),
+            self.time_zone,
+            current_hour,
+        )
 
         try:
             summary = await self.hass.async_add_executor_job(
@@ -130,15 +133,12 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
             # Smart fallback: detect when Garmin servers haven't populated today's data yet
             # Key signal: dailyStepGoal is None means the day data structure doesn't exist
             # This works regardless of timezone - no fixed hour window needed
-            today_data_not_ready = (
-                not summary
-                or summary.get("dailyStepGoal") is None
-            )
+            today_data_not_ready = not summary or summary.get("dailyStepGoal") is None
 
             if today_data_not_ready:
                 _LOGGER.debug(
                     "Today's data not ready (dailyStepGoal=%s), fetching yesterday's data",
-                    summary.get("dailyStepGoal") if summary else None
+                    summary.get("dailyStepGoal") if summary else None,
                 )
                 yesterday_summary = await self.hass.async_add_executor_job(
                     self.api.get_user_summary, yesterday_date
@@ -216,10 +216,10 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
 
             # Fetch workouts (scheduled/planned training sessions)
             try:
-                workouts = await self.hass.async_add_executor_job(
-                    self.api.get_workouts, 0, 10
+                workouts = await self.hass.async_add_executor_job(self.api.get_workouts, 0, 10)
+                summary["workouts"] = (
+                    workouts.get("workouts", []) if isinstance(workouts, dict) else workouts
                 )
-                summary["workouts"] = workouts.get("workouts", []) if isinstance(workouts, dict) else workouts
                 summary["lastWorkout"] = summary["workouts"][0] if summary["workouts"] else {}
             except Exception:
                 summary["workouts"] = []
@@ -264,9 +264,27 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
             except Exception:
                 summary["lactateThreshold"] = {}
 
-            user_points = sum(
-                badge["badgePoints"] * badge["badgeEarnedNumber"] for badge in badges
-            )
+            # Fetch goals (active, future, past)
+            try:
+                active_goals = await self.hass.async_add_executor_job(self.api.get_goals, "active")
+                summary["activeGoals"] = active_goals or []
+            except Exception:
+                summary["activeGoals"] = []
+
+            try:
+                future_goals = await self.hass.async_add_executor_job(self.api.get_goals, "future")
+                summary["futureGoals"] = future_goals or []
+            except Exception:
+                summary["futureGoals"] = []
+
+            try:
+                past_goals = await self.hass.async_add_executor_job(self.api.get_goals, "past")
+                # Limit to last 10 completed goals
+                summary["goalsHistory"] = (past_goals or [])[:10]
+            except Exception:
+                summary["goalsHistory"] = []
+
+            user_points = sum(badge["badgePoints"] * badge["badgeEarnedNumber"] for badge in badges)
             summary["userPoints"] = user_points
 
             user_level = 0
@@ -278,9 +296,7 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
             alarms = await self.hass.async_add_executor_job(self.api.get_device_alarms)
             next_alarms = calculate_next_active_alarms(alarms, self.time_zone)
 
-            activity_types = await self.hass.async_add_executor_job(
-                self.api.get_activity_types
-            )
+            activity_types = await self.hass.async_add_executor_job(self.api.get_activity_types)
 
             sleep_data = await self.hass.async_add_executor_job(
                 self.api.get_sleep_data, today.isoformat()
@@ -353,9 +369,7 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
                                 "bpSystolic": latest_bp.get("systolic"),
                                 "bpDiastolic": latest_bp.get("diastolic"),
                                 "bpPulse": latest_bp.get("pulse"),
-                                "bpMeasurementTime": latest_bp.get(
-                                    "measurementTimestampLocal"
-                                ),
+                                "bpMeasurementTime": latest_bp.get("measurementTimestampLocal"),
                             }
             except Exception as err:
                 _LOGGER.debug("Blood pressure data not available: %s", err)
@@ -380,9 +394,7 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
         try:
             if gear:
                 tasks: list[Awaitable] = [
-                    self.hass.async_add_executor_job(
-                        self.api.get_gear_stats, gear_item[Gear.UUID]
-                    )
+                    self.hass.async_add_executor_job(self.api.get_gear_stats, gear_item[Gear.UUID])
                     for gear_item in gear
                 ]
                 gear_stats = await asyncio.gather(*tasks)
@@ -506,9 +518,7 @@ def calculate_next_active_alarms(alarms: Any, time_zone: str) -> list[str] | Non
                     datetime.min.time(),
                     tzinfo=ZoneInfo(time_zone),
                 )
-                alarm = start_of_week + timedelta(
-                    days=DAY_TO_NUMBER[day] - 1, minutes=alarm_time
-                )
+                alarm = start_of_week + timedelta(days=DAY_TO_NUMBER[day] - 1, minutes=alarm_time)
                 if alarm < now:
                     alarm += timedelta(days=7)
 

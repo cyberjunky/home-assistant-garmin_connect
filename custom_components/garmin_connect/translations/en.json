@@ -367,6 +367,15 @@
             "user_level": {
                 "name": "User level"
             },
+            "active_goals": {
+                "name": "Active goals"
+            },
+            "future_goals": {
+                "name": "Future goals"
+            },
+            "goals_history": {
+                "name": "Goals history"
+            },
             "wellness_start_time": {
                 "name": "Wellness start time"
             },
