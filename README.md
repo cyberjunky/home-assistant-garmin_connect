@@ -112,15 +112,26 @@ Integrate your Garmin Connect fitness data with Home Assistant. Access **110+ se
 
 ### Fitness & Performance
 
-| Sensor                  | Description                          |
-| ----------------------- | ------------------------------------ |
-| Fitness Age             | Estimated fitness age                |
-| Chronological Age       | Your actual age                      |
-| Endurance Score         | Overall endurance rating             |
-| Training Readiness      | Training readiness score (%)         |
-| Training Status         | Current training status phrase       |
-| Lactate Threshold HR    | Lactate threshold heart rate (bpm)   |
-| Lactate Threshold Speed | Lactate threshold running pace (m/s) |
+| Sensor                     | Description                          |
+| -------------------------- | ------------------------------------ |
+| Fitness Age                | Estimated fitness age                |
+| Chronological Age          | Your actual age                      |
+| Endurance Score            | Overall endurance rating             |
+| Training Readiness         | Training readiness score (%)         |
+| Morning Training Readiness | Wake-up training readiness score (%) |
+| Training Status            | Current training status phrase       |
+| Lactate Threshold HR       | Lactate threshold heart rate (bpm)   |
+| Lactate Threshold Speed    | Lactate threshold running pace (m/s) |
+
+### Goal Tracking
+
+| Sensor        | Description                               |
+| ------------- | ----------------------------------------- |
+| Active Goals  | Number of in-progress goals with progress |
+| Future Goals  | Upcoming scheduled goals                  |
+| Goals History | Last 10 completed goals with status       |
+
+> **Note:** Goal sensors include detailed attributes: `goalType`, `targetValue`, `currentValue`, `progressPercent`, `startDate`, `endDate`, and `activityType`.
 
 ### Activity Tracking
 
