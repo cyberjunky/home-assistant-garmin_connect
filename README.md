@@ -21,125 +21,161 @@ Integrate your Garmin Connect fitness data with Home Assistant. Access **110+ se
 ## Available Sensors
 
 > **Note:** All sensors are enabled by default. You can disable sensors using Home Assistant's sensor configuration.
-Sensor values depend on your Garmin devices and connected apps.
+> Sensor values depend on your Garmin devices and connected apps.
 
 ### Activity & Steps
 
-| Sensor | Description |
-|--------|-------------|
-| Total Steps | Daily step count |
-| Daily Step Goal | Your configured step target |
-| Yesterday Steps/Distance | Previous day's complete totals |
-| Weekly Step/Distance Avg | 7-day averages |
-| Total Distance | Distance walked/run in meters |
-| Floors Ascended/Descended | Floors climbed |
+| Sensor                    | Description                    |
+| ------------------------- | ------------------------------ |
+| Total Steps               | Daily step count               |
+| Daily Step Goal           | Your configured step target    |
+| Yesterday Steps/Distance  | Previous day's complete totals |
+| Weekly Step/Distance Avg  | 7-day averages                 |
+| Total Distance            | Distance walked/run in meters  |
+| Floors Ascended/Descended | Floors climbed                 |
 
 ### Calories & Nutrition
 
-| Sensor | Description |
-|--------|-------------|
+| Sensor                    | Description           |
+| ------------------------- | --------------------- |
 | Total/Active/BMR Calories | Daily calorie metrics |
-| Burned/Consumed Calories | Calorie tracking |
+| Burned/Consumed Calories  | Calorie tracking      |
 
 ### Heart Rate
 
-| Sensor | Description |
-|--------|-------------|
-| Resting Heart Rate | Daily resting HR |
-| Min/Max Heart Rate | Daily HR range |
-| Last 7 Days Avg HR | Weekly average |
+| Sensor                 | Description                    |
+| ---------------------- | ------------------------------ |
+| Resting Heart Rate     | Daily resting HR               |
+| Min/Max Heart Rate     | Daily HR range                 |
+| Last 7 Days Avg HR     | Weekly average                 |
 | HRV Weekly/Nightly Avg | Heart rate variability metrics |
-| HRV Baseline | Personal HRV baseline |
+| HRV Baseline           | Personal HRV baseline          |
 
 ### Stress & Recovery
 
-| Sensor | Description |
-|--------|-------------|
-| Avg/Max Stress Level | Stress measurements (0-100) |
-| Stress Durations | Time in rest/activity/low/medium/high stress |
+| Sensor               | Description                                  |
+| -------------------- | -------------------------------------------- |
+| Avg/Max Stress Level | Stress measurements (0-100)                  |
+| Stress Durations     | Time in rest/activity/low/medium/high stress |
 
 ### Sleep
 
-| Sensor | Description |
-|--------|-------------|
-| Sleep Score | Overall sleep quality score |
-| Sleep/Awake Duration | Time asleep and awake |
-| Deep Sleep | Time in deep sleep |
-| Light Sleep | Time in light sleep |
-| REM Sleep | Time in REM sleep |
+| Sensor               | Description                 |
+| -------------------- | --------------------------- |
+| Sleep Score          | Overall sleep quality score |
+| Sleep/Awake Duration | Time asleep and awake       |
+| Deep Sleep           | Time in deep sleep          |
+| Light Sleep          | Time in light sleep         |
+| REM Sleep            | Time in REM sleep           |
 
 ### Body Battery
 
-| Sensor | Description |
-|--------|-------------|
+| Sensor                   | Description                  |
+| ------------------------ | ---------------------------- |
 | Body Battery Most Recent | Current energy level (0-100) |
-| Charged/Drained | Energy gained/spent |
-| Highest/Lowest | Daily peak and low |
+| Charged/Drained          | Energy gained/spent          |
+| Highest/Lowest           | Daily peak and low           |
 
 ### Body Composition
 
-| Sensor | Description |
-|--------|-------------|
-| Weight/BMI | Body weight and mass index |
-| Body Fat/Water | Percentage measurements |
-| Muscle/Bone Mass | Mass measurements |
-| Metabolic Age | Estimated metabolic age |
+| Sensor           | Description                |
+| ---------------- | -------------------------- |
+| Weight/BMI       | Body weight and mass index |
+| Body Fat/Water   | Percentage measurements    |
+| Muscle/Bone Mass | Mass measurements          |
+| Metabolic Age    | Estimated metabolic age    |
 
 ### Hydration
 
-| Sensor | Description |
-|--------|-------------|
-| Hydration | Daily water intake (ml) |
-| Hydration Goal | Target intake |
-| Sweat Loss | Estimated fluid loss |
+| Sensor         | Description             |
+| -------------- | ----------------------- |
+| Hydration      | Daily water intake (ml) |
+| Hydration Goal | Target intake           |
+| Sweat Loss     | Estimated fluid loss    |
 
 ### Blood Pressure
 
-| Sensor | Description |
-|--------|-------------|
-| Systolic | Systolic blood pressure (mmHg) |
-| Diastolic | Diastolic blood pressure (mmHg) |
-| Pulse | Pulse from blood pressure reading (bpm) |
-| Measurement Time | When the BP was measured |
+| Sensor           | Description                             |
+| ---------------- | --------------------------------------- |
+| Systolic         | Systolic blood pressure (mmHg)          |
+| Diastolic        | Diastolic blood pressure (mmHg)         |
+| Pulse            | Pulse from blood pressure reading (bpm) |
+| Measurement Time | When the BP was measured                |
 
 ### Health Monitoring
 
-| Sensor | Description |
-|--------|-------------|
-| SpO2 (Avg/Low/Latest) | Blood oxygen levels |
-| HRV Status | Heart rate variability |
-| Respiration Rate | Breathing measurements |
+| Sensor                | Description            |
+| --------------------- | ---------------------- |
+| SpO2 (Avg/Low/Latest) | Blood oxygen levels    |
+| HRV Status            | Heart rate variability |
+| Respiration Rate      | Breathing measurements |
 
 ### Fitness & Performance
 
-| Sensor | Description |
-|--------|-------------|
-| Fitness Age | Estimated fitness age |
-| Chronological Age | Your actual age |
-| Endurance Score | Overall endurance rating |
-| Training Readiness | Training readiness score (%) |
-| Training Status | Current training status phrase |
-| Lactate Threshold HR | Lactate threshold heart rate (bpm) |
+| Sensor                  | Description                          |
+| ----------------------- | ------------------------------------ |
+| Fitness Age             | Estimated fitness age                |
+| Chronological Age       | Your actual age                      |
+| Endurance Score         | Overall endurance rating             |
+| Training Readiness      | Training readiness score (%)         |
+| Training Status         | Current training status phrase       |
+| Lactate Threshold HR    | Lactate threshold heart rate (bpm)   |
 | Lactate Threshold Speed | Lactate threshold running pace (m/s) |
 
 ### Activity Tracking
 
-| Sensor | Description |
-|--------|-------------|
-| Next Alarm | Next scheduled alarm time |
-| Last Activity/Activities | Recent activity info |
-| Last Workout/Workouts | Scheduled/planned training sessions |
-| Badges/User Points/Level | Gamification metrics |
+| Sensor                   | Description                         |
+| ------------------------ | ----------------------------------- |
+| Next Alarm               | Next scheduled alarm time           |
+| Last Activity/Activities | Recent activity info                |
+| Last Workout/Workouts    | Scheduled/planned training sessions |
+| Badges/User Points/Level | Gamification metrics                |
+
+#### Activity Route Map
+
+The `Last Activity` sensor includes a `polyline` attribute with GPS coordinates when the activity has GPS data (`hasPolyline: true`). This can be displayed on a map using the included custom Lovelace card.
+
+**Installation:**
+
+1. Copy `www/garmin-polyline-card.js` to your `<config>/www/` folder
+2. Add as a resource: **Settings → Dashboards → ⋮ → Resources → Add Resource**
+   - URL: `/local/garmin-polyline-card.js`
+   - Type: JavaScript Module
+3. Hard refresh your browser (Ctrl+Shift+R)
+
+**Usage:**
+
+```yaml
+type: custom:garmin-polyline-card
+entity: sensor.garmin_connect_last_activity
+attribute: polyline
+title: Last Activity Route
+height: 400px
+color: "#FF5722"
+```
+
+**Options:**
+
+| Option      | Default          | Description                           |
+| ----------- | ---------------- | ------------------------------------- |
+| `entity`    | (required)       | Sensor entity with polyline attribute |
+| `attribute` | `polyline`       | Attribute containing GPS coordinates  |
+| `title`     | `Activity Route` | Card title                            |
+| `height`    | `300px`          | Map height                            |
+| `color`     | `#FF5722`        | Route line color                      |
+| `weight`    | `4`              | Route line thickness                  |
+
+![Activity Route Map](screenshots/polyline-card.png)
 
 ### Menstrual Cycle Tracking
 
-| Sensor | Description |
-|--------|-------------|
-| Cycle Phase | Current menstrual phase |
-| Cycle Day | Day of the current cycle |
-| Period Day | Day of the period |
-| Cycle Length | Total cycle length (days) |
-| Period Length | Period length (days) |
+| Sensor        | Description               |
+| ------------- | ------------------------- |
+| Cycle Phase   | Current menstrual phase   |
+| Cycle Day     | Day of the current cycle  |
+| Period Day    | Day of the period         |
+| Cycle Length  | Total cycle length (days) |
+| Period Length | Period length (days)      |
 
 > **Note:** Menstrual cycle sensors are only available if tracking is enabled in your Garmin Connect account.
 
@@ -383,6 +419,7 @@ Want to add support for new Garmin features? Here's how to find the API endpoint
 7. **Click on a request** to see the full URL and response data
 
 **Share your findings** in a GitHub issue with:
+
 - The full API URL path
 - Example response data (redact personal info)
 

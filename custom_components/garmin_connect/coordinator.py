@@ -189,7 +189,30 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
             )
 
             summary["lastActivities"] = last_activities
-            summary["lastActivity"] = last_activities[0] if last_activities else {}
+            last_activity = last_activities[0] if last_activities else {}
+
+            # Fetch polyline for last activity if it has GPS data
+            if last_activity and last_activity.get("hasPolyline"):
+                try:
+                    activity_id = last_activity.get("activityId")
+                    activity_details = await self.hass.async_add_executor_job(
+                        self.api.get_activity_details, activity_id, 100, 4000
+                    )
+                    if activity_details:
+                        polyline_data = activity_details.get("geoPolylineDTO", {})
+                        raw_polyline = polyline_data.get("polyline", [])
+                        # Simplify polyline to just lat/lon to reduce attribute size
+                        # Full polyline with all fields can be 350+ bytes per point
+                        # Simplified: ~50 bytes per point, fits HA 16KB limit
+                        last_activity["polyline"] = [
+                            {"lat": p.get("lat"), "lon": p.get("lon")}
+                            for p in raw_polyline
+                            if p.get("lat") is not None and p.get("lon") is not None
+                        ]
+                except Exception as err:
+                    _LOGGER.debug("Failed to fetch polyline for activity: %s", err)
+
+            summary["lastActivity"] = last_activity
 
             # Fetch workouts (scheduled/planned training sessions)
             try:

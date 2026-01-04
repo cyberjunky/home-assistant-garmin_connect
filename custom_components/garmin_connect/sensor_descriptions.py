@@ -53,6 +53,9 @@ ACTIVITY_ESSENTIAL_KEYS = {
     "maxRunningCadenceInStepsPerMinute",
     # Type (simplified)
     "activityType",
+    # Polyline/GPS (for map display)
+    "hasPolyline",
+    "polyline",
 }
 
 
