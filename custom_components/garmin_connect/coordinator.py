@@ -127,14 +127,23 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
                 self.api.get_user_summary, today.isoformat()
             )
 
-            # Midnight fallback: During 0:00-2:00 window, if today's data is empty/None,
-            # fallback to yesterday's data to avoid gaps due to UTC/GMT timezone differences
-            if current_hour < 2 and (not summary or summary.get("totalSteps") in (None, 0)):
-                _LOGGER.debug("Midnight fallback: Today's data empty, fetching yesterday's data")
+            # Smart fallback: detect when Garmin servers haven't populated today's data yet
+            # Key signal: dailyStepGoal is None means the day data structure doesn't exist
+            # This works regardless of timezone - no fixed hour window needed
+            today_data_not_ready = (
+                not summary
+                or summary.get("dailyStepGoal") is None
+            )
+
+            if today_data_not_ready:
+                _LOGGER.debug(
+                    "Today's data not ready (dailyStepGoal=%s), fetching yesterday's data",
+                    summary.get("dailyStepGoal") if summary else None
+                )
                 yesterday_summary = await self.hass.async_add_executor_job(
                     self.api.get_user_summary, yesterday_date
                 )
-                if yesterday_summary and yesterday_summary.get("totalSteps"):
+                if yesterday_summary and yesterday_summary.get("dailyStepGoal") is not None:
                     summary = yesterday_summary
                     _LOGGER.debug("Using yesterday's summary data as fallback")
 
@@ -204,6 +213,15 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
                 summary["trainingReadiness"] = training_readiness
             except Exception:
                 summary["trainingReadiness"] = {}
+
+            # Fetch morning training readiness (AFTER_WAKEUP_RESET context)
+            try:
+                morning_training_readiness = await self.hass.async_add_executor_job(
+                    self.api.get_morning_training_readiness, today.isoformat()
+                )
+                summary["morningTrainingReadiness"] = morning_training_readiness or {}
+            except Exception:
+                summary["morningTrainingReadiness"] = {}
 
             # Fetch training status
             try:

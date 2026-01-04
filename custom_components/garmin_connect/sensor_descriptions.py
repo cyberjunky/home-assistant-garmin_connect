@@ -887,6 +887,24 @@ ACTIVITY_TRACKING_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         attributes_fn=lambda data: data.get("trainingStatus", {}),
     ),
     GarminConnectSensorEntityDescription(
+        key="morningTrainingReadiness",
+        translation_key="morning_training_readiness",
+        icon="mdi:weather-sunset-up",
+        native_unit_of_measurement=PERCENTAGE,
+
+        value_fn=lambda data: data.get("morningTrainingReadiness", {}).get("score"),
+        attributes_fn=lambda data: {
+            "level": data.get("morningTrainingReadiness", {}).get("level"),
+            "sleep_score": data.get("morningTrainingReadiness", {}).get("sleepScore"),
+            "recovery_score": data.get("morningTrainingReadiness", {}).get("recoveryScore"),
+            "hrv_status": data.get("morningTrainingReadiness", {}).get("hrvStatus"),
+            "acuteLoad": data.get("morningTrainingReadiness", {}).get("acuteLoad"),
+            "input_context": data.get("morningTrainingReadiness", {}).get("inputContext"),
+            **{k: v for k, v in data.get("morningTrainingReadiness", {}).items()
+               if k not in ("score", "level", "sleepScore", "recoveryScore", "hrvStatus", "acuteLoad", "inputContext")},
+        },
+    ),
+    GarminConnectSensorEntityDescription(
         key="lactateThresholdHeartRate",
         translation_key="lactate_threshold_hr",
         icon="mdi:heart-pulse",

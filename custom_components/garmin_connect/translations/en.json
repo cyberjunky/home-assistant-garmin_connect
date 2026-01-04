@@ -349,6 +349,9 @@
             "training_status": {
                 "name": "Training status"
             },
+            "morning_training_readiness": {
+                "name": "Morning training readiness"
+            },
             "lactate_threshold_hr": {
                 "name": "Lactate threshold heart rate"
             },
