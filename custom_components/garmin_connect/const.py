@@ -744,7 +744,7 @@ GARMIN_ENTITY_LIST = {
         "mdi:counter",
         None,
         SensorStateClass.MEASUREMENT,
-        True,
+        False,
     ],
     "menstrual_current_phase": [
         "Cycle Phase",
@@ -752,7 +752,7 @@ GARMIN_ENTITY_LIST = {
         "mdi:calendar-heart",
         None,
         None,
-        True,
+        False,
     ],
     "menstrual_days_until_next_phase": [
         "Days Until Next Phase",
@@ -760,7 +760,7 @@ GARMIN_ENTITY_LIST = {
         "mdi:calendar-clock",
         None,
         SensorStateClass.MEASUREMENT,
-        True,
+        False,
     ],
     "menstrual_cycle_start": [
         "Cycle Start",
@@ -768,7 +768,7 @@ GARMIN_ENTITY_LIST = {
         "mdi:calendar-start",
         SensorDeviceClass.DATE,
         None,
-        True,
+        False,
     ],
     "menstrual_next_predicted_cycle_start": [
         "Next Predicted Cycle Start",
@@ -776,7 +776,7 @@ GARMIN_ENTITY_LIST = {
         "mdi:calendar-arrow-right",
         SensorDeviceClass.DATE,
         None,
-        True,
+        False,
     ],
     "menstrual_fertile_window_start": [
         "Fertile Window Start",

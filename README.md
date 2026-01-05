@@ -141,6 +141,15 @@ Metabolic Age
 Last Activities
 Last Activity
 Endurance Score
+Cycle Day
+Cycle Phase
+Days Until Next Phase
+Cycle Start
+Next Predicted Cycle Start
+Fertile Window Start
+Fertile Window End
+Period Length
+Cycle Type
 ```
 
 ## Screenshots
