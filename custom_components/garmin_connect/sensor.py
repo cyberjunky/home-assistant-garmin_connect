@@ -69,23 +69,6 @@ def _menstrual_next_predicted_cycle_start_iso(data: dict) -> str | None:
                 return s
     return None
 
-
-def _menstrual_next_predicted_cycle_start_iso(data: dict) -> str | None:
-    """Return next predicted cycle startDate (YYYY-MM-DD) from calendar."""
-    today = datetime.date.today()
-    for c in _menstrual_calendar_summaries(data):
-        if c.get("predictedCycle") is True:
-            s = c.get("startDate")
-            if not s:
-                continue
-            try:
-                d = datetime.datetime.strptime(s, "%Y-%m-%d").date()
-            except ValueError:
-                continue
-            if d >= today:
-                return s
-    return None
-
 def _menstrual_fertile_window_start_iso(data: dict) -> str | None:
     """Compute fertile window start date from cycle start + offset."""
     s = _menstrual_day_summary(data)
