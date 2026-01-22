@@ -509,21 +509,19 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
             _LOGGER.debug("No sleep score data found")
 
         # Sleep State data
-        try:
-            if sleep_data and "dailySleepDTO" in sleep_data:
-                sleep_state_data = sleep_data["dailySleepDTO"]
-                _LOGGER.debug("Sleep state data: %s", sleep_state_data)
-        except KeyError:
-            _LOGGER.debug("No sleep state data found")       
+        if sleep_data and "dailySleepDTO" in sleep_data:
+            sleep_state_data = sleep_data["dailySleepDTO"]
+            _LOGGER.debug("Sleep state data: %s", sleep_state_data)
+        else:
+            _LOGGER.debug("No sleep state data found")
 
         # HRV data
-        try:
-            if hrv_data and "hrvSummary" in hrv_data:
-                hrv_status = hrv_data["hrvSummary"]
-                _LOGGER.debug("HRV summary status: %s", hrv_status)
-        except KeyError:
-            _LOGGER.debug(
-                "Error occurred while processing HRV summary status data")
+
+        if hrv_data and "hrvSummary" in hrv_data:
+            hrv_status = hrv_data["hrvSummary"]
+            _LOGGER.debug("HRV summary status: %s", hrv_status)
+        else:
+            _LOGGER.debug("Error occurred while processing HRV summary status data")
 
         # Endurance status
         try:
