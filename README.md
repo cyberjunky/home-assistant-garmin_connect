@@ -254,7 +254,7 @@ data:
 
 #### Add Hydration
 
-```
+```yaml
 action: garmin_connect.add_hydration
 data:
   entity_id: sensor.hydration
