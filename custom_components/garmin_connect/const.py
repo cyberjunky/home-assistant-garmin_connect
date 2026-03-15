@@ -713,7 +713,7 @@ GARMIN_ENTITY_LIST = {
         SensorStateClass.MEASUREMENT,
         True,
     ],
-    "dailyAverageInML": [
+    "dailyAverageinML": [
         "Hydration Daily Average",
         UnitOfVolume.MILLILITERS,
         "mdi:water",
