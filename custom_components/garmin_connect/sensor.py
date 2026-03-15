@@ -158,6 +158,16 @@ async def async_setup_entry(
         "add_blood_pressure",
     )
 
+    platform.async_register_entity_service(
+        "add_hydration",
+        {
+            vol.Required(ATTR_ENTITY_ID): str,
+            vol.Required("value_in_ml"): vol.Coerce(float),
+            vol.Optional("timestamp"): str,
+        },
+        "add_hydration",
+    )
+
 
 class GarminConnectSensor(CoordinatorEntity, SensorEntity):
     """Representation of a Garmin Connect Sensor."""
@@ -392,6 +402,30 @@ class GarminConnectSensor(CoordinatorEntity, SensorEntity):
             pulse,
             timestamp,
             notes,
+        )
+
+    async def add_hydration(self, **kwargs):
+        """Add a hydration intake record to Garmin Connect.
+
+        Parameters:
+            value_in_ml: Amount of liquid in millilitres (positive to add, negative to subtract).
+            timestamp: Optional timestamp in YYYY-MM-DDThh:mm:ss.ms format.
+
+        Raises:
+            IntegrationError: If unable to log in to Garmin Connect.
+        """
+        value_in_ml = kwargs.get("value_in_ml")
+        timestamp = kwargs.get("timestamp")
+
+        if not await self.coordinator.async_login():
+            raise IntegrationError(
+                "Failed to login to Garmin Connect, unable to update"
+            )
+
+        await self.hass.async_add_executor_job(
+            self.coordinator.api.add_hydration_data,
+            value_in_ml,
+            timestamp,
         )
 
 

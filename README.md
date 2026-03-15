@@ -252,6 +252,15 @@ data:
   notes: Measured with Beurer BC54
 ```
 
+#### Add Hydration
+
+```
+action: garmin_connect.add_hydration
+data:
+  entity_id: sensor.hydration
+  value_in_ml: 250
+```
+
 ## Debugging
 
 Add the relevant lines below to the `configuration.yaml`:
