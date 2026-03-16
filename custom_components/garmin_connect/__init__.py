@@ -264,7 +264,7 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
         last_activities = []
         sleep_data = {}
         sleep_score = None
-        sleep_time_seconds = None
+        sleep_state_data = {}
         hrv_data = {}
         hrv_status = {"status": "unknown"}
         endurance_data = {}
@@ -508,25 +508,20 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
         except KeyError:
             _LOGGER.debug("No sleep score data found")
 
-        # Sleep time seconds data
-        try:
-            sleep_time_seconds = sleep_data["dailySleepDTO"]["sleepTimeSeconds"]
-            if sleep_time_seconds:
-                _LOGGER.debug("Sleep time seconds data: %s",
-                              sleep_time_seconds)
-            else:
-                _LOGGER.debug("No sleep time seconds data found")
-        except KeyError:
-            _LOGGER.debug("No sleep time seconds data found")
+        # Sleep State data
+        if sleep_data and "dailySleepDTO" in sleep_data:
+            sleep_state_data = sleep_data["dailySleepDTO"]
+            _LOGGER.debug("Sleep state data: %s", sleep_state_data)
+        else:
+            _LOGGER.debug("No sleep state data found")
 
         # HRV data
-        try:
-            if hrv_data and "hrvSummary" in hrv_data:
-                hrv_status = hrv_data["hrvSummary"]
-                _LOGGER.debug("HRV summary status: %s", hrv_status)
-        except KeyError:
-            _LOGGER.debug(
-                "Error occurred while processing HRV summary status data")
+
+        if hrv_data and "hrvSummary" in hrv_data:
+            hrv_status = hrv_data["hrvSummary"]
+            _LOGGER.debug("HRV summary status: %s", hrv_status)
+        else:
+            _LOGGER.debug("Error occurred while processing HRV summary status data")
 
         # Endurance status
         try:
@@ -545,7 +540,7 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
             "activityTypes": activity_types,
             "gearDefaults": gear_defaults,
             "sleepScore": sleep_score,
-            "sleepTimeSeconds": sleep_time_seconds,
+            **sleep_state_data,
             "hrvStatus": hrv_status,
             "enduranceScore": endurance_status,
             **fitnessage_data,
