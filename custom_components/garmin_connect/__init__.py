@@ -12,7 +12,6 @@ from garminconnect import (
     GarminConnectConnectionError,
     GarminConnectTooManyRequestsError,
 )
-import requests
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_ID, CONF_PASSWORD, CONF_TOKEN, CONF_USERNAME
@@ -270,6 +269,9 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
         endurance_data = {}
         endurance_status = {"overallScore": None}
         next_alarms = []
+        menstrual = {}
+        menstrual_calendar = {}
+
 
         today = datetime.now(ZoneInfo(self.time_zone)).date()
 
@@ -282,6 +284,7 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
                 _LOGGER.debug("User summary data fetched: %s", summary)
             else:
                 _LOGGER.debug("No user summary data found")
+
 
             # Body composition
             body = await self.hass.async_add_executor_job(
@@ -373,6 +376,29 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
                 self.api.get_endurance_score, today.isoformat()
             )
             _LOGGER.debug("Endurance data fetched: %s", endurance_data)
+
+            # Menstrual / cycle tracking data (best-effort)
+            try:
+                menstrual = await self.hass.async_add_executor_job(
+                    self.api.get_menstrual_data_for_date, today.isoformat()
+                )
+                _LOGGER.debug("Menstrual data for date fetched: %s", menstrual)
+            except Exception as err:  # pylint: disable=broad-except
+                _LOGGER.debug("Menstrual data for date not available: %s", err)
+
+            # Calendar data usually needs a range; start simple with a window around today
+            try:
+                start_date = (today - timedelta(days=30)).isoformat()
+                end_date = (today + timedelta(days=60)).isoformat()
+                menstrual_calendar = await self.hass.async_add_executor_job(
+                    self.api.get_menstrual_calendar_data, start_date, end_date
+                )
+                _LOGGER.debug("Menstrual calendar data fetched: %s", menstrual_calendar)
+            except TypeError:
+                # If the library signature is different, we'll adjust after seeing the error.
+                _LOGGER.debug("Menstrual calendar method signature mismatch")
+            except Exception as err:  # pylint: disable=broad-except
+                _LOGGER.debug("Menstrual calendar data not available: %s", err)
 
         except (
             GarminConnectAuthenticationError,
@@ -538,7 +564,7 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
 
         return {
             **summary,
-            **body["totalAverage"],
+            **(body.get("totalAverage") or {}),
             "nextAlarm": next_alarms,
             "gear": gear,
             "gearStats": gear_stats,
@@ -548,6 +574,8 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
             "sleepTimeSeconds": sleep_time_seconds,
             "hrvStatus": hrv_status,
             "enduranceScore": endurance_status,
+            "menstrual": menstrual,
+            "menstrualCalendar": menstrual_calendar,
             **fitnessage_data,
             **hydration_data,
         }

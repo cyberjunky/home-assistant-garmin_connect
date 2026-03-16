@@ -36,6 +36,74 @@ from .const import (
 
 _LOGGER = logging.getLogger(__name__)
 
+# --- Menstrual / cycle helpers ---
+MENSTRUAL_PHASE_MAP = {
+    1: "Menstruation",
+    2: "Follicular",
+    3: "Ovulation",
+    4: "Luteal",
+}
+
+
+def _menstrual_day_summary(data: dict) -> dict:
+    """Safely return menstrual daySummary dict."""
+    return (data.get("menstrual") or {}).get("daySummary") or {}
+
+def _menstrual_calendar_summaries(data: dict) -> list[dict]:
+    """Safely return menstrual calendar cycleSummaries list."""
+    return (data.get("menstrualCalendar") or {}).get("cycleSummaries") or []
+
+def _menstrual_next_predicted_cycle_start_iso(data: dict) -> str | None:
+    """Return next predicted cycle startDate (YYYY-MM-DD) from calendar."""
+    today = datetime.date.today()
+    for c in _menstrual_calendar_summaries(data):
+        if c.get("predictedCycle") is True:
+            s = c.get("startDate")
+            if not s:
+                continue
+            try:
+                d = datetime.datetime.strptime(s, "%Y-%m-%d").date()
+            except ValueError:
+                continue
+            if d >= today:
+                return s
+    return None
+
+def _menstrual_fertile_window_start_iso(data: dict) -> str | None:
+    """Compute fertile window start date from cycle start + offset."""
+    s = _menstrual_day_summary(data)
+    start = s.get("startDate")
+    fw_start = s.get("fertileWindowStart")
+    if not start or not isinstance(fw_start, int):
+        return None
+    try:
+        start_date = datetime.datetime.strptime(start, "%Y-%m-%d").date()
+    except ValueError:
+        return None
+    # Garmin appears to use 1-based day-of-cycle indexing
+    fertile_start = start_date + datetime.timedelta(days=fw_start - 1)
+    return fertile_start.isoformat()
+
+def _menstrual_fertile_window_end_iso(data: dict) -> str | None:
+    """Compute fertile window end date from start + length."""
+    s = _menstrual_day_summary(data)
+    start = s.get("startDate")
+    fw_start = s.get("fertileWindowStart")
+    fw_len = s.get("lengthOfFertileWindow")
+    if (
+        not start
+        or not isinstance(fw_start, int)
+        or not isinstance(fw_len, int)
+        or fw_len <= 0
+    ):
+        return None
+    try:
+        start_date = datetime.datetime.strptime(start, "%Y-%m-%d").date()
+    except ValueError:
+        return None
+    fertile_start = start_date + datetime.timedelta(days=fw_start - 1)
+    fertile_end = fertile_start + datetime.timedelta(days=fw_len - 1)
+    return fertile_end.isoformat()
 
 async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities
@@ -201,10 +269,71 @@ class GarminConnectSensor(CoordinatorEntity, SensorEntity):
         """
         if not self.coordinator.data:
             return None
+        
+        # --- Menstrual / cycle derived sensors (nested payloads) ---
+        # These keys are not top-level in coordinator.data, so handle them BEFORE the generic lookup.
+        if self._type.startswith("menstrual_"):
+            s = _menstrual_day_summary(self.coordinator.data)
+
+            if self._type == "menstrual_day_in_cycle":
+                return s.get("dayInCycle")
+
+            if self._type == "menstrual_cycle_start":
+                start = s.get("startDate")
+                if not start:
+                    return None
+                try:
+                    return datetime.datetime.strptime(start, "%Y-%m-%d").date()
+                except ValueError:
+                    return None
+
+            if self._type == "menstrual_period_length":
+                return s.get("periodLength")
+
+            if self._type == "menstrual_cycle_type":
+                return s.get("cycleType")
+
+            if self._type == "menstrual_days_until_next_phase":
+                return s.get("daysUntilNextPhase")
+
+            if self._type == "menstrual_current_phase":
+                phase = s.get("currentPhase")
+                return MENSTRUAL_PHASE_MAP.get(phase, "Unknown")
+
+            if self._type == "menstrual_fertile_window_start":
+                iso = _menstrual_fertile_window_start_iso(self.coordinator.data)
+                if not iso:
+                    return None
+                try:
+                    return datetime.datetime.strptime(iso, "%Y-%m-%d").date()
+                except ValueError:
+                    return None
+
+            if self._type == "menstrual_fertile_window_end":
+                iso = _menstrual_fertile_window_end_iso(self.coordinator.data)
+                if not iso:
+                    return None
+                try:
+                    return datetime.datetime.strptime(iso, "%Y-%m-%d").date()
+                except ValueError:
+                    return None
+
+            if self._type == "menstrual_next_predicted_cycle_start":
+                iso = _menstrual_next_predicted_cycle_start_iso(self.coordinator.data)
+                if not iso:
+                    return None
+                try:
+                    return datetime.datetime.strptime(iso, "%Y-%m-%d").date()
+                except ValueError:
+                    return None
+
+            return None
+
 
         value = self.coordinator.data.get(self._type)
         if value is None:
             return None
+
 
         if self._type == "lastActivities" or self._type == "badges":
             value = len(self.coordinator.data[self._type])
@@ -253,9 +382,11 @@ class GarminConnectSensor(CoordinatorEntity, SensorEntity):
         if not self.coordinator.data:
             return {}
 
-        attributes = {
-            "last_synced": self.coordinator.data["lastSyncTimestampGMT"],
-        }
+        attributes = {}
+        last_sync = self.coordinator.data.get("lastSyncTimestampGMT")
+        if last_sync is not None:
+            attributes["last_synced"] = last_sync
+
 
         # Only keep the last 5 activities for performance reasons
         if self._type == "lastActivities":
@@ -284,6 +415,18 @@ class GarminConnectSensor(CoordinatorEntity, SensorEntity):
             attributes = {**attributes, **self.coordinator.data[self._type]}
             del attributes["overallScore"]
 
+        # Menstrual/cycle sensors: attach daySummary as attributes (lightly)
+        if self._type.startswith("menstrual_"):
+            s = _menstrual_day_summary(self.coordinator.data)
+            if s:
+                attributes["cycle_start_date"] = s.get("startDate")
+                attributes["day_in_cycle"] = s.get("dayInCycle")
+                attributes["period_length"] = s.get("periodLength")
+                attributes["cycle_type"] = s.get("cycleType")
+                attributes["days_until_next_phase"] = s.get("daysUntilNextPhase")
+                attributes["fertile_window_start_day"] = s.get("fertileWindowStart")
+                attributes["fertile_window_length"] = s.get("lengthOfFertileWindow")
+
         return attributes
 
     @property
@@ -305,11 +448,15 @@ class GarminConnectSensor(CoordinatorEntity, SensorEntity):
     @property
     def available(self) -> bool:
         """Return True if entity is available."""
-        return (
-            super().available
-            and self.coordinator.data
-            and self._type in self.coordinator.data
-        )
+        if not super().available or not self.coordinator.data:
+            return False
+
+        # Derived menstrual sensors live under nested payloads, not top-level keys
+        if self._type.startswith("menstrual_"):
+            return bool(_menstrual_day_summary(self.coordinator.data))
+
+        return self._type in self.coordinator.data
+
 
     async def add_body_composition(self, **kwargs):
         """
