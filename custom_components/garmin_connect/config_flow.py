@@ -2,6 +2,7 @@
 
 import logging
 from collections.abc import Mapping
+from functools import partial
 from typing import Any, cast
 import requests
 from garminconnect import (
@@ -66,8 +67,10 @@ class GarminConnectConfigFlowHandler(ConfigFlow, domain=DOMAIN):
         if country == "CN":
             self._in_china = True
 
-        self._api = Garmin(email=self._username,
-                           password=self._password, return_on_mfa=True, is_cn=self._in_china)
+        self._api = await self.hass.async_add_executor_job(
+            partial(Garmin, email=self._username,
+                    password=self._password, return_on_mfa=True, is_cn=self._in_china)
+        )
 
         try:
             self._login_result1, self._login_result2 = await self.hass.async_add_executor_job(self._api.login)

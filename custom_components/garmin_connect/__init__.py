@@ -3,6 +3,7 @@
 import asyncio
 from collections.abc import Awaitable
 from datetime import datetime, timedelta
+from functools import partial
 import logging
 from zoneinfo import ZoneInfo
 import requests
@@ -56,7 +57,9 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             in_china = hass.config.country == "CN"
 
             # Create temporary API client to get token
-            api = Garmin(email=username, password=password, is_cn=in_china)
+            api = await hass.async_add_executor_job(
+                partial(Garmin, email=username, password=password, is_cn=in_china)
+            )
 
             try:
                 # Login to get the token
@@ -136,6 +139,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Garmin Connect from a config entry."""
 
     coordinator = GarminConnectDataUpdateCoordinator(hass, entry=entry)
+    await coordinator._async_init_api()
 
     if not await coordinator.async_login():
         return False
@@ -180,10 +184,16 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
         self.time_zone = self.hass.config.time_zone
         _LOGGER.debug("Time zone: %s", self.time_zone)
 
-        self.api = Garmin(is_cn=self._in_china)
+        self.api = None
 
         super().__init__(hass, _LOGGER, name=DOMAIN,
                          update_interval=DEFAULT_UPDATE_INTERVAL)
+
+    async def _async_init_api(self) -> None:
+        """Initialize the Garmin API client off the event loop."""
+        self.api = await self.hass.async_add_executor_job(
+            partial(Garmin, is_cn=self._in_china)
+        )
 
     async def async_login(self) -> bool:
         """
