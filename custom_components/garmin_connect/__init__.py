@@ -1,120 +1,90 @@
 """The Garmin Connect integration."""
 
+from __future__ import annotations
+
 import logging
 
-from garminconnect import Garmin
+from aiohttp import ClientError
+from ha_garmin import GarminAuth, GarminClient
+from ha_garmin.exceptions import GarminConnectError
+
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import CONF_ID, CONF_PASSWORD, CONF_TOKEN, CONF_USERNAME
+from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 
-from .const import DOMAIN
-from .coordinator import GarminConnectDataUpdateCoordinator
+from .const import CONF_DI_CLIENT_ID, CONF_DI_REFRESH_TOKEN, CONF_DI_TOKEN
+from .coordinator import CoreCoordinator, GarminConnectCoordinators
 
 _LOGGER = logging.getLogger(__name__)
 
-PLATFORMS = ["sensor"]
+PLATFORMS: list[Platform] = [Platform.SENSOR]
+
+type GarminConnectConfigEntry = ConfigEntry[GarminConnectCoordinators]
 
 
-async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Migrate old config entry to new format."""
-    _LOGGER.debug("Migrating config entry from version %s", entry.version)
+async def async_migrate_entry(
+    hass: HomeAssistant, entry: GarminConnectConfigEntry
+) -> bool:
+    """Migrate config entry to the current version."""
+    if CONF_DI_TOKEN not in entry.data:
+        _LOGGER.warning(
+            "Garmin Connect config entry %s uses an old format "
+            "and needs to be re-authenticated",
+            entry.entry_id,
+        )
+        entry.async_start_reauth(hass)
+        return False
 
-    if entry.version == 1:
-        # Has USERNAME + PASSWORD but no TOKEN (old auth method)
-        if (
-            CONF_TOKEN not in entry.data
-            and CONF_USERNAME in entry.data
-            and CONF_PASSWORD in entry.data
-        ):
-            _LOGGER.info("Migrating from username/password to token-based auth")
-
-            username = entry.data[CONF_USERNAME]
-            password = entry.data[CONF_PASSWORD]
-            in_china = hass.config.country == "CN"
-
-            api = Garmin(email=username, password=password, is_cn=in_china)
-
-            try:
-                await hass.async_add_executor_job(api.login)
-                tokens = api.garth.dumps()
-
-                new_data = {
-                    CONF_ID: entry.data.get(CONF_ID, username),
-                    CONF_TOKEN: tokens,
-                }
-
-                hass.config_entries.async_update_entry(entry, data=new_data)
-                _LOGGER.info("Migration successful")
-                return True
-
-            except Exception as err:  # pylint: disable=broad-except
-                _LOGGER.error("Migration failed: %s", err)
-                return False
-
-        # Has USERNAME + TOKEN but no ID (partially migrated)
-        elif (
-            CONF_ID not in entry.data
-            and CONF_USERNAME in entry.data
-            and CONF_TOKEN in entry.data
-        ):
-            _LOGGER.info("Migrating: converting USERNAME to ID")
-
-            new_data = {
-                CONF_ID: entry.data[CONF_USERNAME],
-                CONF_TOKEN: entry.data[CONF_TOKEN],
-            }
-
-            hass.config_entries.async_update_entry(entry, data=new_data)
-            return True
-
-        # Missing TOKEN (incomplete/corrupted)
-        elif CONF_TOKEN not in entry.data:
-            if CONF_ID not in entry.data:
-                _LOGGER.info("Adding placeholder ID for reauth flow")
-                new_data = {
-                    **entry.data,
-                    CONF_ID: entry.entry_id,
-                }
-                hass.config_entries.async_update_entry(entry, data=new_data)
-
-            _LOGGER.info("Config entry incomplete, reauthentication required")
-            return True
+    if entry.version < 2:
+        # v1 used email as unique_id; v2 uses numeric profile_id.
+        unique_id = entry.unique_id
+        try:
+            is_cn = hass.config.country == "CN"
+            auth = GarminAuth(is_cn=is_cn)
+            auth.di_token = entry.data[CONF_DI_TOKEN]
+            auth.di_refresh_token = entry.data[CONF_DI_REFRESH_TOKEN]
+            auth.di_client_id = entry.data[CONF_DI_CLIENT_ID]
+            client = GarminClient(auth, is_cn=is_cn)
+            profile = await client.get_user_profile()
+            unique_id = str(profile.profile_id)
+        except (GarminConnectError, ClientError):
+            _LOGGER.warning(
+                "Could not fetch Garmin profile during migration of entry %s; "
+                "keeping existing unique_id",
+                entry.entry_id,
+            )
+        hass.config_entries.async_update_entry(entry, unique_id=unique_id, version=2)
 
     return True
 
 
-async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+async def async_setup_entry(
+    hass: HomeAssistant, entry: GarminConnectConfigEntry
+) -> bool:
     """Set up Garmin Connect from a config entry."""
-    from .services import async_setup_services
+    is_cn = hass.config.country == "CN"
+    auth = GarminAuth(is_cn=is_cn)
+    auth.di_token = entry.data[CONF_DI_TOKEN]
+    auth.di_refresh_token = entry.data[CONF_DI_REFRESH_TOKEN]
+    auth.di_client_id = entry.data[CONF_DI_CLIENT_ID]
 
-    coordinator = GarminConnectDataUpdateCoordinator(hass, entry=entry)
+    client = GarminClient(auth, is_cn=is_cn)
 
-    if not await coordinator.async_login():
-        return False
+    coordinators = GarminConnectCoordinators(
+        core=CoreCoordinator(hass, entry, client, auth),
+    )
 
-    await coordinator.async_config_entry_first_refresh()
+    await coordinators.core.async_config_entry_first_refresh()
 
-    # Use runtime_data pattern (modern approach)
-    entry.runtime_data = coordinator
+    entry.runtime_data = coordinators
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
-    # Register integration-level services (only once)
-    if not hass.services.has_service(DOMAIN, "add_body_composition"):
-        await async_setup_services(hass)
-
     return True
 
 
-async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+async def async_unload_entry(
+    hass: HomeAssistant, entry: GarminConnectConfigEntry
+) -> bool:
     """Unload a config entry."""
-    from .services import async_unload_services
-
-    unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
-
-    # Unload services only if this is the last entry (no entries remaining after unload)
-    remaining_entries = len(hass.config_entries.async_entries(DOMAIN))
-    if unload_ok and remaining_entries == 1:  # This entry is being unloaded
-        await async_unload_services(hass)
-
-    return bool(unload_ok)
+    return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)

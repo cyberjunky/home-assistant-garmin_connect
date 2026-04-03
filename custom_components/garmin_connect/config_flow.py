@@ -1,177 +1,166 @@
 """Config flow for Garmin Connect integration."""
 
-import logging
-from collections.abc import Mapping
-from typing import Any, cast
+from __future__ import annotations
 
-import garth
-import requests
+from typing import Any
+
+from aiohttp import ClientError
+from ha_garmin import GarminAuth, GarminAuthError, GarminClient, GarminConnectError, GarminMFARequired
 import voluptuous as vol
-from garminconnect import (
-    Garmin,
-    GarminConnectAuthenticationError,
-    GarminConnectConnectionError,
-    GarminConnectTooManyRequestsError,
+
+from homeassistant.config_entries import SOURCE_REAUTH, ConfigFlow, ConfigFlowResult
+from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
+
+from .const import CONF_DI_CLIENT_ID, CONF_DI_REFRESH_TOKEN, CONF_DI_TOKEN, DOMAIN
+
+STEP_USER_DATA_SCHEMA = vol.Schema(
+    {
+        vol.Required(CONF_USERNAME): str,
+        vol.Required(CONF_PASSWORD): str,
+    }
 )
-from homeassistant.config_entries import ConfigFlow, ConfigFlowResult
-from homeassistant.const import CONF_ID, CONF_PASSWORD, CONF_TOKEN, CONF_USERNAME
 
-from .const import CONF_MFA, DOMAIN
+STEP_MFA_DATA_SCHEMA = vol.Schema(
+    {
+        vol.Required("mfa_code"): str,
+    }
+)
 
-_LOGGER = logging.getLogger(__name__)
 
-
-class GarminConnectConfigFlowHandler(ConfigFlow, domain=DOMAIN):  # type: ignore[call-arg]
+class GarminConnectConfigFlow(ConfigFlow, domain=DOMAIN):
     """Handle a config flow for Garmin Connect."""
 
-    VERSION = 1
+    VERSION = 2
 
     def __init__(self) -> None:
-        """Initialize the config flow."""
-        self.data_schema = {
-            vol.Required(CONF_USERNAME): str,
-            vol.Required(CONF_PASSWORD): str,
-        }
-        self.mfa_data_schema = {
-            vol.Required(CONF_MFA): str,
-        }
-
-        self._api = None
-        self._login_result1: Any = None
-        self._login_result2: Any = None
-        self._mfa_code: str | None = None
+        """Initialize config flow."""
+        self._auth: GarminAuth | None = None
         self._username: str | None = None
-        self._password: str | None = None
-        self._in_china = False
+        self._is_cn: bool = False
 
-    async def _async_garmin_connect_login(self, step_id: str) -> ConfigFlowResult:
-        """Authenticate with Garmin Connect."""
-        errors = {}
-
-        if self.hass.config.country == "CN":
-            self._in_china = True
-
-        self._api = Garmin(
-            email=self._username,
-            password=self._password,
-            return_on_mfa=True,
-            is_cn=self._in_china,
-        )
-
-        try:
-            self._login_result1, self._login_result2 = (
-                await self.hass.async_add_executor_job(self._api.login)  # type: ignore[attr-defined]
-            )
-
-            if self._login_result1 == "needs_mfa":
-                return await self.async_step_mfa()
-
-        except GarminConnectConnectionError:
-            errors = {"base": "cannot_connect"}
-        except GarminConnectAuthenticationError:
-            errors = {"base": "invalid_auth"}
-        except GarminConnectTooManyRequestsError:
-            errors = {"base": "too_many_requests"}
-        except requests.exceptions.HTTPError as err:
-            if err.response.status_code == 403:
-                errors = {"base": "invalid_auth"}
-            elif err.response.status_code == 429:
-                errors = {"base": "too_many_requests"}
-            else:
-                errors = {"base": "cannot_connect"}
-        except Exception:  # pylint: disable=broad-except
-            _LOGGER.exception("Unexpected exception")
-            errors = {"base": "unknown"}
-
-        if errors:
-            return self.async_show_form(
-                step_id=step_id,
-                data_schema=vol.Schema(self.data_schema),
-                errors=errors,
-            )
-
-        return await self._async_create_entry()
-
-    async def _async_garmin_connect_mfa_login(self) -> ConfigFlowResult:
-        """Complete MFA authentication."""
-        try:
-            await self.hass.async_add_executor_job(
-                self._api.resume_login, self._login_result2, self._mfa_code  # type: ignore[attr-defined]
-            )
-        except garth.exc.GarthException as err:
-            _LOGGER.error("MFA login error: %s", err)
-            return self.async_show_form(
-                step_id="mfa",
-                data_schema=vol.Schema(self.mfa_data_schema),
-                errors={"base": "invalid_mfa_code"},
-            )
-
-        return await self._async_create_entry()
-
-    async def _async_create_entry(self) -> ConfigFlowResult:
-        """Create the config entry."""
-        config_data = {
-            CONF_ID: self._username,
-            CONF_TOKEN: self._api.garth.dumps(),  # type: ignore[attr-defined]
+    def _token_data(self) -> dict[str, Any]:
+        """Return token data from current auth state."""
+        assert self._auth is not None
+        return {
+            CONF_DI_TOKEN: self._auth.di_token,
+            CONF_DI_REFRESH_TOKEN: self._auth.di_refresh_token,
+            CONF_DI_CLIENT_ID: self._auth.di_client_id,
         }
-        existing_entry = await self.async_set_unique_id(self._username)
 
-        if existing_entry:
-            self.hass.config_entries.async_update_entry(existing_entry, data=config_data)
-            await self.hass.config_entries.async_reload(existing_entry.entry_id)
-            return self.async_abort(reason="reauth_successful")
+    async def _async_finish_reauth(self) -> ConfigFlowResult:
+        """Update tokens on the existing entry and reload it."""
+        entry = self._get_reauth_entry()
+        self.hass.config_entries.async_update_entry(entry, data=self._token_data())
+        await self.hass.config_entries.async_reload(entry.entry_id)
+        return self.async_abort(reason="reauth_successful")
 
-        return self.async_create_entry(title=cast(str, self._username), data=config_data)
+    async def _async_create_new_entry(self) -> ConfigFlowResult:
+        """Finalize a new config entry after successful authentication."""
+        assert self._auth is not None
+        unique_id = self._username
+        try:
+            client = GarminClient(self._auth, is_cn=self._is_cn)
+            profile = await client.get_user_profile()
+            unique_id = str(profile.profile_id)
+        except (GarminConnectError, ClientError):
+            pass
+        await self.async_set_unique_id(unique_id)
+        self._abort_if_unique_id_configured()
+        return self.async_create_entry(
+            title=self._username or "Garmin Connect",
+            data=self._token_data(),
+        )
 
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Handle the user step."""
-        if user_input is None:
-            return self.async_show_form(
-                step_id="user", data_schema=vol.Schema(self.data_schema)
-            )
+        """Handle the initial step."""
+        errors: dict[str, str] = {}
 
-        self._username = user_input[CONF_USERNAME]
-        self._password = user_input[CONF_PASSWORD]
+        if user_input is not None:
+            self._username = user_input[CONF_USERNAME]
+            self._is_cn = self.hass.config.country == "CN"
+            self._auth = GarminAuth(is_cn=self._is_cn)
 
-        return await self._async_garmin_connect_login(step_id="user")
+            try:
+                await self._auth.login(
+                    user_input[CONF_USERNAME],
+                    user_input[CONF_PASSWORD],
+                )
+            except GarminMFARequired:
+                return await self.async_step_mfa()
+            except GarminAuthError:
+                errors["base"] = "invalid_auth"
+            except GarminConnectError:
+                errors["base"] = "unknown"
+            else:
+                return await self._async_create_new_entry()
+
+        return self.async_show_form(
+            step_id="user",
+            data_schema=STEP_USER_DATA_SCHEMA,
+            errors=errors,
+        )
 
     async def async_step_mfa(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Handle the MFA step."""
-        if user_input is None:
-            return self.async_show_form(
-                step_id="mfa", data_schema=vol.Schema(self.mfa_data_schema)
-            )
+        """Handle MFA step."""
+        errors: dict[str, str] = {}
 
-        self._mfa_code = user_input[CONF_MFA]
-        return await self._async_garmin_connect_mfa_login()
+        if user_input is not None:
+            assert self._auth is not None
+
+            try:
+                await self._auth.complete_mfa(user_input["mfa_code"])
+            except GarminAuthError:
+                errors["base"] = "invalid_mfa"
+            except GarminConnectError:
+                errors["base"] = "unknown"
+            else:
+                if self.source == SOURCE_REAUTH:
+                    return await self._async_finish_reauth()
+                return await self._async_create_new_entry()
+
+        return self.async_show_form(
+            step_id="mfa",
+            data_schema=STEP_MFA_DATA_SCHEMA,
+            errors=errors,
+        )
 
     async def async_step_reauth(
-        self, entry_data: Mapping[str, Any]
+        self, entry_data: dict[str, Any]
     ) -> ConfigFlowResult:
-        """Handle reauthorization."""
-        self._username = entry_data.get(CONF_USERNAME) or entry_data.get(CONF_ID)
+        """Handle re-authentication."""
         return await self.async_step_reauth_confirm()
 
     async def async_step_reauth_confirm(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Handle reauthorization confirmation."""
-        if user_input is None:
-            return self.async_show_form(
-                step_id="reauth_confirm",
-                data_schema=vol.Schema(
-                    {
-                        vol.Required(CONF_USERNAME, default=self._username): str,
-                        vol.Required(CONF_PASSWORD): str,
-                    }
-                ),
-            )
+        """Handle re-authentication confirmation."""
+        errors: dict[str, str] = {}
 
-        self._username = user_input[CONF_USERNAME]
-        self._password = user_input[CONF_PASSWORD]
+        if user_input is not None:
+            self._username = user_input[CONF_USERNAME]
+            self._is_cn = self.hass.config.country == "CN"
+            self._auth = GarminAuth(is_cn=self._is_cn)
 
-        return await self._async_garmin_connect_login(step_id="reauth_confirm")
+            try:
+                await self._auth.login(
+                    user_input[CONF_USERNAME],
+                    user_input[CONF_PASSWORD],
+                )
+            except GarminMFARequired:
+                return await self.async_step_mfa()
+            except GarminAuthError:
+                errors["base"] = "invalid_auth"
+            except GarminConnectError:
+                errors["base"] = "unknown"
+            else:
+                return await self._async_finish_reauth()
+
+        return self.async_show_form(
+            step_id="reauth_confirm",
+            data_schema=STEP_USER_DATA_SCHEMA,
+            errors=errors,
+        )

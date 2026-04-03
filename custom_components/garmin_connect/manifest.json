@@ -5,12 +5,15 @@
     "@cyberjunky"
   ],
   "config_flow": true,
-  "dependencies": [],
   "documentation": "https://github.com/cyberjunky/home-assistant-garmin_connect",
+  "integration_type": "service",
   "iot_class": "cloud_polling",
   "issue_tracker": "https://github.com/cyberjunky/home-assistant-garmin_connect/issues",
-  "requirements": [
-    "garminconnect>=0.2.38"
+  "loggers": [
+    "ha_garmin"
   ],
-  "version": "1.0.0-beta-01"
+  "requirements": [
+    "ha-garmin==0.1.0"
+  ],
+  "version": "2.1.0"
 }

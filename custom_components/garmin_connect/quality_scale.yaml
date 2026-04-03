@@ -1,38 +1,70 @@
-# Garmin Connect Quality Scale
-
-# This file tracks the integration quality scale for Home Assistant Core.
-# See: https://developers.home-assistant.io/docs/core/integration-quality-scale/
-
 rules:
-  # Bronze tier (minimum for Core)
+  # Bronze
+  action-setup: done
+  appropriate-polling: done
+  brands: done
+  common-modules: done
   config-flow: done
-  unique-config-entry: done
+  config-flow-test-coverage: done
+  dependency-transparency: done
+  docs-actions: done
+  docs-high-level-description: done
+  docs-installation-instructions: done
+  docs-removal-instructions: done
+  entity-event-setup:
+    status: exempt
+    comment: Garmin Connect is a polling integration.
   entity-unique-id: done
   has-entity-name: done
-  appropriate-polling: done
-  action-exceptions: done
-  test-before-configure: done
   runtime-data: done
+  test-before-configure: done
+  test-before-setup: done
+  unique-config-entry: done
 
-  # Silver tier
-  reauthentication-flow: done
-  entity-translations: done
-  parallel-updates: done
+  # Silver
+  action-exceptions: done
   config-entry-unloading: done
-  log-when-unavailable: done
+  docs-configuration-parameters: done
+  docs-installation-parameters: done
   entity-unavailable: done
+  integration-owner: done
+  log-when-unavailable: done
+  parallel-updates: done
+  reauthentication-flow: done
+  test-coverage: done
 
-  # Gold tier
-  entity-device-class: done
-  reconfiguration-flow: exempt  # Credentials handled by reauthentication flow
-  dynamic-devices: exempt  # Single cloud account, not device-based
-  discovery: exempt  # Cloud service, not discoverable
+  # Gold
+  devices: done
   diagnostics: done
+  discovery:
+    status: exempt
+    comment: Cloud service, no local discovery.
+  discovery-update-info:
+    status: exempt
+    comment: Cloud service.
+  docs-data-update: done
+  docs-examples: done
+  docs-known-limitations: done
+  docs-supported-devices: done
+  docs-supported-functions: done
+  docs-troubleshooting: done
+  docs-use-cases: done
+  dynamic-devices:
+    status: exempt
+    comment: Uses single service device for all sensors.
+  entity-category: done
+  entity-device-class: done
+  entity-disabled-by-default: done
+  entity-translations: done
   exception-translations: done
   icon-translations: done
-  stale-devices: exempt  # Single device per config entry
+  reconfiguration-flow: todo
+  repair-issues: done
+  stale-devices:
+    status: exempt
+    comment: Uses single service device.
 
-  # Platinum tier
-  async-dependency: todo
-  inject-websession: todo
-  strict-typing: todo
+  # Platinum
+  async-dependency: done
+  inject-websession: done
+  strict-typing: done
