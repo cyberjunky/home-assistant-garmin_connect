@@ -238,7 +238,7 @@ class GarminConnectSensor(CoordinatorEntity, SensorEntity):
 
         elif self._type == "bpCategory":
             # Garmin returns e.g. "STAGE_1_HIGH" — normalize to "Stage 1 High"
-            value = str(value).title() if value else None
+            value = str(value).replace("_", " ").title() if value else None
 
         if self._device_class == SensorDeviceClass.TIMESTAMP:
             if value:

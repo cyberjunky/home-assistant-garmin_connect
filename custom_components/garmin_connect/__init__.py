@@ -545,13 +545,15 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
         try:
             if bp_data and "measurementSummaries" in bp_data:
                 for bp_summary in bp_data["measurementSummaries"]:
-                    if "measurements" in bp_summary and bp_summary["measurements"]:
-                        latest = bp_summary["measurements"][0]
+                    measurements = bp_summary.get("measurements")
+                    if measurements:
+                        latest = measurements[0]
                         bp_latest = {
                             "systolic": latest.get("systolic"),
                             "diastolic": latest.get("diastolic"),
                             "pulse": latest.get("pulse"),
-                            "bpCategory": latest.get("categoryName", "").replace("_", " ").title(),
+                            # Garmin returns e.g. "STAGE_1_HIGH" or None — coalesce and normalize
+                            "bpCategory": (latest.get("categoryName") or "").replace("_", " ").title(),
                             "bpTimestamp": latest.get("measurementTimestampLocal"),
                         }
                         break
