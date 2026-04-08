@@ -13,3 +13,4 @@ ruff==0.14.10
 types-pytz==2025.2.0.20251108
 types-requests
 vulture==2.14
+pycares>=5.0.0

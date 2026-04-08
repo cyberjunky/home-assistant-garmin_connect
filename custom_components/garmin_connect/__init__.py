@@ -200,7 +200,7 @@ async def async_options_update_listener(
     hass: HomeAssistant, entry: GarminConnectConfigEntry
 ) -> None:
     """Handle options update — reload to apply new scan_interval."""
-    await hass.config_entries.async_reload(entry.entry_id)
+    hass.async_create_task(hass.config_entries.async_reload(entry.entry_id))
 
 
 async def async_unload_entry(

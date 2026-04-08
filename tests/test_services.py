@@ -12,6 +12,8 @@ from custom_components.garmin_connect.services import (
     async_unload_services,
 )
 
+# ── Fixtures / helpers ────────────────────────────────────────────────────────
+
 
 @pytest.fixture
 def mock_hass() -> MagicMock:
@@ -44,8 +46,11 @@ def _get_client(mock_hass: MagicMock) -> AsyncMock:
     return entry.runtime_data.core.client
 
 
+# ── Registration / unregistration ─────────────────────────────────────────────
+
+
 async def test_setup_registers_all_services(mock_hass: MagicMock) -> None:
-    """Test that setup registers all 6 services."""
+    """async_setup_services must register all 6 service handlers."""
     await async_setup_services(mock_hass)
 
     registered = {
@@ -62,7 +67,7 @@ async def test_setup_registers_all_services(mock_hass: MagicMock) -> None:
 
 
 async def test_unload_removes_all_services(mock_hass: MagicMock) -> None:
-    """Test that unload removes all 6 services."""
+    """async_unload_services must remove all 6 services."""
     await async_unload_services(mock_hass)
 
     removed = {
@@ -78,8 +83,44 @@ async def test_unload_removes_all_services(mock_hass: MagicMock) -> None:
     }
 
 
+# ── _get_client error paths ───────────────────────────────────────────────────
+
+
+async def test_service_no_entry_raises(mock_hass: MagicMock) -> None:
+    """Services must raise HomeAssistantError when no config entry exists."""
+    mock_hass.config_entries.async_entries.return_value = []
+
+    await async_setup_services(mock_hass)
+    handler = _get_handler(mock_hass, "add_body_composition")
+
+    call = MagicMock()
+    call.data = {"weight": 80.0}
+
+    with pytest.raises(HomeAssistantError):
+        await handler(call)
+
+
+async def test_service_entry_not_loaded_raises(mock_hass: MagicMock) -> None:
+    """Services must raise HomeAssistantError when entry has no runtime_data."""
+    mock_entry = MagicMock()
+    mock_entry.runtime_data = None
+    mock_hass.config_entries.async_entries.return_value = [mock_entry]
+
+    await async_setup_services(mock_hass)
+    handler = _get_handler(mock_hass, "add_body_composition")
+
+    call = MagicMock()
+    call.data = {"weight": 80.0}
+
+    with pytest.raises(HomeAssistantError):
+        await handler(call)
+
+
+# ── set_active_gear ───────────────────────────────────────────────────────────
+
+
 async def test_set_active_gear_by_uuid(mock_hass: MagicMock) -> None:
-    """Test set_active_gear service with gear_uuid."""
+    """set_active_gear must call client with the supplied gear_uuid."""
     await async_setup_services(mock_hass)
     handler = _get_handler(mock_hass, "set_active_gear")
     client = _get_client(mock_hass)
@@ -101,7 +142,7 @@ async def test_set_active_gear_by_uuid(mock_hass: MagicMock) -> None:
 
 
 async def test_set_active_gear_by_entity_id(mock_hass: MagicMock) -> None:
-    """Test set_active_gear resolves gear_uuid from entity state."""
+    """set_active_gear must resolve gear_uuid from entity state attributes."""
     await async_setup_services(mock_hass)
     handler = _get_handler(mock_hass, "set_active_gear")
 
@@ -127,7 +168,7 @@ async def test_set_active_gear_by_entity_id(mock_hass: MagicMock) -> None:
 
 
 async def test_set_active_gear_no_gear_raises(mock_hass: MagicMock) -> None:
-    """Test set_active_gear raises when neither uuid nor entity given."""
+    """set_active_gear must raise when neither uuid nor entity_id given."""
     await async_setup_services(mock_hass)
     handler = _get_handler(mock_hass, "set_active_gear")
 
@@ -139,7 +180,7 @@ async def test_set_active_gear_no_gear_raises(mock_hass: MagicMock) -> None:
 
 
 async def test_set_active_gear_entity_not_found_raises(mock_hass: MagicMock) -> None:
-    """Test set_active_gear raises when entity doesn't exist."""
+    """set_active_gear must raise when entity doesn't exist."""
     await async_setup_services(mock_hass)
     handler = _get_handler(mock_hass, "set_active_gear")
 
@@ -157,7 +198,7 @@ async def test_set_active_gear_entity_not_found_raises(mock_hass: MagicMock) -> 
 
 
 async def test_set_active_gear_entity_no_uuid_raises(mock_hass: MagicMock) -> None:
-    """Test set_active_gear raises when entity has no gear_uuid attribute."""
+    """set_active_gear must raise when entity has no gear_uuid attribute."""
     await async_setup_services(mock_hass)
     handler = _get_handler(mock_hass, "set_active_gear")
 
@@ -176,8 +217,11 @@ async def test_set_active_gear_entity_no_uuid_raises(mock_hass: MagicMock) -> No
         await handler(call)
 
 
+# ── add_body_composition ──────────────────────────────────────────────────────
+
+
 async def test_add_body_composition(mock_hass: MagicMock) -> None:
-    """Test add_body_composition service call."""
+    """add_body_composition must call client with the supplied fields."""
     await async_setup_services(mock_hass)
     handler = _get_handler(mock_hass, "add_body_composition")
     client = _get_client(mock_hass)
@@ -199,7 +243,7 @@ async def test_add_body_composition(mock_hass: MagicMock) -> None:
 
 
 async def test_add_body_composition_api_error_raises(mock_hass: MagicMock) -> None:
-    """Test add_body_composition wraps API errors."""
+    """add_body_composition must wrap API errors in HomeAssistantError."""
     await async_setup_services(mock_hass)
     handler = _get_handler(mock_hass, "add_body_composition")
     client = _get_client(mock_hass)
@@ -212,8 +256,11 @@ async def test_add_body_composition_api_error_raises(mock_hass: MagicMock) -> No
         await handler(call)
 
 
+# ── add_blood_pressure ────────────────────────────────────────────────────────
+
+
 async def test_add_blood_pressure(mock_hass: MagicMock) -> None:
-    """Test add_blood_pressure service call."""
+    """add_blood_pressure must call client.set_blood_pressure with correct args."""
     await async_setup_services(mock_hass)
     handler = _get_handler(mock_hass, "add_blood_pressure")
     client = _get_client(mock_hass)
@@ -237,8 +284,25 @@ async def test_add_blood_pressure(mock_hass: MagicMock) -> None:
     )
 
 
+async def test_add_blood_pressure_wraps_exception(mock_hass: MagicMock) -> None:
+    """add_blood_pressure must wrap API errors in HomeAssistantError."""
+    await async_setup_services(mock_hass)
+    handler = _get_handler(mock_hass, "add_blood_pressure")
+    client = _get_client(mock_hass)
+    client.set_blood_pressure.side_effect = RuntimeError("network error")
+
+    call = MagicMock()
+    call.data = {"systolic": 120, "diastolic": 80, "pulse": 70}
+
+    with pytest.raises(HomeAssistantError):
+        await handler(call)
+
+
+# ── create_activity ───────────────────────────────────────────────────────────
+
+
 async def test_create_activity(mock_hass: MagicMock) -> None:
-    """Test create_activity service call."""
+    """create_activity must forward all fields and append .000 to start_datetime."""
     await async_setup_services(mock_hass)
     handler = _get_handler(mock_hass, "create_activity")
     client = _get_client(mock_hass)
@@ -261,12 +325,11 @@ async def test_create_activity(mock_hass: MagicMock) -> None:
     assert kwargs["duration_min"] == 30
     assert kwargs["distance_km"] == 5.0
     assert kwargs["time_zone"] == "Europe/Amsterdam"
-    # Milliseconds appended
     assert kwargs["start_datetime"] == "2026-01-24T08:00:00.000"
 
 
 async def test_create_activity_defaults_to_now(mock_hass: MagicMock) -> None:
-    """Test create_activity uses current time when start_datetime not given."""
+    """create_activity must generate a start_datetime when not supplied."""
     await async_setup_services(mock_hass)
     handler = _get_handler(mock_hass, "create_activity")
     client = _get_client(mock_hass)
@@ -281,13 +344,15 @@ async def test_create_activity_defaults_to_now(mock_hass: MagicMock) -> None:
     await handler(call)
 
     kwargs = client.create_activity.call_args.kwargs
-    # Should have generated a timestamp string
     assert kwargs["start_datetime"] is not None
     assert ".000" in kwargs["start_datetime"]
 
 
+# ── upload_activity ───────────────────────────────────────────────────────────
+
+
 async def test_upload_activity(mock_hass: MagicMock, tmp_path: Path) -> None:
-    """Test upload_activity service call."""
+    """upload_activity must call client.upload_activity when the file exists."""
     await async_setup_services(mock_hass)
     handler = _get_handler(mock_hass, "upload_activity")
     client = _get_client(mock_hass)
@@ -304,7 +369,7 @@ async def test_upload_activity(mock_hass: MagicMock, tmp_path: Path) -> None:
 
 
 async def test_upload_activity_file_not_found_raises(mock_hass: MagicMock) -> None:
-    """Test upload_activity raises when file doesn't exist."""
+    """upload_activity must raise HomeAssistantError when file doesn't exist."""
     await async_setup_services(mock_hass)
     handler = _get_handler(mock_hass, "upload_activity")
 
@@ -315,17 +380,17 @@ async def test_upload_activity_file_not_found_raises(mock_hass: MagicMock) -> No
         await handler(call)
 
 
+# ── add_gear_to_activity ──────────────────────────────────────────────────────
+
+
 async def test_add_gear_to_activity_by_uuid(mock_hass: MagicMock) -> None:
-    """Test add_gear_to_activity with gear_uuid."""
+    """add_gear_to_activity must call client with gear_uuid and activity_id."""
     await async_setup_services(mock_hass)
     handler = _get_handler(mock_hass, "add_gear_to_activity")
     client = _get_client(mock_hass)
 
     call = MagicMock()
-    call.data = {
-        "activity_id": 12345,
-        "gear_uuid": "gear-abc",
-    }
+    call.data = {"activity_id": 12345, "gear_uuid": "gear-abc"}
 
     await handler(call)
 
@@ -336,7 +401,7 @@ async def test_add_gear_to_activity_by_uuid(mock_hass: MagicMock) -> None:
 
 
 async def test_add_gear_to_activity_by_entity(mock_hass: MagicMock) -> None:
-    """Test add_gear_to_activity resolves uuid from entity."""
+    """add_gear_to_activity must resolve uuid from entity state attributes."""
     await async_setup_services(mock_hass)
     handler = _get_handler(mock_hass, "add_gear_to_activity")
     client = _get_client(mock_hass)
@@ -346,10 +411,7 @@ async def test_add_gear_to_activity_by_entity(mock_hass: MagicMock) -> None:
     mock_hass.states.get.return_value = state
 
     call = MagicMock()
-    call.data = {
-        "activity_id": 99999,
-        "entity_id": "sensor.garmin_shoes",
-    }
+    call.data = {"activity_id": 99999, "entity_id": "sensor.garmin_shoes"}
 
     await handler(call)
 
@@ -359,31 +421,13 @@ async def test_add_gear_to_activity_by_entity(mock_hass: MagicMock) -> None:
     )
 
 
-async def test_service_no_entry_raises(mock_hass: MagicMock) -> None:
-    """Test that services raise when no config entry exists."""
-    mock_hass.config_entries.async_entries.return_value = []
-
+async def test_add_gear_to_activity_no_gear_raises(mock_hass: MagicMock) -> None:
+    """add_gear_to_activity must raise when no gear is specified."""
     await async_setup_services(mock_hass)
-    handler = _get_handler(mock_hass, "add_body_composition")
+    handler = _get_handler(mock_hass, "add_gear_to_activity")
 
     call = MagicMock()
-    call.data = {"weight": 80.0}
-
-    with pytest.raises(HomeAssistantError):
-        await handler(call)
-
-
-async def test_service_entry_not_loaded_raises(mock_hass: MagicMock) -> None:
-    """Test that services raise when entry has no runtime_data."""
-    mock_entry = MagicMock()
-    mock_entry.runtime_data = None
-    mock_hass.config_entries.async_entries.return_value = [mock_entry]
-
-    await async_setup_services(mock_hass)
-    handler = _get_handler(mock_hass, "add_body_composition")
-
-    call = MagicMock()
-    call.data = {"weight": 80.0}
+    call.data = {"activity_id": 99999}
 
     with pytest.raises(HomeAssistantError):
         await handler(call)

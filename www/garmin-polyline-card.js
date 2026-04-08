@@ -10,6 +10,8 @@ class GarminPolylineCard extends HTMLElement {
     this._config = null;
     this._map = null;
     this._polyline = null;
+    this._initPending = false;
+    this._lastPolylineKey = null;
   }
 
   setConfig(config) {
@@ -29,7 +31,34 @@ class GarminPolylineCard extends HTMLElement {
 
   set hass(hass) {
     this._hass = hass;
+    if (!this._config) return;
+
+    // Only re-render when the relevant attribute actually changes
+    const stateObj = hass.states[this._config.entity];
+    const polylineData = stateObj?.attributes[this._config.attribute];
+    const key = polylineData ? JSON.stringify(polylineData) : null;
+    if (key === this._lastPolylineKey) return;
+    this._lastPolylineKey = key;
+
     this._updateMap();
+  }
+
+  connectedCallback() {
+    // Re-render when re-attached to the DOM (map was removed in disconnectedCallback)
+    if (this._hass && this._config) {
+      this._map = null;
+      this._polyline = null;
+      this._lastPolylineKey = null;
+      this._updateMap();
+    }
+  }
+
+  disconnectedCallback() {
+    if (this._map) {
+      this._map.remove();
+      this._map = null;
+      this._polyline = null;
+    }
   }
 
   _updateMap() {
@@ -44,7 +73,6 @@ class GarminPolylineCard extends HTMLElement {
       return;
     }
 
-    // Convert to Leaflet format [[lat, lon], ...]
     const coordinates = polylineData
       .filter(p => p.lat != null && p.lon != null)
       .map(p => [p.lat, p.lon]);
@@ -58,6 +86,11 @@ class GarminPolylineCard extends HTMLElement {
   }
 
   _renderNoData() {
+    if (this._map) {
+      this._map.remove();
+      this._map = null;
+      this._polyline = null;
+    }
     this.shadowRoot.innerHTML = `
       <ha-card header="${this._config.title}">
         <div style="padding: 16px; text-align: center; color: var(--secondary-text-color);">
@@ -65,74 +98,102 @@ class GarminPolylineCard extends HTMLElement {
         </div>
       </ha-card>
     `;
-    this._map = null;
   }
 
   _renderMap(coordinates, stateObj) {
     const activityName = stateObj.state || 'Activity';
-    
-    // Check if we already have a map container
-    if (!this._map) {
-      this.shadowRoot.innerHTML = `
-        <ha-card header="${this._config.title}">
-          <div id="map" style="height: ${this._config.height}; width: 100%;"></div>
-          <div style="padding: 8px 16px; font-size: 12px; color: var(--secondary-text-color);">
-            ${activityName} • ${coordinates.length} points
-          </div>
-        </ha-card>
-        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-      `;
 
-      // Load Leaflet if not already loaded
-      if (!window.L) {
-        const script = document.createElement('script');
-        script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
-        script.onload = () => this._initMap(coordinates);
-        document.head.appendChild(script);
-      } else {
-        setTimeout(() => this._initMap(coordinates), 100);
+    if (this._map) {
+      // Update existing map — guard against Leaflet not being ready
+      try {
+        if (this._polyline) {
+          this._polyline.setLatLngs(coordinates);
+          this._map.invalidateSize();
+          this._map.fitBounds(this._polyline.getBounds(), { padding: [20, 20] });
+        }
+      } catch (_e) {
+        // Map pane not ready; tear down and rebuild
+        this._map.remove();
+        this._map = null;
+        this._polyline = null;
+        this._renderMap(coordinates, stateObj);
       }
-    } else {
-      // Update existing polyline
-      if (this._polyline) {
-        this._polyline.setLatLngs(coordinates);
-        this._map.fitBounds(this._polyline.getBounds(), { padding: [20, 20] });
-      }
+      return;
     }
+
+    this.shadowRoot.innerHTML = `
+      <ha-card header="${this._config.title}">
+        <div id="map" style="height: ${this._config.height}; width: 100%;"></div>
+        <div style="padding: 8px 16px; font-size: 12px; color: var(--secondary-text-color);">
+          ${activityName} • ${coordinates.length} points
+        </div>
+      </ha-card>
+      <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    `;
+
+    if (!window.L) {
+      if (this._initPending) return;
+      this._initPending = true;
+      const script = document.createElement('script');
+      script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+      script.onload = () => {
+        this._initPending = false;
+        this._initMapWhenReady(coordinates);
+      };
+      script.onerror = () => {
+        this._initPending = false;
+        console.error('garmin-polyline-card: failed to load Leaflet from CDN');
+      };
+      document.head.appendChild(script);
+    } else {
+      this._initMapWhenReady(coordinates);
+    }
+  }
+
+  _initMapWhenReady(coordinates, retries = 0) {
+    const MAX_RETRIES = 10;
+    requestAnimationFrame(() => {
+      const mapContainer = this.shadowRoot.getElementById('map');
+      if (!mapContainer || !window.L) return;
+
+      if (mapContainer.offsetWidth === 0 || mapContainer.offsetHeight === 0) {
+        if (retries < MAX_RETRIES) {
+          this._initMapWhenReady(coordinates, retries + 1);
+        }
+        return;
+      }
+
+      this._initMap(coordinates);
+    });
   }
 
   _initMap(coordinates) {
     const mapContainer = this.shadowRoot.getElementById('map');
     if (!mapContainer || !window.L) return;
 
-    // If map already exists, remove it first
     if (this._map) {
       this._map.remove();
       this._map = null;
     }
 
-    // Create map
     this._map = L.map(mapContainer, {
       zoomControl: true,
       scrollWheelZoom: false
     });
 
-    // Add tile layer
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '© OpenStreetMap'
     }).addTo(this._map);
 
-    // Add polyline
     this._polyline = L.polyline(coordinates, {
       color: this._config.color,
       weight: this._config.weight,
       opacity: 0.8
     }).addTo(this._map);
 
-    // Fit map to polyline bounds
+    this._map.invalidateSize();
     this._map.fitBounds(this._polyline.getBounds(), { padding: [20, 20] });
 
-    // Add start/end markers
     if (coordinates.length > 0) {
       L.circleMarker(coordinates[0], {
         radius: 8,
@@ -165,7 +226,6 @@ class GarminPolylineCard extends HTMLElement {
 
 customElements.define('garmin-polyline-card', GarminPolylineCard);
 
-// Register with Home Assistant
 window.customCards = window.customCards || [];
 window.customCards.push({
   type: 'garmin-polyline-card',
