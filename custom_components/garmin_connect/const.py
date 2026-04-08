@@ -746,7 +746,7 @@ GARMIN_ENTITY_LIST = {
         "mdi:heart-plus",
         None,
         SensorStateClass.MEASUREMENT,
-        True,
+        False,
     ],
     "diastolic": [
         "Diastolic Blood Pressure",
@@ -754,7 +754,7 @@ GARMIN_ENTITY_LIST = {
         "mdi:heart-minus",
         None,
         SensorStateClass.MEASUREMENT,
-        True,
+        False,
     ],
     "pulse": [
         "Blood Pressure Pulse",
@@ -762,7 +762,7 @@ GARMIN_ENTITY_LIST = {
         "mdi:heart-pulse",
         None,
         SensorStateClass.MEASUREMENT,
-        True,
+        False,
     ],
     "bpCategory": [
         "Blood Pressure Category",
@@ -770,7 +770,7 @@ GARMIN_ENTITY_LIST = {
         "mdi:stethoscope",
         None,
         None,
-        True,
+        False,
     ],
     "bpTimestamp": [
         "Blood Pressure Time",
@@ -778,7 +778,7 @@ GARMIN_ENTITY_LIST = {
         "mdi:clock-outline",
         SensorDeviceClass.TIMESTAMP,
         None,
-        True,
+        False,
     ],
 }
 
