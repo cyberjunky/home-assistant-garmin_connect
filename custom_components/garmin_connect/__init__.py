@@ -271,7 +271,7 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
         endurance_status = {"overallScore": None}
         # Blood pressure: initialize with None so sensors exist even without data
         bp_data = {}
-        bp_latest = {"systolic": None, "diastolic": None, "pulse": None, "bpCategory": None, "bpTimestamp": None}
+        bp_latest = {"systolic": None, "diastolic": None, "bpPulse": None, "bpCategory": None, "bpTimestamp": None}
         next_alarms = []
 
         today = datetime.now(ZoneInfo(self.time_zone)).date()
@@ -376,15 +376,6 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
                 self.api.get_endurance_score, today.isoformat()
             )
             _LOGGER.debug("Endurance data fetched: %s", endurance_data)
-
-            # Blood pressure — uses garminconnect's get_blood_pressure()
-            bp_data = await self.hass.async_add_executor_job(
-                self.api.get_blood_pressure, today.isoformat()
-            )
-            if bp_data:
-                _LOGGER.debug("Blood pressure data fetched: %s", bp_data)
-            else:
-                _LOGGER.debug("No blood pressure data found")
 
         except (
             GarminConnectAuthenticationError,
@@ -513,6 +504,19 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
         except (KeyError, TypeError, ValueError, ConnectionError) as err:
             _LOGGER.debug("Error occurred while fetching Gear data: %s", err)
 
+        # Blood pressure data (isolated — users without a BP device may get 403/404)
+        try:
+            bp_data = await self.hass.async_add_executor_job(
+                self.api.get_blood_pressure, today.isoformat()
+            )
+            if bp_data:
+                _LOGGER.debug("Blood pressure data fetched: %s", bp_data)
+            else:
+                _LOGGER.debug("No blood pressure data found")
+        except Exception as bp_err:
+            _LOGGER.warning("Blood pressure data fetch failed (non-fatal): %s", bp_err)
+            bp_data = {}
+
         # Sleep score data
         try:
             sleep_score = sleep_data["dailySleepDTO"]["sleepScores"]["overall"]["value"]
@@ -551,13 +555,13 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
                         bp_latest = {
                             "systolic": latest.get("systolic"),
                             "diastolic": latest.get("diastolic"),
-                            "pulse": latest.get("pulse"),
+                            "bpPulse": latest.get("pulse"),
                             # Garmin returns e.g. "STAGE_1_HIGH" or None — coalesce and normalize
                             "bpCategory": (latest.get("categoryName") or "").replace("_", " ").title(),
                             "bpTimestamp": latest.get("measurementTimestampLocal"),
                         }
                         break
-        except (KeyError, IndexError, TypeError):
+        except (KeyError, IndexError, TypeError, AttributeError):
             _LOGGER.debug("Error processing blood pressure data")
 
         # Endurance status

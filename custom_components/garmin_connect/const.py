@@ -756,7 +756,7 @@ GARMIN_ENTITY_LIST = {
         SensorStateClass.MEASUREMENT,
         False,
     ],
-    "pulse": [
+    "bpPulse": [
         "Blood Pressure Pulse",
         "bpm",
         "mdi:heart-pulse",
