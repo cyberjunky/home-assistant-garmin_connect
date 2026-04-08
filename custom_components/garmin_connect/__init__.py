@@ -513,6 +513,13 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
                 _LOGGER.debug("Blood pressure data fetched: %s", bp_data)
             else:
                 _LOGGER.debug("No blood pressure data found")
+        except (
+            GarminConnectAuthenticationError,
+            GarminConnectTooManyRequestsError,
+            GarminConnectConnectionError,
+        ):
+            # Re-raise so the coordinator handles auth/rate-limit/connection errors
+            raise
         except Exception as bp_err:
             _LOGGER.warning("Blood pressure data fetch failed (non-fatal): %s", bp_err)
             bp_data = {}
