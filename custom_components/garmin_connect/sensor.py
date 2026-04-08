@@ -236,6 +236,10 @@ class GarminConnectSensor(CoordinatorEntity, SensorEntity):
         elif self._type == "stressQualifier":
             value = value.capitalize()
 
+        elif self._type == "bpCategory":
+            # Garmin returns e.g. "STAGE_1_HIGH" — normalize to "Stage 1 High"
+            value = str(value).title() if value else None
+
         if self._device_class == SensorDeviceClass.TIMESTAMP:
             if value:
                 value = datetime.datetime.fromisoformat(value).replace(
@@ -254,7 +258,8 @@ class GarminConnectSensor(CoordinatorEntity, SensorEntity):
             return {}
 
         attributes = {
-            "last_synced": self.coordinator.data["lastSyncTimestampGMT"],
+            # Use .get() to avoid KeyError during initial load before first data fetch
+            "last_synced": self.coordinator.data.get("lastSyncTimestampGMT"),
         }
 
         # Only keep the last 5 activities for performance reasons
@@ -463,7 +468,8 @@ class GarminConnectGearSensor(CoordinatorEntity, SensorEntity):
             return {}
 
         attributes = {
-            "last_synced": self.coordinator.data["lastSyncTimestampGMT"],
+            # Use .get() to avoid KeyError during initial load before first data fetch
+            "last_synced": self.coordinator.data.get("lastSyncTimestampGMT"),
             "total_activities": stats["totalActivities"],
             "create_date": stats["createDate"],
             "update_date": stats["updateDate"],

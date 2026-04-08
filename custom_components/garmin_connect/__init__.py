@@ -269,6 +269,9 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
         hrv_status = {"status": "unknown"}
         endurance_data = {}
         endurance_status = {"overallScore": None}
+        # Blood pressure: initialize with None so sensors exist even without data
+        bp_data = {}
+        bp_latest = {"systolic": None, "diastolic": None, "pulse": None, "bpCategory": None, "bpTimestamp": None}
         next_alarms = []
 
         today = datetime.now(ZoneInfo(self.time_zone)).date()
@@ -373,6 +376,15 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
                 self.api.get_endurance_score, today.isoformat()
             )
             _LOGGER.debug("Endurance data fetched: %s", endurance_data)
+
+            # Blood pressure — uses garminconnect's get_blood_pressure()
+            bp_data = await self.hass.async_add_executor_job(
+                self.api.get_blood_pressure, today.isoformat()
+            )
+            if bp_data:
+                _LOGGER.debug("Blood pressure data fetched: %s", bp_data)
+            else:
+                _LOGGER.debug("No blood pressure data found")
 
         except (
             GarminConnectAuthenticationError,
@@ -528,6 +540,24 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
             _LOGGER.debug(
                 "Error occurred while processing HRV summary status data")
 
+        # Blood pressure — extract the most recent measurement from today's data.
+        # The API returns measurementSummaries[].measurements[] ordered newest-first.
+        try:
+            if bp_data and "measurementSummaries" in bp_data:
+                for bp_summary in bp_data["measurementSummaries"]:
+                    if "measurements" in bp_summary and bp_summary["measurements"]:
+                        latest = bp_summary["measurements"][0]
+                        bp_latest = {
+                            "systolic": latest.get("systolic"),
+                            "diastolic": latest.get("diastolic"),
+                            "pulse": latest.get("pulse"),
+                            "bpCategory": latest.get("categoryName", "").replace("_", " ").title(),
+                            "bpTimestamp": latest.get("measurementTimestampLocal"),
+                        }
+                        break
+        except (KeyError, IndexError, TypeError):
+            _LOGGER.debug("Error processing blood pressure data")
+
         # Endurance status
         try:
             if endurance_data and "overallScore" in endurance_data:
@@ -550,6 +580,7 @@ class GarminConnectDataUpdateCoordinator(DataUpdateCoordinator):
             "enduranceScore": endurance_status,
             **fitnessage_data,
             **hydration_data,
+            **bp_latest,
         }
 
 

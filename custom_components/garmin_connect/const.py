@@ -737,6 +737,49 @@ GARMIN_ENTITY_LIST = {
         SensorStateClass.MEASUREMENT,
         True,
     ],
+    # Blood pressure sensors — read from garminconnect get_blood_pressure() API.
+    # Exposes the most recent measurement's systolic, diastolic, pulse, category,
+    # and timestamp. Requires a Garmin blood pressure device (e.g., Index BPM).
+    "systolic": [
+        "Systolic Blood Pressure",
+        "mmHg",
+        "mdi:heart-plus",
+        None,
+        SensorStateClass.MEASUREMENT,
+        True,
+    ],
+    "diastolic": [
+        "Diastolic Blood Pressure",
+        "mmHg",
+        "mdi:heart-minus",
+        None,
+        SensorStateClass.MEASUREMENT,
+        True,
+    ],
+    "pulse": [
+        "Blood Pressure Pulse",
+        "bpm",
+        "mdi:heart-pulse",
+        None,
+        SensorStateClass.MEASUREMENT,
+        True,
+    ],
+    "bpCategory": [
+        "Blood Pressure Category",
+        None,
+        "mdi:stethoscope",
+        None,
+        None,
+        True,
+    ],
+    "bpTimestamp": [
+        "Blood Pressure Time",
+        None,
+        "mdi:clock-outline",
+        SensorDeviceClass.TIMESTAMP,
+        None,
+        True,
+    ],
 }
 
 GEAR_ICONS = {
