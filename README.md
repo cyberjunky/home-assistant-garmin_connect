@@ -8,141 +8,267 @@
 
 # Garmin Connect
 
-Integrate your Garmin Connect fitness data with Home Assistant. Access **110+ sensors** covering health metrics, activities, body composition, and gear tracking—plus add measurements directly to Garmin Connect via services.
+> **v3.0 — Complete rewrite**
+>
+> This release is a ground-up rewrite of the integration to prepare for inclusion in Home Assistant Core. It uses the new [`ha-garmin`](https://pypi.org/project/ha-garmin/) library, replaces the old authentication method, and restructures all sensors to follow HA conventions.
+>
+> **What this means for you:**
+> - **Re-authentication required** — The old OAuth tokens are not compatible with the new library. After updating you will be prompted to re-authenticate each configured Garmin account.
+> - **Entity IDs are preserved** — The migration automatically updates internal identifiers so your existing dashboards and automations keep working. Some sensors have been renamed or replaced; any that no longer exist will simply disappear.
+> - **Many new sensors** — 130+ sensors (up from ~100), including HRV details, training metrics, blood pressure, menstrual cycle tracking, and more.
 
-## Supported Features
+The **Garmin Connect** integration connects your [Garmin Connect](https://connect.garmin.com/) cloud service to Home Assistant, enabling users to monitor their health and fitness data from Garmin wearable devices directly in Home Assistant.
 
-- **Health Metrics** - Steps, calories, heart rate, stress, sleep, body battery, SpO2
-- **Body Composition** - Weight, BMI, body fat, muscle mass, hydration
-- **Fitness Tracking** - Activities, intensity minutes, fitness age, endurance score
-- **Gear Management** - Track usage of shoes, bikes, and other equipment
-- **Services** - Add body composition and blood pressure data, manage gear defaults
+The integration provides **130+ sensors** across the following categories:
 
-## Available Sensors
+- **Daily health metrics** — Steps, distance, floors climbed, calories burned
+- **Heart rate monitoring** — Resting, min, max, and 7-day average heart rate
+- **HRV (Heart Rate Variability)** — Status, weekly/nightly averages, baseline metrics
+- **Stress tracking** — Average/max stress levels, stress duration breakdowns
+- **Sleep analysis** — Total sleep, deep/light/REM sleep, sleep score
+- **Body Battery** — Current level, charged/drained values
+- **Body composition** — Weight, BMI, body fat, muscle mass, bone mass, hydration
+- **Training metrics** — Training readiness, training status, lactate threshold, endurance/hill scores
+- **Activities & workouts** — Last activity, recent activities list, workout tracking
+- **Goals & badges** — Active/future goals, goal history, earned badges
+- **Blood pressure** — Systolic, diastolic, pulse measurements
+- **Menstrual cycle tracking** — Cycle phase, day, fertile window (disabled by default)
+- **Gear tracking** — Dynamic sensors for shoes, bikes, and other equipment
+- **Hydration** — Daily intake, goals, sweat loss
 
-> **Note:** All sensors are enabled by default. You can disable sensors using Home Assistant's sensor configuration.
-> Sensor values depend on your Garmin devices and connected apps.
+![screenshot](https://github.com/cyberjunky/home-assistant-garmin_connect/blob/main/screenshots/garmin_connect.png?raw=true "Screenshot Garmin Connect")
+
+## Prerequisites
+
+- A [Garmin Connect](https://connect.garmin.com/) account
+- At least one Garmin device synced to your account
+- If you have MFA (Multi-Factor Authentication) enabled, you'll need access to your authentication method during setup
+
+## Installation
+
+### HACS (Recommended)
+
+[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=cyberjunky&repository=home-assistant-garmin_connect&category=integration)
+
+Alternatively:
+
+1. Install [HACS](https://hacs.xyz) if not already installed
+2. Search for "Garmin Connect" in HACS
+3. Click **Download**
+4. Restart Home Assistant
+5. Add via **Settings** → **Devices & Services**
+
+### Manual Installation
+
+1. Copy `custom_components/garmin_connect` to your `<config>/custom_components/` directory
+2. Restart Home Assistant
+3. Add via **Settings** → **Devices & Services**
+
+## Configuration
+
+1. Navigate to **Settings** → **Devices & Services**
+2. Click **+ Add Integration**
+3. Search for **"Garmin Connect"**
+4. Enter your Garmin Connect email and password
+5. If MFA is enabled, enter the verification code when prompted
+
+### Options
+
+After setup, configure these options via the integration's **Configure** button:
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| Scan interval | 300 | How often to fetch data in seconds (60–3600) |
+
+## Data updates
+
+The integration uses cloud polling to fetch data from Garmin Connect servers. Data is refreshed based on the configured scan interval (default: 5 minutes). Eight independent coordinators fetch data in parallel:
+
+| Coordinator | Data |
+|-------------|------|
+| Core | Steps, distance, calories, heart rate, stress, sleep, body battery, SpO2, respiration, intensity |
+| Activity | Last activity, recent activities, workouts |
+| Training | Training readiness/status, HRV, lactate threshold, endurance/hill scores |
+| Body | Weight, BMI, body fat, muscle mass, hydration, fitness age |
+| Goals | Active/future goals, goal history, badges, user points |
+| Gear | Shoes, bikes, equipment usage and distance |
+| Blood Pressure | Systolic, diastolic, pulse |
+| Menstrual | Cycle phase, day, fertile window |
+
+> **Tip:** Garmin devices sync to Garmin Connect when in Bluetooth range of the paired phone or via WiFi. Sensors update after your device syncs to Garmin Connect **and** the integration polls for new data.
+
+## Sensors
+
+All sensors are created under a single "Garmin Connect" device. Entity IDs follow the pattern `sensor.garmin_connect_[sensor_name]`.
+
+> **Note:** Most sensors are enabled by default. Menstrual cycle sensors are disabled by default and can be enabled in the entity settings. Sensor values depend on your Garmin devices and connected apps — not all data may be available for your account.
 
 ### Activity & Steps
 
-| Sensor                    | Description                    |
-| ------------------------- | ------------------------------ |
-| Total Steps               | Daily step count               |
-| Daily Step Goal           | Your configured step target    |
-| Yesterday Steps/Distance  | Previous day's complete totals |
-| Weekly Step/Distance Avg  | 7-day averages                 |
-| Total Distance            | Distance walked/run in meters  |
-| Floors Ascended/Descended | Floors climbed                 |
+| Sensor | Description |
+|--------|-------------|
+| Steps | Daily step count |
+| Daily Step Goal | Your configured step target |
+| Distance | Distance walked/run in meters |
+| Yesterday Steps / Distance | Previous day's complete totals |
+| Weekly Step / Distance Avg | 7-day averages |
+| Floors Ascended / Descended | Floors climbed and descended |
+| Floors Ascended Distance | Vertical distance climbed in meters |
 
-### Calories & Nutrition
+### Calories
 
-| Sensor                    | Description           |
-| ------------------------- | --------------------- |
-| Total/Active/BMR Calories | Daily calorie metrics |
-| Burned/Consumed Calories  | Calorie tracking      |
+| Sensor | Description |
+|--------|-------------|
+| Calories | Total daily calories |
+| Active Calories | Calories from activity |
+| BMR Calories | Basal metabolic rate calories |
+| Burned / Consumed / Remaining Calories | Calorie tracking |
 
 ### Heart Rate
 
-| Sensor                 | Description                    |
-| ---------------------- | ------------------------------ |
-| Resting Heart Rate     | Daily resting HR               |
-| Min/Max Heart Rate     | Daily HR range                 |
-| Last 7 Days Avg HR     | Weekly average                 |
-| HRV Weekly/Nightly Avg | Heart rate variability metrics |
-| HRV Baseline           | Personal HRV baseline          |
+| Sensor | Description |
+|--------|-------------|
+| Resting Heart Rate | Daily resting HR |
+| Min / Max Heart Rate | Daily HR range |
+| 7-Day Average Resting Heart Rate | Weekly resting HR average |
+| Min / Max Average Heart Rate | Average min/max HR |
+| Abnormal Heart Rate Alerts | Count of abnormal HR alerts |
+
+### HRV (Heart Rate Variability)
+
+| Sensor | Description |
+|--------|-------------|
+| HRV Status | Current HRV status (balanced, low, etc.) |
+| HRV Weekly Average | 7-day HRV average |
+| HRV Last Night Average | Overnight HRV average |
+| HRV Last Night 5-Min High | Peak 5-minute HRV during sleep |
+| HRV Baseline | Personal HRV baseline range |
 
 ### Stress & Recovery
 
-| Sensor               | Description                                  |
-| -------------------- | -------------------------------------------- |
-| Avg/Max Stress Level | Stress measurements (0-100)                  |
-| Stress Durations     | Time in rest/activity/low/medium/high stress |
+| Sensor | Description |
+|--------|-------------|
+| Average / Max Stress Level | Stress measurements |
+| Stress Qualifier | Overall stress descriptor |
+| Total Stress Duration | Total time in stress |
+| Rest / Activity / Low / Medium / High Stress Duration | Duration breakdowns |
+| Stress Percentage | Percentage breakdowns by category |
 
 ### Sleep
 
-| Sensor               | Description                 |
-| -------------------- | --------------------------- |
-| Sleep Score          | Overall sleep quality score |
-| Sleep/Awake Duration | Time asleep and awake       |
-| Deep Sleep           | Time in deep sleep          |
-| Light Sleep          | Time in light sleep         |
-| REM Sleep            | Time in REM sleep           |
+| Sensor | Description |
+|--------|-------------|
+| Sleep Score | Overall sleep quality score |
+| Sleep Duration | Total time asleep |
+| Awake Duration | Time awake during sleep |
+| Deep / Light / REM Sleep | Time in each sleep stage |
+| Nap Time | Daytime nap duration |
+| Unmeasurable Sleep | Unclassified sleep time |
 
 ### Body Battery
 
-| Sensor                   | Description                  |
-| ------------------------ | ---------------------------- |
-| Body Battery Most Recent | Current energy level (0-100) |
-| Charged/Drained          | Energy gained/spent          |
-| Highest/Lowest           | Daily peak and low           |
+| Sensor | Description |
+|--------|-------------|
+| Body Battery | Current energy level (0–100) |
+| Charged / Drained | Energy gained and spent |
+| Highest / Lowest | Daily peak and low |
 
 ### Body Composition
 
-| Sensor           | Description                |
-| ---------------- | -------------------------- |
-| Weight/BMI       | Body weight and mass index |
-| Body Fat/Water   | Percentage measurements    |
-| Muscle/Bone Mass | Mass measurements          |
-| Metabolic Age    | Estimated metabolic age    |
+| Sensor | Description |
+|--------|-------------|
+| Weight | Body weight in kg |
+| BMI | Body Mass Index |
+| Body Fat / Body Water | Percentage measurements |
+| Muscle Mass / Bone Mass | Mass measurements in kg |
+| Visceral Fat | Visceral fat percentage |
+| Physique Rating | Body physique rating |
+| Metabolic Age | Estimated metabolic age |
 
 ### Hydration
 
-| Sensor         | Description             |
-| -------------- | ----------------------- |
-| Hydration      | Daily water intake (ml) |
-| Hydration Goal | Target intake           |
-| Sweat Loss     | Estimated fluid loss    |
+| Sensor | Description |
+|--------|-------------|
+| Hydration | Daily water intake (ml) |
+| Hydration Goal | Target intake |
+| Hydration Daily Average | Average daily intake |
+| Hydration Sweat Loss | Estimated fluid loss |
+| Hydration Activity Intake | Intake during activities |
 
 ### Blood Pressure
 
-| Sensor           | Description                             |
-| ---------------- | --------------------------------------- |
-| Systolic         | Systolic blood pressure (mmHg)          |
-| Diastolic        | Diastolic blood pressure (mmHg)         |
-| Pulse            | Pulse from blood pressure reading (bpm) |
-| Measurement Time | When the BP was measured                |
+| Sensor | Description |
+|--------|-------------|
+| Systolic | Systolic blood pressure (mmHg) |
+| Diastolic | Diastolic blood pressure (mmHg) |
+| Pulse | Pulse from blood pressure reading (bpm) |
 
 ### Health Monitoring
 
-| Sensor                | Description            |
-| --------------------- | ---------------------- |
-| SpO2 (Avg/Low/Latest) | Blood oxygen levels    |
-| HRV Status            | Heart rate variability |
-| Respiration Rate      | Breathing measurements |
+| Sensor | Description |
+|--------|-------------|
+| Average / Lowest / Latest SpO2 | Blood oxygen levels |
+| Latest SpO2 Time | When SpO2 was last measured |
+| Highest / Lowest / Latest Respiration | Breathing rate (brpm) |
+| Latest Respiration Time | When respiration was last measured |
+| Average Altitude | Average monitoring altitude |
 
-### Fitness & Performance
+### Fitness & Training
 
-| Sensor                     | Description                          |
-| -------------------------- | ------------------------------------ |
-| Fitness Age                | Estimated fitness age                |
-| Chronological Age          | Your actual age                      |
-| Endurance Score            | Overall endurance rating             |
-| Training Readiness         | Training readiness score (%)         |
-| Morning Training Readiness | Wake-up training readiness score (%) |
-| Training Status            | Current training status phrase       |
-| Lactate Threshold HR       | Lactate threshold heart rate (bpm)   |
-| Lactate Threshold Speed    | Lactate threshold running pace (m/s) |
+| Sensor | Description |
+|--------|-------------|
+| Fitness Age / Achievable / Previous Fitness Age | Estimated fitness ages |
+| Chronological Age | Your actual age |
+| Endurance Score | Overall endurance rating |
+| Hill Score | Hill running/climbing score |
+| Training Readiness | Training readiness score (%) |
+| Morning Training Readiness | Wake-up readiness score (%) |
+| Training Status | Current training status phrase |
+| Lactate Threshold HR | Lactate threshold heart rate (bpm) |
+| Lactate Threshold Speed | Lactate threshold pace (m/s) |
 
-### Goal Tracking
+### Goals & Achievements
 
-| Sensor        | Description                               |
-| ------------- | ----------------------------------------- |
-| Active Goals  | Number of in-progress goals with progress |
-| Future Goals  | Upcoming scheduled goals                  |
-| Goals History | Last 10 completed goals with status       |
+| Sensor | Description |
+|--------|-------------|
+| Active Goals | Number of in-progress goals with progress |
+| Future Goals | Upcoming scheduled goals |
+| Goals History | Last 10 completed goals with status |
+| Badges | Total badges earned |
+| User Points / User Level | Gamification metrics |
 
-> **Note:** Goal sensors include detailed attributes: `goalType`, `targetValue`, `currentValue`, `progressPercent`, `startDate`, `endDate`, and `activityType`.
+> Goal sensors include detailed attributes: `goalType`, `targetValue`, `currentValue`, `progressPercent`, `startDate`, `endDate`, and `activityType`.
 
 ### Activity Tracking
 
-| Sensor                   | Description                         |
-| ------------------------ | ----------------------------------- |
-| Next Alarm               | Next scheduled alarm time           |
-| Last Activity/Activities | Recent activity info                |
-| Last Workout/Workouts    | Scheduled/planned training sessions |
-| Badges/User Points/Level | Gamification metrics                |
+| Sensor | Description |
+|--------|-------------|
+| Last Activity | Most recent activity with details |
+| Last Activities | Recent activities list (attributes) |
+| Last Workout / Workouts | Scheduled/planned training sessions |
+| Next Alarm | Next scheduled alarm time |
+| Last Synced | Last device sync timestamp |
 
-#### Activity Route Map
+### Menstrual Cycle Tracking
+
+| Sensor | Description |
+|--------|-------------|
+| Cycle Phase | Current menstrual phase |
+| Cycle Day | Day of the current cycle |
+| Cycle Type | Type of cycle tracking |
+| Cycle Start | Start date of current cycle |
+| Period Length | Period length (days) |
+| Days Until Next Phase | Days remaining in current phase |
+| Fertile Window Start / End | Predicted fertile window |
+| Next Predicted Cycle Start | Predicted start of next cycle |
+
+> Menstrual cycle sensors are disabled by default and only available if tracking is enabled in your Garmin Connect account.
+
+### Gear Tracking
+
+Gear sensors are dynamically created for each piece of equipment registered in Garmin Connect (shoes, bikes, etc.). They track total distance in meters and include attributes like `gear_uuid`, `total_activities`, `gear_make_name`, `gear_model_name`, and `default_for_activity`.
+
+## Activity Route Map
 
 The `Last Activity` sensor includes a `polyline` attribute with GPS coordinates when the activity has GPS data (`hasPolyline: true`). This can be displayed on a map using the included custom Lovelace card.
 
@@ -165,129 +291,79 @@ height: 400px
 color: "#FF5722"
 ```
 
-**Options:**
-
-| Option      | Default          | Description                           |
-| ----------- | ---------------- | ------------------------------------- |
-| `entity`    | (required)       | Sensor entity with polyline attribute |
-| `attribute` | `polyline`       | Attribute containing GPS coordinates  |
-| `title`     | `Activity Route` | Card title                            |
-| `height`    | `300px`          | Map height                            |
-| `color`     | `#FF5722`        | Route line color                      |
-| `weight`    | `4`              | Route line thickness                  |
+| Option | Default | Description |
+|--------|---------|-------------|
+| `entity` | (required) | Sensor entity with polyline attribute |
+| `attribute` | `polyline` | Attribute containing GPS coordinates |
+| `title` | `Activity Route` | Card title |
+| `height` | `300px` | Map height |
+| `color` | `#FF5722` | Route line color |
+| `weight` | `4` | Route line thickness |
 
 ![Activity Route Map](screenshots/polyline-card.png)
 
-### Menstrual Cycle Tracking
+## Actions (Services)
 
-| Sensor        | Description               |
-| ------------- | ------------------------- |
-| Cycle Phase   | Current menstrual phase   |
-| Cycle Day     | Day of the current cycle  |
-| Period Day    | Day of the period         |
-| Cycle Length  | Total cycle length (days) |
-| Period Length | Period length (days)      |
+### garmin_connect.set_active_gear
 
-> **Note:** Menstrual cycle sensors are only available if tracking is enabled in your Garmin Connect account.
+Set gear as the default for an activity type.
 
-### Gear Tracking
+| Parameter | Required | Description |
+|-----------|----------|-------------|
+| `gear_uuid` | No* | UUID of the gear (from sensor attributes) |
+| `entity_id` | No* | Alternatively, select a gear sensor entity |
+| `activity_type` | Yes | `running`, `cycling`, `hiking`, `walking`, `swimming`, `other` |
+| `setting` | No | `set this as default, unset others` / `set as default` / `unset default` |
 
-Gear sensors are dynamically created for each piece of equipment registered in Garmin Connect (shoes, bikes, etc.). They track total distance and usage statistics.
+*Either `gear_uuid` or `entity_id` is required.
 
-## Screenshots
+```yaml
+action: garmin_connect.set_active_gear
+data:
+  entity_id: sensor.garmin_connect_my_running_shoes
+  activity_type: running
+  setting: "set this as default, unset others"
+```
 
-![screenshot](https://github.com/cyberjunky/home-assistant-garmin_connect/blob/main/screenshots/garmin_connect.png?raw=true "Screenshot Garmin Connect")
+### garmin_connect.add_body_composition
 
-## Requirements
+Record body composition metrics to Garmin Connect.
 
-- A Garmin Connect account.
-- A device that syncs to the Garmin Connect website.
-
-### HACS (Recommended)
-
-[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=cyberjunky&repository=home-assistant-garmin_connect&category=integration)
-
-Alternatively:
-
-1. Install [HACS](https://hacs.xyz) if not already installed
-2. Search for "Garmin Connect" in HACS
-3. Click **Download**
-4. Restart Home Assistant
-5. Add via Settings → Devices & Services
-
-### Manual Installation
-
-1. Copy `custom_components/garmin_connect` to your `<config>/custom_components/` directory
-2. Restart Home Assistant
-3. Add via Settings → Devices & Services
-
-## Configuration
-
-### Adding the Integration
-
-1. Navigate to **Settings** → **Devices & Services**
-2. Click **+ Add Integration**
-3. Search for **"Garmin Connect"**
-4. Enter your configuration:
-   - **Username**: Your Garmin Connect username
-   - **Password**: Your Garmin Connect password
-   - **MFA Code**: Your Garmin Connect MFA code (optional)
-
-## Advanced Usage
-
-### Automation Examples
-
-**Add Body Composition**
+| Parameter | Required | Description |
+|-----------|----------|-------------|
+| `weight` | Yes | Weight in kg |
+| `timestamp` | No | ISO datetime (defaults to now) |
+| `bmi` | No | Body Mass Index |
+| `percent_fat` | No | Body fat percentage |
+| `percent_hydration` | No | Hydration percentage |
+| `visceral_fat_mass` | No | Visceral fat in kg |
+| `bone_mass` | No | Bone mass in kg |
+| `muscle_mass` | No | Muscle mass in kg |
+| `basal_met` | No | Basal metabolic rate (kcal) |
+| `active_met` | No | Active metabolic rate (kcal) |
+| `physique_rating` | No | Physique rating (1–9) |
+| `metabolic_age` | No | Metabolic age (years) |
+| `visceral_fat_rating` | No | Visceral fat rating (1–59) |
 
 ```yaml
 action: garmin_connect.add_body_composition
 data:
-  weight: 87
-  bmi: 25.5
-  bone_mass: 4.8
+  weight: 82.3
+  percent_fat: 23.6
+  muscle_mass: 35.5
 ```
 
-See the action template for other available values to add.
+### garmin_connect.add_blood_pressure
 
-**Withings scale data to Garmin**
+Record a blood pressure measurement.
 
-```yaml
-alias: WithingsToGarmin
-description: Sync weight from Withings to Garmin Connect
-triggers:
-  - trigger: state
-    entity_id:
-      - sensor.withings_weight
-conditions:
-  - condition: numeric_state
-    entity_id: sensor.withings_weight
-    above: 55
-    below: 100
-actions:
-  - action: garmin_connect.add_body_composition
-    data:
-      weight: "{{ states('sensor.withings_weight') }}"
-      timestamp: "{{ now().isoformat() }}"
-      bmi: >-
-        {{ (states('sensor.withings_weight') | float(0) / 1.72**2) | round(1) }}
-      bone_mass: "{{ states('sensor.withings_bone_mass') }}"
-      muscle_mass: "{{ states('sensor.withings_muscle_mass') }}"
-      percent_fat: "{{ states('sensor.withings_fat_ratio') }}"
-mode: single
-```
-
-**Set Active Gear**
-
-```yaml
-action: garmin_connect.set_active_gear
-target:
-  entity_id: sensor.garmin_connect_adidas
-data:
-  activity_type: running
-  setting: set as default
-```
-
-**Add Blood Pressure**
+| Parameter | Required | Description |
+|-----------|----------|-------------|
+| `systolic` | Yes | Systolic pressure (60–250 mmHg) |
+| `diastolic` | Yes | Diastolic pressure (40–150 mmHg) |
+| `pulse` | Yes | Pulse rate (30–220 bpm) |
+| `timestamp` | No | ISO datetime (defaults to now) |
+| `notes` | No | Additional notes |
 
 ```yaml
 action: garmin_connect.add_blood_pressure
@@ -295,66 +371,107 @@ data:
   systolic: 120
   diastolic: 80
   pulse: 60
-  timestamp: "2025-01-21T07:34:00"
-  notes: Measured with Beurer BC54
+  notes: "Morning measurement"
 ```
 
-**Create Activity**
+### garmin_connect.create_activity
 
-Creates an activity in Garmin Connect:
+Create a manual activity in Garmin Connect.
+
+| Parameter | Required | Description |
+|-----------|----------|-------------|
+| `activity_name` | Yes | Name of the activity |
+| `activity_type` | Yes | `running`, `cycling`, `walking`, `hiking`, `swimming`, `fitness_equipment`, `other` |
+| `duration_min` | Yes | Duration in minutes (1–1440) |
+| `start_datetime` | No | ISO datetime (defaults to now) |
+| `distance_km` | No | Distance in kilometres |
+| `time_zone` | No | Time zone (defaults to HA config) |
 
 ```yaml
 action: garmin_connect.create_activity
 data:
   activity_name: "Morning Run"
   activity_type: running
-  start_datetime: "2025-01-21T08:30:00"
   duration_min: 30
   distance_km: 5.0
 ```
 
-**Upload Activity**
+### garmin_connect.upload_activity
 
-Uploads an activity file (FIT, GPX, TCX) to Garmin Connect:
+Upload an activity file (FIT, GPX, TCX) to Garmin Connect.
+
+| Parameter | Required | Description |
+|-----------|----------|-------------|
+| `file_path` | Yes | Absolute path or relative to HA config directory |
 
 ```yaml
 action: garmin_connect.upload_activity
 data:
-  file_path: "morning_run.fit"
+  file_path: "activities/morning_run.fit"
 ```
 
-**Add Gear to Activity**
+### garmin_connect.add_gear_to_activity
 
-Associates gear (shoes, bike, etc.) with a specific activity:
+Associate gear with a specific activity.
+
+| Parameter | Required | Description |
+|-----------|----------|-------------|
+| `activity_id` | Yes | Activity ID (from last_activity sensor attributes) |
+| `gear_uuid` | No* | UUID of the gear |
+| `entity_id` | No* | Alternatively, select a gear sensor entity |
+
+*Either `gear_uuid` or `entity_id` is required.
 
 ```yaml
 action: garmin_connect.add_gear_to_activity
 data:
   activity_id: 12345678901
-  gear_uuid: "abc12345-def6-7890-ghij-klmn12345678"
+  entity_id: sensor.garmin_connect_my_running_shoes
 ```
 
-**Automatically assign alternate running shoes after a run**
+## Automation Examples
+
+### Sync Withings scale data to Garmin
 
 ```yaml
-automation:
-  - alias: "Assign alternate shoes to last running activity"
-    trigger:
-      - platform: state
-        entity_id: sensor.garmin_connect_last_activity
-    condition:
-      - condition: template
-        value_template: "{{ state_attr('sensor.garmin_connect_last_activity', 'activityType') == 'running' }}"
-    action:
-      - service: garmin_connect.add_gear_to_activity
-        data:
-          activity_id: "{{ state_attr('sensor.garmin_connect_last_activity', 'activityId') }}"
-          gear_uuid: "{{ state_attr('sensor.garmnin_connect_adidas', 'gear_uuid') }}"
+alias: "Sync Withings to Garmin"
+triggers:
+  - trigger: state
+    entity_id: sensor.withings_weight
+conditions:
+  - condition: numeric_state
+    entity_id: sensor.withings_weight
+    above: 40
+    below: 200
+actions:
+  - action: garmin_connect.add_body_composition
+    data:
+      weight: "{{ states('sensor.withings_weight') }}"
+      timestamp: "{{ now().isoformat() }}"
+      bmi: "{{ (states('sensor.withings_weight') | float(0) / 1.72**2) | round(1) }}"
+      bone_mass: "{{ states('sensor.withings_bone_mass') }}"
+      muscle_mass: "{{ states('sensor.withings_muscle_mass') }}"
+      percent_fat: "{{ states('sensor.withings_fat_ratio') }}"
 ```
 
-### Template Sensor Examples
+### Auto-assign running shoes after a run
 
-**Daily Running Distance** - Track how far you run each day:
+```yaml
+alias: "Assign shoes to running activity"
+triggers:
+  - trigger: state
+    entity_id: sensor.garmin_connect_last_activity
+conditions:
+  - condition: template
+    value_template: "{{ state_attr('sensor.garmin_connect_last_activity', 'activityType') == 'running' }}"
+actions:
+  - action: garmin_connect.add_gear_to_activity
+    data:
+      activity_id: "{{ state_attr('sensor.garmin_connect_last_activity', 'activityId') }}"
+      entity_id: sensor.garmin_connect_my_running_shoes
+```
+
+### Daily running distance template sensor
 
 ```yaml
 template:
@@ -369,22 +486,47 @@ template:
             {% set running.total = running.total + a.distance %}
           {% endfor %}
           {{ (running.total / 1000) | round(2) }}
-
-      - name: "Today's Cycling Distance"
-        unit_of_measurement: "km"
-        state: >
-          {% set today = now().strftime('%Y-%m-%d') %}
-          {% set activities = state_attr('sensor.garmin_connect_last_activities', 'last_activities') | default([]) %}
-          {% set cycling = namespace(total=0) %}
-          {% for a in activities if a.activityType == 'cycling' and today in a.startTimeLocal %}
-            {% set cycling.total = cycling.total + a.distance %}
-          {% endfor %}
-          {{ (cycling.total / 1000) | round(2) }}
 ```
 
-### Enable Debug Logging
+## Migration from v1
 
-Add the relevant lines below to the `configuration.yaml`:
+If you're upgrading from an older version of this integration (which used the `garminconnect` / `garth` library), the integration will automatically:
+
+1. **Migrate entity unique IDs** so your existing entity IDs are preserved (automations and dashboards keep working)
+2. **Request re-authentication** since the authentication method has changed
+
+After upgrading, go to **Settings** → **Devices & Services**, find Garmin Connect, and complete the re-authentication flow. If you have multiple Garmin accounts configured, each will prompt separately.
+
+## Known Limitations
+
+- **Cloud-based** — Requires internet connection; data depends on Garmin servers availability
+- **Polling delay** — Data updates only when your device syncs to Garmin Connect and the integration polls
+- **MFA sessions** — MFA sessions may expire, requiring re-authentication
+- **Rate limiting** — Excessive polling may trigger Garmin's rate limits; minimum interval is 60 seconds
+- **China region** — Users with `.cn` Garmin accounts need to set their country to China in Home Assistant configuration
+
+## Troubleshooting
+
+### Re-authentication required
+
+1. Go to **Settings** → **Devices & Services**
+2. Find Garmin Connect and click **Reconfigure**
+3. Enter your credentials and MFA code if prompted
+
+### Sensors show "unknown" or "unavailable"
+
+- Check if your Garmin device has synced recently
+- Verify the Garmin Connect website/app shows current data
+- Not all data may be available depending on your Garmin device model
+- Check Home Assistant logs for error messages
+
+### Rate limit errors
+
+If you see 429 or rate limit errors:
+1. Increase the scan interval in options (e.g., to 600 seconds)
+2. Wait 15–30 minutes before reloading the integration
+
+### Enable debug logging
 
 ```yaml
 logger:
@@ -393,75 +535,22 @@ logger:
     custom_components.garmin_connect: debug
 ```
 
-Alternatively, enable debug logging via the UI in **Settings** → **Devices & Services** → **Garmin Connect** → **Enable debug logging**:
+Or enable via the UI: **Settings** → **Devices & Services** → **Garmin Connect** → **Enable debug logging**.
 
-![Enable Debug Logging](screenshots/enabledebug.png)
+## Support This Project
 
-Then perform any steps to reproduce the issue and disable debug logging again. It will download the relevant log file automatically.
-
-## Development
-
-Quick-start (from project root):
-
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install --upgrade pip
-pip install -r requirements_lint.txt
-./scripts/lint    # runs pre-commit + vulture
-# or: ruff check .
-# to auto-fix: ruff check . --fix
-```
-
-### Discovering New API Endpoints
-
-Want to add support for new Garmin features? Here's how to find the API endpoints:
-
-1. **Login to [Garmin Connect](https://connect.garmin.com)** in your browser
-2. **Open Developer Tools** (F12 or Right-click → Inspect)
-3. Go to the **Network** tab
-4. **Filter by "Fetch/XHR"** to see API calls only
-5. **Navigate through the feature** you want to capture
-6. **Look for API calls** - they typically go to:
-   - `connect.garmin.com/proxy/*`
-   - `connect.garmin.com/activity-service/*`
-   - `connect.garmin.com/metrics-service/*`
-   - `connect.garmin.com/*-service/*`
-7. **Click on a request** to see the full URL and response data
-
-**Share your findings** in a GitHub issue with:
-
-- The full API URL path
-- Example response data (redact personal info)
-
-## 💖 Support This Project
-
-If you find this library useful for your projects, please consider supporting its continued development and maintenance:
-
-### 🌟 Ways to Support
-
-- **⭐ Star this repository** - Help others discover the project
-- **💰 Financial Support** - Contribute to development and hosting costs
-- **🐛 Report Issues** - Help improve stability and compatibility
-- **📖 Spread the Word** - Share with other developers
-
-### 💳 Financial Support Options
+If you find this integration useful, please consider supporting its development:
 
 [![Donate via PayPal](https://img.shields.io/badge/Donate-PayPal-blue.svg?style=for-the-badge&logo=paypal)](https://www.paypal.me/cyberjunkynl/)
 [![Sponsor on GitHub](https://img.shields.io/badge/Sponsor-GitHub-red.svg?style=for-the-badge&logo=github)](https://github.com/sponsors/cyberjunky)
 
-**Why Support?**
-
-- Keeps the project actively maintained
-- Enables faster bug fixes and new features
-- Supports infrastructure costs (testing, AI, CI/CD)
-- Shows appreciation for hundreds of hours of development
-
-Every contribution, no matter the size, makes a difference and is greatly appreciated! 🙏
+- Star this repository
+- [Report issues](https://github.com/cyberjunky/home-assistant-garmin_connect/issues)
+- Share with other Home Assistant users
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
 
 ---
 

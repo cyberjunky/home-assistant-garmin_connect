@@ -1,246 +1,147 @@
 {
+  "services": {
+    "set_active_gear": { "service": "mdi:shoe-print" },
+    "add_body_composition": { "service": "mdi:scale-bathroom" },
+    "add_blood_pressure": { "service": "mdi:heart-pulse" },
+    "create_activity": { "service": "mdi:run" },
+    "upload_activity": { "service": "mdi:upload" },
+    "add_gear_to_activity": { "service": "mdi:plus-box" }
+  },
   "entity": {
     "sensor": {
-      "abnormal_hr_alerts": {
-        "default": "mdi:heart-pulse"
-      },
-      "active_calories": {
-        "default": "mdi:fire"
-      },
-      "active_time": {
-        "default": "mdi:fire"
-      },
-      "activity_stress_duration": {
-        "default": "mdi:timer-play"
-      },
-      "activity_stress_percentage": {
-        "default": "mdi:flash-alert"
-      },
-      "avg_altitude": {
-        "default": "mdi:image-filter-hdr"
-      },
-      "avg_spo2": {
-        "default": "mdi:diabetes"
-      },
-      "avg_stress_level": {
-        "default": "mdi:gauge"
-      },
-      "awake_duration": {
-        "default": "mdi:sleep-off"
-      },
-      "awake_sleep": {
-        "default": "mdi:sleep-off"
-      },
-      "bmr_calories": {
-        "default": "mdi:fire-circle"
-      },
-      "body_battery_charged": {
-        "default": "mdi:battery-plus"
-      },
-      "body_battery_drained": {
-        "default": "mdi:battery-minus"
-      },
-      "body_battery_highest": {
-        "default": "mdi:battery-charging-100"
-      },
-      "body_battery_lowest": {
-        "default": "mdi:battery-heart-outline"
-      },
-      "body_battery_most_recent": {
-        "default": "mdi:battery-heart"
-      },
-      "burned_calories": {
-        "default": "mdi:fire"
-      },
-      "consumed_calories": {
-        "default": "mdi:food"
-      },
-      "daily_step_goal": {
-        "default": "mdi:target"
-      },
-      "deep_sleep": {
-        "default": "mdi:sleep"
-      },
-      "floors_ascended": {
-        "default": "mdi:stairs-up"
-      },
-      "floors_ascended_distance": {
-        "default": "mdi:stairs-up"
-      },
-      "floors_ascended_goal": {
-        "default": "mdi:target"
-      },
-      "floors_descended": {
-        "default": "mdi:stairs-down"
-      },
-      "floors_descended_distance": {
-        "default": "mdi:stairs-down"
-      },
-      "high_stress_duration": {
-        "default": "mdi:timer-remove"
-      },
-      "high_stress_percentage": {
-        "default": "mdi:flash-alert"
-      },
-      "highest_respiration": {
-        "default": "mdi:progress-clock"
-      },
-      "highly_active_time": {
-        "default": "mdi:fire"
-      },
-      "intensity_goal": {
-        "default": "mdi:target"
-      },
-      "last_7_days_avg_resting_heart_rate": {
-        "default": "mdi:heart-pulse"
-      },
-      "last_synced": {
-        "default": "mdi:sync"
-      },
-      "latest_respiration": {
-        "default": "mdi:progress-clock"
-      },
-      "latest_respiration_time": {
-        "default": "mdi:clock"
-      },
-      "latest_spo2": {
-        "default": "mdi:diabetes"
-      },
-      "latest_spo2_time": {
-        "default": "mdi:clock"
-      },
-      "light_sleep": {
-        "default": "mdi:sleep"
-      },
-      "low_stress_duration": {
-        "default": "mdi:timer-check"
-      },
-      "low_stress_percentage": {
-        "default": "mdi:flash-alert"
-      },
-      "lowest_respiration": {
-        "default": "mdi:progress-clock"
-      },
-      "lowest_spo2": {
-        "default": "mdi:diabetes"
-      },
-      "max_avg_heart_rate": {
-        "default": "mdi:heart-pulse"
-      },
-      "max_heart_rate": {
-        "default": "mdi:heart-pulse"
-      },
-      "max_stress_level": {
-        "default": "mdi:gauge-full"
-      },
-      "medium_stress_duration": {
-        "default": "mdi:timer-alert"
-      },
-      "medium_stress_percentage": {
-        "default": "mdi:flash-alert"
-      },
-      "min_avg_heart_rate": {
-        "default": "mdi:heart-pulse"
-      },
-      "min_heart_rate": {
-        "default": "mdi:heart-pulse"
-      },
-      "moderate_intensity": {
-        "default": "mdi:flash-alert"
-      },
-      "nap_time": {
-        "default": "mdi:sleep"
-      },
-      "rem_sleep": {
-        "default": "mdi:sleep"
-      },
-      "remaining_calories": {
-        "default": "mdi:food"
-      },
-      "rest_stress_duration": {
-        "default": "mdi:timer-pause"
-      },
-      "rest_stress_percentage": {
-        "default": "mdi:flash-alert"
-      },
-      "resting_heart_rate": {
-        "default": "mdi:heart-pulse"
-      },
-      "sedentary_time": {
-        "default": "mdi:seat"
-      },
-      "sleep_duration": {
-        "default": "mdi:sleep"
-      },
-      "sleep_score": {
-        "default": "mdi:sleep"
-      },
-      "sleeping_time": {
-        "default": "mdi:sleep"
-      },
-      "stress_percentage": {
-        "default": "mdi:flash-alert"
-      },
-      "stress_qualifier": {
-        "default": "mdi:emoticon"
-      },
-      "total_calories": {
-        "default": "mdi:fire"
-      },
-      "total_distance": {
-        "default": "mdi:walk"
-      },
-      "total_intensity_minutes": {
-        "default": "mdi:fire"
-      },
-      "total_sleep_duration": {
-        "default": "mdi:sleep"
-      },
-      "total_steps": {
-        "default": "mdi:walk"
-      },
-      "total_stress_duration": {
-        "default": "mdi:timer"
-      },
-      "uncategorized_stress_duration": {
-        "default": "mdi:flash-alert"
-      },
-      "uncategorized_stress_percentage": {
-        "default": "mdi:flash-alert"
-      },
-      "unmeasurable_sleep": {
-        "default": "mdi:sleep-off"
-      },
-      "vigorous_intensity": {
-        "default": "mdi:run-fast"
-      },
-      "weekly_distance_avg": {
-        "default": "mdi:chart-line"
-      },
-      "weekly_step_avg": {
-        "default": "mdi:chart-line"
-      },
-      "wellness_active_calories": {
-        "default": "mdi:fire"
-      },
-      "wellness_calories": {
-        "default": "mdi:fire"
-      },
-      "wellness_distance": {
-        "default": "mdi:walk"
-      },
-      "wellness_end_time": {
-        "default": "mdi:clock"
-      },
-      "wellness_start_time": {
-        "default": "mdi:clock"
-      },
-      "yesterday_distance": {
-        "default": "mdi:map-marker-distance"
-      },
-      "yesterday_steps": {
-        "default": "mdi:walk"
-      }
+      "abnormal_hr_alerts": { "default": "mdi:heart-pulse" },
+      "achievable_fitness_age": { "default": "mdi:calendar-heart" },
+      "active_calories": { "default": "mdi:fire" },
+      "active_goals": { "default": "mdi:flag-checkered" },
+      "active_time": { "default": "mdi:fire" },
+      "activity_stress_duration": { "default": "mdi:timer-play" },
+      "activity_stress_percentage": { "default": "mdi:flash-alert" },
+      "avg_altitude": { "default": "mdi:image-filter-hdr" },
+      "avg_spo2": { "default": "mdi:diabetes" },
+      "avg_stress_level": { "default": "mdi:gauge" },
+      "awake_duration": { "default": "mdi:sleep-off" },
+      "awake_sleep": { "default": "mdi:sleep-off" },
+      "badges": { "default": "mdi:medal" },
+      "bmi": { "default": "mdi:human" },
+      "bmr_calories": { "default": "mdi:fire-circle" },
+      "body_battery_charged": { "default": "mdi:battery-plus" },
+      "body_battery_drained": { "default": "mdi:battery-minus" },
+      "body_battery_highest": { "default": "mdi:battery-charging-100" },
+      "body_battery_lowest": { "default": "mdi:battery-heart-outline" },
+      "body_battery_most_recent": { "default": "mdi:battery-heart" },
+      "body_fat": { "default": "mdi:percent" },
+      "body_water": { "default": "mdi:water-percent" },
+      "bone_mass": { "default": "mdi:bone" },
+      "bp_diastolic": { "default": "mdi:heart-pulse" },
+      "bp_pulse": { "default": "mdi:heart" },
+      "bp_systolic": { "default": "mdi:heart-pulse" },
+      "burned_calories": { "default": "mdi:fire" },
+      "chronological_age": { "default": "mdi:calendar-heart" },
+      "consumed_calories": { "default": "mdi:food" },
+      "daily_step_goal": { "default": "mdi:target" },
+      "deep_sleep": { "default": "mdi:sleep" },
+      "endurance_score": { "default": "mdi:run" },
+      "fitness_age": { "default": "mdi:calendar-heart" },
+      "floors_ascended": { "default": "mdi:stairs-up" },
+      "floors_ascended_distance": { "default": "mdi:stairs-up" },
+      "floors_ascended_goal": { "default": "mdi:target" },
+      "floors_descended": { "default": "mdi:stairs-down" },
+      "floors_descended_distance": { "default": "mdi:stairs-down" },
+      "future_goals": { "default": "mdi:calendar-clock" },
+      "goals_history": { "default": "mdi:history" },
+      "high_stress_duration": { "default": "mdi:timer-remove" },
+      "high_stress_percentage": { "default": "mdi:flash-alert" },
+      "highest_respiration": { "default": "mdi:progress-clock" },
+      "highly_active_time": { "default": "mdi:fire" },
+      "hill_score": { "default": "mdi:terrain" },
+      "hrv_baseline": { "default": "mdi:heart-pulse" },
+      "hrv_last_night_5min_high": { "default": "mdi:heart-pulse" },
+      "hrv_last_night_avg": { "default": "mdi:heart-pulse" },
+      "hrv_status": { "default": "mdi:heart-pulse" },
+      "hrv_weekly_avg": { "default": "mdi:heart-pulse" },
+      "hydration": { "default": "mdi:water" },
+      "hydration_activity_intake": { "default": "mdi:water-plus" },
+      "hydration_daily_average": { "default": "mdi:water-sync" },
+      "hydration_goal": { "default": "mdi:water-check" },
+      "hydration_sweat_loss": { "default": "mdi:water-minus" },
+      "intensity_goal": { "default": "mdi:target" },
+      "lactate_threshold_hr": { "default": "mdi:heart-pulse" },
+      "lactate_threshold_speed": { "default": "mdi:speedometer" },
+      "last_7_days_avg_resting_heart_rate": { "default": "mdi:heart-pulse" },
+      "last_activities": { "default": "mdi:numeric" },
+      "last_activity": { "default": "mdi:walk" },
+      "last_synced": { "default": "mdi:sync" },
+      "last_workout": { "default": "mdi:dumbbell" },
+      "last_workouts": { "default": "mdi:dumbbell" },
+      "latest_respiration": { "default": "mdi:progress-clock" },
+      "latest_respiration_time": { "default": "mdi:clock" },
+      "latest_spo2": { "default": "mdi:diabetes" },
+      "latest_spo2_time": { "default": "mdi:clock" },
+      "light_sleep": { "default": "mdi:sleep" },
+      "low_stress_duration": { "default": "mdi:timer-check" },
+      "low_stress_percentage": { "default": "mdi:flash-alert" },
+      "lowest_respiration": { "default": "mdi:progress-clock" },
+      "lowest_spo2": { "default": "mdi:diabetes" },
+      "max_avg_heart_rate": { "default": "mdi:heart-pulse" },
+      "max_heart_rate": { "default": "mdi:heart-pulse" },
+      "max_stress_level": { "default": "mdi:gauge-full" },
+      "medium_stress_duration": { "default": "mdi:timer-alert" },
+      "medium_stress_percentage": { "default": "mdi:flash-alert" },
+      "menstrual_cycle_day": { "default": "mdi:counter" },
+      "menstrual_cycle_phase": { "default": "mdi:calendar-heart" },
+      "menstrual_cycle_start": { "default": "mdi:calendar-start" },
+      "menstrual_cycle_type": { "default": "mdi:calendar-question" },
+      "menstrual_days_until_next_phase": { "default": "mdi:calendar-clock" },
+      "menstrual_fertile_window_end": { "default": "mdi:leaf-circle" },
+      "menstrual_fertile_window_start": { "default": "mdi:leaf" },
+      "menstrual_next_predicted_cycle_start": { "default": "mdi:calendar-arrow-right" },
+      "menstrual_period_length": { "default": "mdi:calendar-range" },
+      "metabolic_age": { "default": "mdi:calendar-heart" },
+      "min_avg_heart_rate": { "default": "mdi:heart-pulse" },
+      "min_heart_rate": { "default": "mdi:heart-pulse" },
+      "moderate_intensity": { "default": "mdi:flash-alert" },
+      "morning_training_readiness": { "default": "mdi:weather-sunset-up" },
+      "muscle_mass": { "default": "mdi:dumbbell" },
+      "nap_time": { "default": "mdi:sleep" },
+      "next_alarm": { "default": "mdi:alarm" },
+      "physique_rating": { "default": "mdi:numeric" },
+      "previous_fitness_age": { "default": "mdi:calendar-heart" },
+      "rem_sleep": { "default": "mdi:sleep" },
+      "remaining_calories": { "default": "mdi:food" },
+      "rest_stress_duration": { "default": "mdi:timer-pause" },
+      "rest_stress_percentage": { "default": "mdi:flash-alert" },
+      "resting_heart_rate": { "default": "mdi:heart-pulse" },
+      "sedentary_time": { "default": "mdi:seat" },
+      "sleep_duration": { "default": "mdi:sleep" },
+      "sleep_score": { "default": "mdi:sleep" },
+      "sleeping_time": { "default": "mdi:sleep" },
+      "stress_percentage": { "default": "mdi:flash-alert" },
+      "stress_qualifier": { "default": "mdi:emoticon" },
+      "total_calories": { "default": "mdi:fire" },
+      "total_distance": { "default": "mdi:walk" },
+      "total_intensity_minutes": { "default": "mdi:fire" },
+      "total_sleep_duration": { "default": "mdi:sleep" },
+      "total_steps": { "default": "mdi:walk" },
+      "total_stress_duration": { "default": "mdi:timer" },
+      "training_readiness": { "default": "mdi:run-fast" },
+      "training_status": { "default": "mdi:chart-line" },
+      "uncategorized_stress_duration": { "default": "mdi:flash-alert" },
+      "uncategorized_stress_percentage": { "default": "mdi:flash-alert" },
+      "unmeasurable_sleep": { "default": "mdi:sleep-off" },
+      "user_level": { "default": "mdi:star-four-points-circle" },
+      "user_points": { "default": "mdi:counter" },
+      "vigorous_intensity": { "default": "mdi:run-fast" },
+      "visceral_fat": { "default": "mdi:food" },
+      "weekly_distance_avg": { "default": "mdi:chart-line" },
+      "weekly_step_avg": { "default": "mdi:chart-line" },
+      "weight": { "default": "mdi:weight-kilogram" },
+      "wellness_active_calories": { "default": "mdi:fire" },
+      "wellness_calories": { "default": "mdi:fire" },
+      "wellness_distance": { "default": "mdi:walk" },
+      "wellness_end_time": { "default": "mdi:clock" },
+      "wellness_start_time": { "default": "mdi:clock" },
+      "yesterday_distance": { "default": "mdi:map-marker-distance" },
+      "yesterday_steps": { "default": "mdi:walk" }
     }
   }
 }

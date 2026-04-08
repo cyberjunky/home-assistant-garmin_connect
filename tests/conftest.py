@@ -7,9 +7,9 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from custom_components.garmin_connect.const import (
-    CONF_DI_CLIENT_ID,
-    CONF_DI_REFRESH_TOKEN,
-    CONF_DI_TOKEN,
+    CONF_CLIENT_ID,
+    CONF_REFRESH_TOKEN,
+    CONF_TOKEN,
     DOMAIN,
 )
 
@@ -21,9 +21,9 @@ def mock_config_entry() -> MagicMock:
     entry.domain = DOMAIN
     entry.title = "test@example.com"
     entry.data = {
-        CONF_DI_TOKEN: "mock_di_token.eyJleHAiOjk5OTk5OTk5OTl9.sig",
-        CONF_DI_REFRESH_TOKEN: "mock_di_refresh_token",
-        CONF_DI_CLIENT_ID: "GARMIN_CONNECT_MOBILE_ANDROID_DI",
+        CONF_TOKEN: "mock_di_token.eyJleHAiOjk5OTk5OTk5OTl9.sig",
+        CONF_REFRESH_TOKEN: "mock_di_refresh_token",
+        CONF_CLIENT_ID: "GARMIN_CONNECT_MOBILE_ANDROID_DI",
     }
     entry.unique_id = "test@example.com"
     entry.entry_id = "test_entry_id"

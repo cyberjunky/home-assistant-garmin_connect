@@ -1,19 +1,14 @@
-{
+ {
   "domain": "garmin_connect",
   "name": "Garmin Connect",
-  "codeowners": [
-    "@cyberjunky"
-  ],
+  "codeowners": ["@cyberjunky"],
   "config_flow": true,
   "documentation": "https://github.com/cyberjunky/home-assistant-garmin_connect",
   "integration_type": "service",
   "iot_class": "cloud_polling",
   "issue_tracker": "https://github.com/cyberjunky/home-assistant-garmin_connect/issues",
-  "loggers": [
-    "ha_garmin"
-  ],
-  "requirements": [
-    "ha-garmin==0.1.0"
-  ],
-  "version": "2.1.0"
+  "loggers": ["ha-garmin"],
+  "quality_scale": "gold",
+  "requirements": ["ha-garmin==0.1.1"],
+  "version": "3.0.0"
 }

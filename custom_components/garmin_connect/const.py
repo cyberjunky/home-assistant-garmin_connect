@@ -5,8 +5,12 @@ from typing import Final
 DOMAIN: Final = "garmin_connect"
 
 # Config entry keys
-CONF_DI_TOKEN: Final = "di_token"
-CONF_DI_REFRESH_TOKEN: Final = "di_refresh_token"
-CONF_DI_CLIENT_ID: Final = "di_client_id"
+CONF_TOKEN: Final = "token"
+CONF_REFRESH_TOKEN: Final = "refresh_token"
+CONF_CLIENT_ID: Final = "client_id"
 
-DEFAULT_UPDATE_INTERVAL: Final = 300
+# Options
+CONF_SCAN_INTERVAL: Final = "scan_interval"
+DEFAULT_SCAN_INTERVAL: Final = 300  # 5 minutes
+MIN_SCAN_INTERVAL: Final = 60  # 1 minute
+MAX_SCAN_INTERVAL: Final = 3600  # 1 hour

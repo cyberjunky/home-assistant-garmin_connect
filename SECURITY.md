@@ -16,7 +16,7 @@ This integration communicates with Garmin Connect over the internet (HTTPS):
 
 ### Credential Storage
 
-Garmin Connect connection details (username, password, mfa_code) are used to fetch a session token. This session token is stored in Home Assistant's configuration:
+Garmin Connect connection details (username, password, mfa_code) are used to fetch session tokens only. This session tokens are stored in Home Assistant's configuration:
 
 - Keep your Home Assistant configuration and data secure
 - Do not share your Home Assistant backups without sanitizing sensitive data

@@ -3,14 +3,6 @@
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from ha_garmin import GarminAuthError, GarminMFARequired
-import pytest
-
-from custom_components.garmin_connect.const import (
-    CONF_DI_CLIENT_ID,
-    CONF_DI_REFRESH_TOKEN,
-    CONF_DI_TOKEN,
-    DOMAIN,
-)
 
 
 def _make_mock_auth(*, raise_on_login=None):
@@ -43,6 +35,7 @@ async def test_login_invalid_auth() -> None:
     flow = GarminConnectConfigFlow()
     flow.hass = MagicMock()
     flow.hass.config.country = "US"
+    flow.hass.async_add_executor_job = AsyncMock(side_effect=GarminAuthError("bad creds"))
 
     with patch("custom_components.garmin_connect.config_flow.GarminAuth", return_value=mock_auth):
         result = await flow.async_step_user(
@@ -61,6 +54,7 @@ async def test_login_mfa_required_transitions_to_mfa_step() -> None:
     flow = GarminConnectConfigFlow()
     flow.hass = MagicMock()
     flow.hass.config.country = "US"
+    flow.hass.async_add_executor_job = AsyncMock(side_effect=GarminMFARequired("mfa_ticket"))
 
     with patch("custom_components.garmin_connect.config_flow.GarminAuth", return_value=mock_auth):
         result = await flow.async_step_user(
@@ -77,8 +71,9 @@ async def test_mfa_invalid_code_sets_error() -> None:
 
     flow = GarminConnectConfigFlow()
     flow.hass = MagicMock()
+    flow.hass.async_add_executor_job = AsyncMock(side_effect=GarminAuthError("bad code"))
     flow._auth = MagicMock()
-    flow._auth.complete_mfa = AsyncMock(side_effect=GarminAuthError("bad code"))
+    flow._auth.complete_mfa = MagicMock(side_effect=GarminAuthError("bad code"))
 
     result = await flow.async_step_mfa({"mfa_code": "000000"})
 
@@ -96,12 +91,11 @@ async def test_no_bare_except_in_flow() -> None:
     assert "except Exception" not in source
 
 
-async def test_login_uses_async_api() -> None:
-    """Login must call auth.login directly (async API, not executor)."""
+async def test_login_uses_executor() -> None:
+    """Login must run auth.login via executor (sync garth library)."""
     import inspect
 
     from custom_components.garmin_connect import config_flow
 
-    source = inspect.getsource(config_flow.GarminConnectConfigFlow.async_step_user)
-    assert "await self._auth.login(" in source
-    assert "async_add_executor_job" not in source
+    source = inspect.getsource(config_flow.GarminConnectConfigFlow._async_login)
+    assert "async_add_executor_job" in source

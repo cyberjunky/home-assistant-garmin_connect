@@ -58,13 +58,13 @@ rules:
   entity-translations: done
   exception-translations: done
   icon-translations: done
-  reconfiguration-flow: todo
+  reconfiguration-flow: done
   repair-issues: done
   stale-devices:
     status: exempt
     comment: Uses single service device.
 
   # Platinum
-  async-dependency: done
-  inject-websession: done
+  async-dependency: todo
+  inject-websession: todo
   strict-typing: done
