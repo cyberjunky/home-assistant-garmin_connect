@@ -145,8 +145,8 @@ class GarminConnectConfigFlow(ConfigFlow, domain=DOMAIN):
                 return await self.async_step_mfa()
             except GarminAuthError as err:
                 errors["base"] = self._map_auth_error(err)
-            except GarminConnectError:
-                errors["base"] = "unknown"
+            except GarminConnectError as err:
+                errors["base"] = "rate_limit" if "429" in str(err) else "unknown"
             else:
                 return await self._async_create_new_entry(user_input[CONF_USERNAME])
 
@@ -172,8 +172,9 @@ class GarminConnectConfigFlow(ConfigFlow, domain=DOMAIN):
                     errors["base"] = "rate_limit"
                 else:
                     errors["base"] = "invalid_mfa"
-            except GarminConnectError:
-                errors["base"] = "unknown"
+            except GarminConnectError as err:
+                errors["base"] = "rate_limit" if "429" in str(err) else "unknown"
+
             else:
                 if self.source == SOURCE_REAUTH:
                     return await self._async_finish_reauth()
@@ -211,8 +212,8 @@ class GarminConnectConfigFlow(ConfigFlow, domain=DOMAIN):
                 return await self.async_step_mfa()
             except GarminAuthError as err:
                 errors["base"] = self._map_auth_error(err)
-            except GarminConnectError:
-                errors["base"] = "unknown"
+            except GarminConnectError as err:
+                errors["base"] = "rate_limit" if "429" in str(err) else "unknown"
             else:
                 return await self._async_finish_reauth()
 
@@ -242,8 +243,8 @@ class GarminConnectConfigFlow(ConfigFlow, domain=DOMAIN):
                 return await self.async_step_mfa()
             except GarminAuthError as err:
                 errors["base"] = self._map_auth_error(err)
-            except GarminConnectError:
-                errors["base"] = "unknown"
+            except GarminConnectError as err:
+                errors["base"] = "rate_limit" if "429" in str(err) else "unknown"
             else:
                 entry = self._get_reconfigure_entry()
                 self.hass.config_entries.async_update_entry(entry, data=self._token_data())
