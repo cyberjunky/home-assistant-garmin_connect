@@ -2,7 +2,7 @@
 
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from ha_garmin import GarminAuthError, GarminConnectError, GarminMFARequired
+from ha_garmin import GarminAuthError, GarminConnectError, GarminMFARequired, GarminRateLimitError
 
 from custom_components.garmin_connect.const import (
     CONF_SCAN_INTERVAL,
@@ -90,6 +90,29 @@ async def test_user_step_garmin_connect_error() -> None:
     assert result["errors"] == {"base": "unknown"}
 
 
+async def test_user_step_rate_limit() -> None:
+    """GarminRateLimitError must set the rate_limit base error."""
+    from custom_components.garmin_connect.config_flow import GarminConnectConfigFlow
+
+    auth = _make_auth_mock(login_side_effect=GarminRateLimitError("429"))
+    flow = GarminConnectConfigFlow()
+    flow.hass = MagicMock()
+    flow.hass.config.country = "US"
+    flow.hass.async_add_executor_job = AsyncMock(
+        side_effect=lambda fn, *a: _sync_call(fn, *a)
+    )
+
+    with patch(
+        "custom_components.garmin_connect.config_flow.GarminAuth", return_value=auth
+    ):
+        result = await flow.async_step_user(
+            {"username": "test@example.com", "password": "pass"}
+        )
+
+    assert result["type"] == "form"
+    assert result["errors"] == {"base": "rate_limit"}
+
+
 async def test_user_step_mfa_required_transitions() -> None:
     """GarminMFARequired must move the flow to the mfa step."""
     from custom_components.garmin_connect.config_flow import GarminConnectConfigFlow
@@ -132,6 +155,24 @@ async def test_mfa_step_invalid_code() -> None:
 
     assert result["type"] == "form"
     assert result["errors"] == {"base": "invalid_mfa"}
+
+
+async def test_mfa_step_rate_limit() -> None:
+    """GarminRateLimitError during MFA must set the rate_limit base error."""
+    from custom_components.garmin_connect.config_flow import GarminConnectConfigFlow
+
+    flow = GarminConnectConfigFlow()
+    flow.hass = MagicMock()
+    flow._auth = MagicMock()
+    flow._auth.complete_mfa = MagicMock(side_effect=GarminRateLimitError("429"))
+    flow.hass.async_add_executor_job = AsyncMock(
+        side_effect=lambda fn, *a: _sync_call(fn, *a)
+    )
+
+    result = await flow.async_step_mfa({"mfa_code": "000000"})
+
+    assert result["type"] == "form"
+    assert result["errors"] == {"base": "rate_limit"}
 
 
 # ── Reauth / Reconfigure steps ────────────────────────────────────────────────
