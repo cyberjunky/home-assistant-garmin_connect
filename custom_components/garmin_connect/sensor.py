@@ -1416,7 +1416,7 @@ async def async_setup_entry(
     # Dynamic gear sensors
     gear_data = coordinators.gear.data or {}
     for gear_stat in gear_data.get("gearStats", []):
-        gear_name = gear_stat.get("displayName") or gear_stat.get("gearName", "Unknown")
+        gear_name = gear_stat.get("displayName") or gear_stat.get("gearName") or "Unknown"
         gear_uuid = gear_stat.get("uuid") or gear_stat.get("gearUuid", "")
         if gear_uuid:
             entities.append(
@@ -1497,12 +1497,12 @@ class GarminConnectGearSensor(CoordinatorEntity[GearCoordinator], SensorEntity):
         """Initialize the gear sensor."""
         super().__init__(coordinator)
         self._gear_uuid = gear_uuid
-        self._gear_name = gear_name
+        self._gear_name = gear_name or "Unknown"
         self._attr_native_unit_of_measurement = UnitOfLength.METERS
         self._attr_device_class = SensorDeviceClass.DISTANCE
         self._attr_state_class = SensorStateClass.TOTAL_INCREASING
         self._attr_suggested_display_precision = 0
-        clean_name = gear_name.lower().replace(" ", "_").replace("-", "_")
+        clean_name = self._gear_name.lower().replace(" ", "_").replace("-", "_")
         self._attr_unique_id = f"{entry_id}_gear_{clean_name}"
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, entry_id)},
