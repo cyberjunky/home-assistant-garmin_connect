@@ -135,7 +135,6 @@ class GarminPolylineCard extends HTMLElement {
       if (this._initPending) return;
       this._initPending = true;
       const script = document.createElement('script');
-      script.crossOrigin = 'anonymous';
       script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
       script.onload = () => {
         this._initPending = false;
@@ -211,9 +210,13 @@ class GarminPolylineCard extends HTMLElement {
 
     // Defer so the browser has painted the container before Leaflet measures it
     setTimeout(() => {
-      if (this._map && this._polyline) {
-        this._map.invalidateSize();
-        this._map.fitBounds(this._polyline.getBounds(), { padding: [20, 20] });
+      try {
+        if (this._map && this._polyline) {
+          this._map.invalidateSize();
+          this._map.fitBounds(this._polyline.getBounds(), { padding: [20, 20] });
+        }
+      } catch (_e) {
+        // Map pane not fully laid out yet — safe to ignore
       }
     }, 50);
 
