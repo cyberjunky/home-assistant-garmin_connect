@@ -13,6 +13,7 @@ from ha_garmin import (
     GarminClient,
     GarminConnectError,
     GarminMFARequired,
+    GarminRateLimitError,
 )
 from homeassistant.config_entries import (
     SOURCE_REAUTH,
@@ -73,14 +74,6 @@ class GarminConnectConfigFlow(ConfigFlow, domain=DOMAIN):
             CONF_REFRESH_TOKEN: self._auth.di_refresh_token,
             CONF_CLIENT_ID: self._auth.di_client_id,
         }
-
-    @staticmethod
-    def _map_auth_error(err: GarminAuthError) -> str:
-        """Map a GarminAuthError to a config flow error key."""
-        msg = str(err).lower()
-        if "429" in msg or "rate limit" in msg:
-            return "rate_limit"
-        return "invalid_auth"
 
     async def _async_login(self, username: str, password: str) -> None:
         """Run Garmin login in the executor."""
@@ -143,10 +136,12 @@ class GarminConnectConfigFlow(ConfigFlow, domain=DOMAIN):
                 )
             except GarminMFARequired:
                 return await self.async_step_mfa()
-            except GarminAuthError as err:
-                errors["base"] = self._map_auth_error(err)
-            except GarminConnectError as err:
-                errors["base"] = "rate_limit" if "429" in str(err) else "unknown"
+            except GarminRateLimitError:
+                errors["base"] = "rate_limit"
+            except GarminAuthError:
+                errors["base"] = "invalid_auth"
+            except GarminConnectError:
+                errors["base"] = "unknown"
             else:
                 return await self._async_create_new_entry(user_input[CONF_USERNAME])
 
@@ -166,14 +161,12 @@ class GarminConnectConfigFlow(ConfigFlow, domain=DOMAIN):
 
             try:
                 await self._async_complete_mfa(user_input["mfa_code"])
-            except GarminAuthError as err:
-                msg = str(err).lower()
-                if "429" in msg or "rate limit" in msg:
-                    errors["base"] = "rate_limit"
-                else:
-                    errors["base"] = "invalid_mfa"
-            except GarminConnectError as err:
-                errors["base"] = "rate_limit" if "429" in str(err) else "unknown"
+            except GarminRateLimitError:
+                errors["base"] = "rate_limit"
+            except GarminAuthError:
+                errors["base"] = "invalid_mfa"
+            except GarminConnectError:
+                errors["base"] = "unknown"
 
             else:
                 if self.source == SOURCE_REAUTH:
@@ -210,10 +203,12 @@ class GarminConnectConfigFlow(ConfigFlow, domain=DOMAIN):
                 )
             except GarminMFARequired:
                 return await self.async_step_mfa()
-            except GarminAuthError as err:
-                errors["base"] = self._map_auth_error(err)
-            except GarminConnectError as err:
-                errors["base"] = "rate_limit" if "429" in str(err) else "unknown"
+            except GarminRateLimitError:
+                errors["base"] = "rate_limit"
+            except GarminAuthError:
+                errors["base"] = "invalid_auth"
+            except GarminConnectError:
+                errors["base"] = "unknown"
             else:
                 return await self._async_finish_reauth()
 
@@ -241,10 +236,12 @@ class GarminConnectConfigFlow(ConfigFlow, domain=DOMAIN):
                 )
             except GarminMFARequired:
                 return await self.async_step_mfa()
-            except GarminAuthError as err:
-                errors["base"] = self._map_auth_error(err)
-            except GarminConnectError as err:
-                errors["base"] = "rate_limit" if "429" in str(err) else "unknown"
+            except GarminRateLimitError:
+                errors["base"] = "rate_limit"
+            except GarminAuthError:
+                errors["base"] = "invalid_auth"
+            except GarminConnectError:
+                errors["base"] = "unknown"
             else:
                 entry = self._get_reconfigure_entry()
                 self.hass.config_entries.async_update_entry(entry, data=self._token_data())
