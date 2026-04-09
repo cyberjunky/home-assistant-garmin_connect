@@ -2,6 +2,44 @@
  * Garmin Activity Polyline Map Card
  * A simple custom Lovelace card to display activity routes from sensor attributes
  */
+
+const LEAFLET_VERSION = '1.9.4';
+const LEAFLET_JS  = `https://unpkg.com/leaflet@${LEAFLET_VERSION}/dist/leaflet.js`;
+const LEAFLET_CSS = `https://unpkg.com/leaflet@${LEAFLET_VERSION}/dist/leaflet.css`;
+
+// Load Leaflet JS + CSS into document.head once, return a Promise that resolves
+// when both are ready. Shadow DOM elements cannot reliably use a <link> in the
+// shadow root because the stylesheet loads asynchronously and Leaflet reads CSS
+// dimensions synchronously on init — injecting into head avoids the race.
+function loadLeaflet() {
+  if (loadLeaflet._promise) return loadLeaflet._promise;
+
+  loadLeaflet._promise = new Promise((resolve, reject) => {
+    // CSS — inject only once
+    if (!document.querySelector(`link[href="${LEAFLET_CSS}"]`)) {
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = LEAFLET_CSS;
+      document.head.appendChild(link);
+    }
+
+    if (window.L) {
+      resolve();
+      return;
+    }
+
+    const script = document.createElement('script');
+    script.crossOrigin = 'anonymous';
+    script.src = LEAFLET_JS;
+    script.onload = resolve;
+    script.onerror = () => reject(new Error('Failed to load Leaflet from CDN'));
+    document.head.appendChild(script);
+  });
+
+  return loadLeaflet._promise;
+}
+
+
 class GarminPolylineCard extends HTMLElement {
   constructor() {
     super();
@@ -10,7 +48,6 @@ class GarminPolylineCard extends HTMLElement {
     this._config = null;
     this._map = null;
     this._polyline = null;
-    this._initPending = false;
     this._lastPolylineKey = null;
   }
 
@@ -44,7 +81,6 @@ class GarminPolylineCard extends HTMLElement {
   }
 
   connectedCallback() {
-    // Re-render when re-attached to the DOM (map was removed in disconnectedCallback)
     if (this._hass && this._config) {
       this._map = null;
       this._polyline = null;
@@ -104,7 +140,6 @@ class GarminPolylineCard extends HTMLElement {
     const activityName = stateObj.state || 'Activity';
 
     if (this._map) {
-      // Update existing map — guard against Leaflet not being ready
       try {
         if (this._polyline) {
           this._polyline.setLatLngs(coordinates);
@@ -112,7 +147,6 @@ class GarminPolylineCard extends HTMLElement {
           this._map.fitBounds(this._polyline.getBounds(), { padding: [20, 20] });
         }
       } catch (_e) {
-        // Map pane not ready; tear down and rebuild
         this._map.remove();
         this._map = null;
         this._polyline = null;
@@ -128,34 +162,18 @@ class GarminPolylineCard extends HTMLElement {
           ${activityName} • ${coordinates.length} points
         </div>
       </ha-card>
-      <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     `;
 
-    if (!window.L) {
-      if (this._initPending) return;
-      this._initPending = true;
-      const script = document.createElement('script');
-      script.crossOrigin = 'anonymous';
-      script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
-      script.onload = () => {
-        this._initPending = false;
-        this._initMapWhenReady(coordinates);
-      };
-      script.onerror = () => {
-        this._initPending = false;
-        console.error('garmin-polyline-card: failed to load Leaflet from CDN');
-      };
-      document.head.appendChild(script);
-    } else {
-      this._initMapWhenReady(coordinates);
-    }
+    loadLeaflet()
+      .then(() => this._initMapWhenReady(coordinates))
+      .catch(err => console.error('garmin-polyline-card:', err));
   }
 
   _initMapWhenReady(coordinates, retries = 0) {
     const MAX_RETRIES = 10;
     requestAnimationFrame(() => {
       const mapContainer = this.shadowRoot.getElementById('map');
-      if (!mapContainer || !window.L) return;
+      if (!mapContainer) return;
 
       if (mapContainer.offsetWidth === 0 || mapContainer.offsetHeight === 0) {
         if (retries < MAX_RETRIES) {
@@ -182,12 +200,11 @@ class GarminPolylineCard extends HTMLElement {
       scrollWheelZoom: false
     });
 
-    // Custom tile layer that sets referrerPolicy BEFORE src so the browser
-    // sends no Referer header — required when HA runs on localhost.
+    // Set referrerPolicy before src so no Referer header is sent with tile requests
     const NoRefererTileLayer = L.TileLayer.extend({
       createTile(coords, done) {
         const tile = document.createElement('img');
-        tile.referrerPolicy = 'no-referrer';  // must be before src
+        tile.referrerPolicy = 'no-referrer';
         L.DomEvent.on(tile, 'load', L.Util.bind(this._tileOnLoad, this, done, tile));
         L.DomEvent.on(tile, 'error', L.Util.bind(this._tileOnError, this, done, tile));
         tile.alt = '';
@@ -203,40 +220,32 @@ class GarminPolylineCard extends HTMLElement {
       maxZoom: 19
     }).addTo(this._map);
 
-    // Tell Leaflet the real container size before any tiles load
-    this._map.invalidateSize();
-
     this._polyline = L.polyline(coordinates, {
       color: this._config.color,
       weight: this._config.weight,
       opacity: 0.8
     }).addTo(this._map);
 
+    if (coordinates.length > 0) {
+      L.circleMarker(coordinates[0], {
+        radius: 8, color: '#4CAF50', fillColor: '#4CAF50', fillOpacity: 1
+      }).addTo(this._map).bindPopup('Start');
+
+      L.circleMarker(coordinates[coordinates.length - 1], {
+        radius: 8, color: '#F44336', fillColor: '#F44336', fillOpacity: 1
+      }).addTo(this._map).bindPopup('End');
+    }
+
+    this._map.invalidateSize();
     this._map.fitBounds(this._polyline.getBounds(), { padding: [20, 20] });
 
-    // Second pass after paint in case the shadow DOM container resized
+    // Second pass — shadow DOM containers sometimes report wrong dimensions on first paint
     setTimeout(() => {
       if (this._map && this._polyline) {
         this._map.invalidateSize();
         this._map.fitBounds(this._polyline.getBounds(), { padding: [20, 20] });
       }
-    }, 100);
-
-    if (coordinates.length > 0) {
-      L.circleMarker(coordinates[0], {
-        radius: 8,
-        color: '#4CAF50',
-        fillColor: '#4CAF50',
-        fillOpacity: 1
-      }).addTo(this._map).bindPopup('Start');
-
-      L.circleMarker(coordinates[coordinates.length - 1], {
-        radius: 8,
-        color: '#F44336',
-        fillColor: '#F44336',
-        fillOpacity: 1
-      }).addTo(this._map).bindPopup('End');
-    }
+    }, 200);
   }
 
   getCardSize() {
