@@ -494,6 +494,7 @@ If you're upgrading from an older version of this integration (which used the `g
 
 1. **Migrate entity unique IDs** so your existing entity IDs are preserved (automations and dashboards keep working)
 2. **Request re-authentication** since the authentication method has changed
+3. **Entity naming** entities now have default prefix 'Garmin Connect' we try to convert them, you can change it afterwards, this may break automations and dashboards
 
 After upgrading, go to **Settings** → **Devices & Services**, find Garmin Connect, and complete the re-authentication flow. If you have multiple Garmin accounts configured, each will prompt separately.
 
@@ -524,7 +525,7 @@ After upgrading, go to **Settings** → **Devices & Services**, find Garmin Conn
 
 If you see 429 or rate limit errors:
 1. Increase the scan interval in options (e.g., to 600 seconds)
-2. Wait 15–30 minutes before reloading the integration
+2. Wait 15–60 minutes before reloading the integration
 
 ### Enable debug logging
 

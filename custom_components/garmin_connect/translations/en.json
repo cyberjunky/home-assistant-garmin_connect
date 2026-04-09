@@ -8,6 +8,7 @@
     "error": {
       "invalid_auth": "Invalid credentials",
       "invalid_mfa": "Invalid verification code",
+      "rate_limit": "Too many login attempts — Garmin is rate limiting. Please try again in a few minutes.",
       "unknown": "Unexpected error"
     },
     "step": {

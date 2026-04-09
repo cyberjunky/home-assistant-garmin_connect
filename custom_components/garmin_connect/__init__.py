@@ -63,9 +63,7 @@ _V1_KEY_RENAMES: dict[str, str | None] = {
 }
 
 
-async def async_migrate_entry(
-    hass: HomeAssistant, entry: GarminConnectConfigEntry
-) -> bool:
+async def async_migrate_entry(hass: HomeAssistant, entry: GarminConnectConfigEntry) -> bool:
     """Migrate a config entry from v1 to v2.
 
     V1 used garminconnect/garth (OAuth1 tokens, email as unique_id prefix).
@@ -87,9 +85,7 @@ async def async_migrate_entry(
         # Bump version and trigger reauth (tokens are incompatible).
         hass.config_entries.async_update_entry(entry, version=2)
         entry.async_start_reauth(hass)
-        _LOGGER.info(
-            "Migration to v2 complete for %s — reauth required", entry.title
-        )
+        _LOGGER.info("Migration to v2 complete for %s — reauth required", entry.title)
 
     return True
 
@@ -150,10 +146,14 @@ def _migrate_entity_unique_ids(
             )
 
 
-async def async_setup_entry(
-    hass: HomeAssistant, entry: GarminConnectConfigEntry
-) -> bool:
+async def async_setup_entry(hass: HomeAssistant, entry: GarminConnectConfigEntry) -> bool:
     """Set up Garmin Connect from a config entry."""
+    if CONF_TOKEN not in entry.data:
+        # Migration from v1 bumps version and starts reauth but setup still runs.
+        # Without valid DI tokens there's nothing to set up — reauth will fix it.
+        _LOGGER.debug("Skipping setup for %s — reauth pending", entry.title)
+        return False
+
     is_cn = hass.config.country == "CN"
     auth = GarminAuth(is_cn=is_cn)
     auth.di_token = entry.data[CONF_TOKEN]
@@ -203,9 +203,7 @@ async def async_options_update_listener(
     hass.async_create_task(hass.config_entries.async_reload(entry.entry_id))
 
 
-async def async_unload_entry(
-    hass: HomeAssistant, entry: GarminConnectConfigEntry
-) -> bool:
+async def async_unload_entry(hass: HomeAssistant, entry: GarminConnectConfigEntry) -> bool:
     """Unload a config entry."""
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
 

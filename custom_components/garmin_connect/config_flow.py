@@ -74,6 +74,14 @@ class GarminConnectConfigFlow(ConfigFlow, domain=DOMAIN):
             CONF_CLIENT_ID: self._auth.di_client_id,
         }
 
+    @staticmethod
+    def _map_auth_error(err: GarminAuthError) -> str:
+        """Map a GarminAuthError to a config flow error key."""
+        msg = str(err).lower()
+        if "429" in msg or "rate limit" in msg:
+            return "rate_limit"
+        return "invalid_auth"
+
     async def _async_login(self, username: str, password: str) -> None:
         """Run Garmin login in the executor."""
         if TYPE_CHECKING:
@@ -119,9 +127,7 @@ class GarminConnectConfigFlow(ConfigFlow, domain=DOMAIN):
             data=self._token_data(),
         )
 
-    async def async_step_user(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
+    async def async_step_user(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         """Handle the initial step."""
         errors: dict[str, str] = {}
 
@@ -137,8 +143,8 @@ class GarminConnectConfigFlow(ConfigFlow, domain=DOMAIN):
                 )
             except GarminMFARequired:
                 return await self.async_step_mfa()
-            except GarminAuthError:
-                errors["base"] = "invalid_auth"
+            except GarminAuthError as err:
+                errors["base"] = self._map_auth_error(err)
             except GarminConnectError:
                 errors["base"] = "unknown"
             else:
@@ -150,9 +156,7 @@ class GarminConnectConfigFlow(ConfigFlow, domain=DOMAIN):
             errors=errors,
         )
 
-    async def async_step_mfa(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
+    async def async_step_mfa(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         """Handle MFA step."""
         errors: dict[str, str] = {}
 
@@ -162,8 +166,12 @@ class GarminConnectConfigFlow(ConfigFlow, domain=DOMAIN):
 
             try:
                 await self._async_complete_mfa(user_input["mfa_code"])
-            except GarminAuthError:
-                errors["base"] = "invalid_mfa"
+            except GarminAuthError as err:
+                msg = str(err).lower()
+                if "429" in msg or "rate limit" in msg:
+                    errors["base"] = "rate_limit"
+                else:
+                    errors["base"] = "invalid_mfa"
             except GarminConnectError:
                 errors["base"] = "unknown"
             else:
@@ -179,9 +187,7 @@ class GarminConnectConfigFlow(ConfigFlow, domain=DOMAIN):
             errors=errors,
         )
 
-    async def async_step_reauth(
-        self, entry_data: Mapping[str, Any]
-    ) -> ConfigFlowResult:
+    async def async_step_reauth(self, entry_data: Mapping[str, Any]) -> ConfigFlowResult:
         """Handle re-authentication."""
         return await self.async_step_reauth_confirm()
 
@@ -203,8 +209,8 @@ class GarminConnectConfigFlow(ConfigFlow, domain=DOMAIN):
                 )
             except GarminMFARequired:
                 return await self.async_step_mfa()
-            except GarminAuthError:
-                errors["base"] = "invalid_auth"
+            except GarminAuthError as err:
+                errors["base"] = self._map_auth_error(err)
             except GarminConnectError:
                 errors["base"] = "unknown"
             else:
@@ -234,15 +240,13 @@ class GarminConnectConfigFlow(ConfigFlow, domain=DOMAIN):
                 )
             except GarminMFARequired:
                 return await self.async_step_mfa()
-            except GarminAuthError:
-                errors["base"] = "invalid_auth"
+            except GarminAuthError as err:
+                errors["base"] = self._map_auth_error(err)
             except GarminConnectError:
                 errors["base"] = "unknown"
             else:
                 entry = self._get_reconfigure_entry()
-                self.hass.config_entries.async_update_entry(
-                    entry, data=self._token_data()
-                )
+                self.hass.config_entries.async_update_entry(entry, data=self._token_data())
                 await self.hass.config_entries.async_reload(entry.entry_id)
                 return self.async_abort(reason="reconfigure_successful")
 
@@ -256,9 +260,7 @@ class GarminConnectConfigFlow(ConfigFlow, domain=DOMAIN):
 class GarminConnectOptionsFlow(OptionsFlow):
     """Handle options flow for Garmin Connect."""
 
-    async def async_step_init(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
+    async def async_step_init(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         """Manage the options."""
         if user_input is not None:
             return self.async_create_entry(title="", data=user_input)
