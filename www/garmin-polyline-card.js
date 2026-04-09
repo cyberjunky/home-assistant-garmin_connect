@@ -128,7 +128,7 @@ class GarminPolylineCard extends HTMLElement {
           ${activityName} • ${coordinates.length} points
         </div>
       </ha-card>
-      <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="anonymous" />
+      <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     `;
 
     if (!window.L) {
@@ -203,19 +203,24 @@ class GarminPolylineCard extends HTMLElement {
       maxZoom: 19
     }).addTo(this._map);
 
+    // Tell Leaflet the real container size before any tiles load
+    this._map.invalidateSize();
+
     this._polyline = L.polyline(coordinates, {
       color: this._config.color,
       weight: this._config.weight,
       opacity: 0.8
     }).addTo(this._map);
 
-    // Defer so the browser has painted the container before Leaflet measures it
+    this._map.fitBounds(this._polyline.getBounds(), { padding: [20, 20] });
+
+    // Second pass after paint in case the shadow DOM container resized
     setTimeout(() => {
       if (this._map && this._polyline) {
         this._map.invalidateSize();
         this._map.fitBounds(this._polyline.getBounds(), { padding: [20, 20] });
       }
-    }, 50);
+    }, 100);
 
     if (coordinates.length > 0) {
       L.circleMarker(coordinates[0], {
