@@ -699,18 +699,18 @@ ACTIVITY_TRACKING_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         key="lastActivity",
         translation_key="last_activity",
         coordinator_type=CoordinatorType.ACTIVITY,
-        value_fn=lambda data: data.get("lastActivity", {}).get("activityName"),
-        attributes_fn=lambda data: data.get("lastActivity", {}),
+        value_fn=lambda data: (data.get("lastActivity") or {}).get("activityName"),
+        attributes_fn=lambda data: data.get("lastActivity") or {},
     ),
     GarminConnectSensorEntityDescription(
         key="lastActivities",
         translation_key="last_activities",
         coordinator_type=CoordinatorType.ACTIVITY,
         state_class=SensorStateClass.TOTAL,
-        value_fn=lambda data: len(data.get("lastActivities", [])),
+        value_fn=lambda data: len(data.get("lastActivities") or []),
         attributes_fn=lambda data: {
             "last_activities": sorted(
-                data.get("lastActivities", []),
+                data.get("lastActivities") or [],
                 key=lambda x: x.get("activityId", 0),
             )[-10:]
         },
@@ -719,17 +719,17 @@ ACTIVITY_TRACKING_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         key="lastWorkout",
         translation_key="last_workout",
         coordinator_type=CoordinatorType.ACTIVITY,
-        value_fn=lambda data: data.get("lastWorkout", {}).get("workoutName"),
-        attributes_fn=lambda data: data.get("lastWorkout", {}),
+        value_fn=lambda data: (data.get("lastWorkout") or {}).get("workoutName"),
+        attributes_fn=lambda data: data.get("lastWorkout") or {},
     ),
     GarminConnectSensorEntityDescription(
         key="lastWorkouts",
         translation_key="last_workouts",
         coordinator_type=CoordinatorType.ACTIVITY,
         state_class=SensorStateClass.TOTAL,
-        value_fn=lambda data: len(data.get("workouts", [])),
+        value_fn=lambda data: len(data.get("workouts") or []),
         attributes_fn=lambda data: {
-            "last_workouts": data.get("workouts", [])[-10:],
+            "last_workouts": (data.get("workouts") or [])[-10:],
         },
     ),
 )
