@@ -128,14 +128,14 @@ class GarminPolylineCard extends HTMLElement {
           ${activityName} • ${coordinates.length} points
         </div>
       </ha-card>
-      <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+      <link rel="stylesheet" href="/local/leaflet.css" />
     `;
 
     if (!window.L) {
       if (this._initPending) return;
       this._initPending = true;
       const script = document.createElement('script');
-      script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+      script.src = '/local/leaflet.js';
       script.onload = () => {
         this._initPending = false;
         this._initMapWhenReady(coordinates);
