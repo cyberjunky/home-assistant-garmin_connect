@@ -160,7 +160,7 @@ def test_value_fn_receives_full_data_dict() -> None:
     coord = MagicMock()
     coord.data = {"x": 1, "y": 2}
     sensor = GarminConnectSensor(coord, desc, "entry_id")
-    sensor.native_value
+    _ = sensor.native_value
     assert received[0] is coord.data
 
 
@@ -330,6 +330,24 @@ def test_bp_systolic_value_and_attributes() -> None:
     assert attrs.get("pulse") == 70
 
 
+def test_bp_category_returns_name() -> None:
+    """bpCategoryName sensor must return the human-readable category name."""
+    desc = next(d for d in BLOOD_PRESSURE_SENSORS if d.key == "bpCategoryName")
+    coord = MagicMock()
+    coord.data = mock_blood_pressure_data()
+    sensor = GarminConnectSensor(coord, desc, "entry_id")
+    assert sensor.native_value == "Normal"
+
+
+def test_bp_measurement_time_returns_string() -> None:
+    """bpMeasurementTime sensor must return the local measurement timestamp string."""
+    desc = next(d for d in BLOOD_PRESSURE_SENSORS if d.key == "bpMeasurementTime")
+    coord = MagicMock()
+    coord.data = mock_blood_pressure_data()
+    sensor = GarminConnectSensor(coord, desc, "entry_id")
+    assert sensor.native_value == "2026-01-24T08:00:00"
+
+
 def test_next_alarm_returns_first() -> None:
     """nextAlarm sensor must return the first alarm string."""
     desc = next(d for d in GEAR_SENSORS if d.key == "nextAlarm")
@@ -344,6 +362,42 @@ def test_next_alarm_none_when_empty_list() -> None:
     desc = next(d for d in GEAR_SENSORS if d.key == "nextAlarm")
     coord = MagicMock()
     coord.data = {"nextAlarm": []}
+    sensor = GarminConnectSensor(coord, desc, "entry_id")
+    assert sensor.native_value is None
+
+
+def test_next_alarm_none_when_null() -> None:
+    """nextAlarm sensor must return None when the value is null."""
+    desc = next(d for d in GEAR_SENSORS if d.key == "nextAlarm")
+    coord = MagicMock()
+    coord.data = {"nextAlarm": None}
+    sensor = GarminConnectSensor(coord, desc, "entry_id")
+    assert sensor.native_value is None
+
+
+def test_next_alarm_none_when_missing() -> None:
+    """nextAlarm sensor must return None when the key is absent."""
+    desc = next(d for d in GEAR_SENSORS if d.key == "nextAlarm")
+    coord = MagicMock()
+    coord.data = {}
+    sensor = GarminConnectSensor(coord, desc, "entry_id")
+    assert sensor.native_value is None
+
+
+def test_vo2_max_extracts_value() -> None:
+    """vo2Max sensor must extract vo2MaxValue from trainingStatus.mostRecentVO2Max.generic."""
+    desc = next(d for d in TRAINING_SENSORS if d.key == "vo2Max")
+    coord = MagicMock()
+    coord.data = mock_training_data()
+    sensor = GarminConnectSensor(coord, desc, "entry_id")
+    assert sensor.native_value == 37.0
+
+
+def test_vo2_max_none_when_missing() -> None:
+    """vo2Max sensor must return None when trainingStatus has no mostRecentVO2Max."""
+    desc = next(d for d in TRAINING_SENSORS if d.key == "vo2Max")
+    coord = MagicMock()
+    coord.data = {"trainingStatus": {"trainingStatusPhrase": "PRODUCTIVE"}}
     sensor = GarminConnectSensor(coord, desc, "entry_id")
     assert sensor.native_value is None
 

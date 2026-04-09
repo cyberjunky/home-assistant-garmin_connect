@@ -50,7 +50,7 @@ def _get_client(mock_hass: MagicMock) -> AsyncMock:
 
 
 async def test_setup_registers_all_services(mock_hass: MagicMock) -> None:
-    """async_setup_services must register all 6 service handlers."""
+    """async_setup_services must register all 7 service handlers."""
     await async_setup_services(mock_hass)
 
     registered = {
@@ -63,11 +63,12 @@ async def test_setup_registers_all_services(mock_hass: MagicMock) -> None:
         "create_activity",
         "upload_activity",
         "add_gear_to_activity",
+        "add_hydration",
     }
 
 
 async def test_unload_removes_all_services(mock_hass: MagicMock) -> None:
-    """async_unload_services must remove all 6 services."""
+    """async_unload_services must remove all 7 services."""
     await async_unload_services(mock_hass)
 
     removed = {
@@ -80,6 +81,7 @@ async def test_unload_removes_all_services(mock_hass: MagicMock) -> None:
         "create_activity",
         "upload_activity",
         "add_gear_to_activity",
+        "add_hydration",
     }
 
 
@@ -428,6 +430,74 @@ async def test_add_gear_to_activity_no_gear_raises(mock_hass: MagicMock) -> None
 
     call = MagicMock()
     call.data = {"activity_id": 99999}
+
+    with pytest.raises(HomeAssistantError):
+        await handler(call)
+
+
+# ── add_hydration ─────────────────────────────────────────────────────────────
+
+
+async def test_add_hydration(mock_hass: MagicMock) -> None:
+    """add_hydration must call client.set_hydration with value_in_ml."""
+    await async_setup_services(mock_hass)
+    handler = _get_handler(mock_hass, "add_hydration")
+    client = _get_client(mock_hass)
+
+    call = MagicMock()
+    call.data = {"value_in_ml": 250.0}
+
+    await handler(call)
+
+    client.set_hydration.assert_awaited_once_with(
+        value_in_ml=250.0,
+        timestamp=None,
+    )
+
+
+async def test_add_hydration_with_timestamp(mock_hass: MagicMock) -> None:
+    """add_hydration must forward an optional timestamp to the client."""
+    await async_setup_services(mock_hass)
+    handler = _get_handler(mock_hass, "add_hydration")
+    client = _get_client(mock_hass)
+
+    call = MagicMock()
+    call.data = {"value_in_ml": 500.0, "timestamp": "2026-01-24T10:00:00"}
+
+    await handler(call)
+
+    client.set_hydration.assert_awaited_once_with(
+        value_in_ml=500.0,
+        timestamp="2026-01-24T10:00:00",
+    )
+
+
+async def test_add_hydration_negative_value(mock_hass: MagicMock) -> None:
+    """add_hydration must accept negative values to subtract intake."""
+    await async_setup_services(mock_hass)
+    handler = _get_handler(mock_hass, "add_hydration")
+    client = _get_client(mock_hass)
+
+    call = MagicMock()
+    call.data = {"value_in_ml": -150.0}
+
+    await handler(call)
+
+    client.set_hydration.assert_awaited_once_with(
+        value_in_ml=-150.0,
+        timestamp=None,
+    )
+
+
+async def test_add_hydration_wraps_exception(mock_hass: MagicMock) -> None:
+    """add_hydration must wrap API errors in HomeAssistantError."""
+    await async_setup_services(mock_hass)
+    handler = _get_handler(mock_hass, "add_hydration")
+    client = _get_client(mock_hass)
+    client.set_hydration.side_effect = RuntimeError("API error")
+
+    call = MagicMock()
+    call.data = {"value_in_ml": 250.0}
 
     with pytest.raises(HomeAssistantError):
         await handler(call)

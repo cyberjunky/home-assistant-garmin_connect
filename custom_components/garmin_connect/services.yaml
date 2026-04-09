@@ -248,6 +248,27 @@ upload_activity:
       selector:
         text:
 
+add_hydration:
+  name: Add hydration
+  description: Log a hydration intake (or deduction) to Garmin Connect.
+  fields:
+    value_in_ml:
+      name: Amount (mL)
+      description: Hydration amount in millilitres. Use a negative value to subtract from today's intake.
+      required: true
+      selector:
+        number:
+          min: -5000
+          max: 5000
+          step: 1
+          unit_of_measurement: mL
+    timestamp:
+      name: Timestamp
+      description: "Measurement time (ISO 8601). Defaults to now."
+      example: "2024-01-15T08:30:00"
+      selector:
+        text:
+
 add_gear_to_activity:
   name: Add gear to activity
   description: Link a gear item to an existing Garmin Connect activity.

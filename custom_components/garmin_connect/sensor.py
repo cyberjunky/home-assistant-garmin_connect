@@ -863,6 +863,22 @@ TRAINING_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         attributes_fn=lambda data: (data.get("hrvStatus") or {}).get("baseline") or {},
         preserve_value=True,
     ),
+    GarminConnectSensorEntityDescription(
+        key="vo2Max",
+        translation_key="vo2_max",
+        coordinator_type=CoordinatorType.TRAINING,
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement="mL/(kg·min)",
+        value_fn=lambda data: (
+            ((data.get("trainingStatus") or {}).get("mostRecentVO2Max") or {})
+            .get("generic", {})
+            .get("vo2MaxValue")
+        ),
+        attributes_fn=lambda data: (
+            ((data.get("trainingStatus") or {}).get("mostRecentVO2Max") or {})
+            .get("generic") or {}
+        ),
+    ),
 )
 
 
@@ -1137,7 +1153,7 @@ GOALS_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
 
 
 # ── GEAR coordinator sensors ──────────────────────────────────────────────────
-# Data from ha_garmin.fetch_gear_data() — nextAlarm + dynamic gear sensors
+# Data from ha_garmin.fetch_gear_data() — dynamic gear sensors
 
 GEAR_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
     GarminConnectSensorEntityDescription(
@@ -1145,10 +1161,16 @@ GEAR_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         translation_key="next_alarm",
         coordinator_type=CoordinatorType.GEAR,
         device_class=SensorDeviceClass.TIMESTAMP,
-        value_fn=lambda data: data.get("nextAlarm", [None])[0] if data.get("nextAlarm") else None,
-        attributes_fn=lambda data: {
-            "next_alarms": data.get("nextAlarm"),
-        },
+        value_fn=lambda data: (
+            data.get("nextAlarm")[0]
+            if isinstance(data.get("nextAlarm"), list) and data.get("nextAlarm")
+            else (
+                data.get("nextAlarm", {}).get("alarmTime")
+                if isinstance(data.get("nextAlarm"), dict)
+                else None
+            )
+        ),
+        attributes_fn=lambda data: {"next_alarms": data.get("nextAlarm")},
     ),
 )
 
@@ -1213,6 +1235,28 @@ BLOOD_PRESSURE_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
             }.items()
             if v is not None
         },
+    ),
+    GarminConnectSensorEntityDescription(
+        key="bpCategoryName",
+        translation_key="bp_category",
+        coordinator_type=CoordinatorType.BLOOD_PRESSURE,
+        preserve_value=True,
+        attributes_fn=lambda data: {
+            k: v
+            for k, v in {
+                "systolic": data.get("bpSystolic"),
+                "diastolic": data.get("bpDiastolic"),
+                "category_code": data.get("bpCategory"),
+                "measurement_time": data.get("bpMeasurementTime"),
+            }.items()
+            if v is not None
+        },
+    ),
+    GarminConnectSensorEntityDescription(
+        key="bpMeasurementTime",
+        translation_key="bp_measurement_time",
+        coordinator_type=CoordinatorType.BLOOD_PRESSURE,
+        preserve_value=True,
     ),
 )
 

@@ -224,8 +224,10 @@ All sensors are created under a single "Garmin Connect" device. Entity IDs follo
 | Training Readiness | Training readiness score (%) |
 | Morning Training Readiness | Wake-up readiness score (%) |
 | Training Status | Current training status phrase |
+| VO2 Max | Most recent VO2 Max value (mL/(kg·min)) |
 | Lactate Threshold HR | Lactate threshold heart rate (bpm) |
 | Lactate Threshold Speed | Lactate threshold pace (m/s) |
+| Next Alarm | Next scheduled alarm time |
 
 ### Goals & Achievements
 
@@ -246,8 +248,19 @@ All sensors are created under a single "Garmin Connect" device. Entity IDs follo
 | Last Activity | Most recent activity with details |
 | Last Activities | Recent activities list (attributes) |
 | Last Workout / Workouts | Scheduled/planned training sessions |
-| Next Alarm | Next scheduled alarm time |
 | Last Synced | Last device sync timestamp |
+
+### Blood Pressure
+
+> Requires a Garmin blood pressure device (e.g., Index BPM). Sensors are populated from the most recent measurement.
+
+| Sensor | Description |
+|--------|-------------|
+| Blood Pressure Systolic | Systolic blood pressure (mmHg) |
+| Blood Pressure Diastolic | Diastolic blood pressure (mmHg) |
+| Blood Pressure Pulse | Pulse from blood pressure reading (bpm) |
+| Blood Pressure Category | Category name (e.g., Normal, Elevated) |
+| Blood Pressure Measurement Time | Local timestamp of the measurement |
 
 ### Menstrual Cycle Tracking
 
@@ -372,6 +385,21 @@ data:
   diastolic: 80
   pulse: 60
   notes: "Morning measurement"
+```
+
+### garmin_connect.add_hydration
+
+Log a hydration intake to Garmin Connect. Use a negative value to subtract from today's total.
+
+| Parameter | Required | Description |
+|-----------|----------|-------------|
+| `value_in_ml` | Yes | Amount in millilitres (negative to subtract) |
+| `timestamp` | No | ISO datetime (defaults to now) |
+
+```yaml
+action: garmin_connect.add_hydration
+data:
+  value_in_ml: 250
 ```
 
 ### garmin_connect.create_activity

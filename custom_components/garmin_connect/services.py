@@ -28,6 +28,7 @@ SERVICE_ADD_BLOOD_PRESSURE = "add_blood_pressure"
 SERVICE_CREATE_ACTIVITY = "create_activity"
 SERVICE_UPLOAD_ACTIVITY = "upload_activity"
 SERVICE_ADD_GEAR_TO_ACTIVITY = "add_gear_to_activity"
+SERVICE_ADD_HYDRATION = "add_hydration"
 
 # Service schemas
 SET_ACTIVE_GEAR_SCHEMA = vol.Schema(
@@ -105,6 +106,13 @@ ADD_GEAR_TO_ACTIVITY_SCHEMA = vol.Schema(
         vol.Required("activity_id"): vol.Coerce(int),
         vol.Optional("gear_uuid"): cv.string,
         vol.Optional("entity_id"): cv.entity_id,
+    }
+)
+
+ADD_HYDRATION_SCHEMA = vol.Schema(
+    {
+        vol.Required("value_in_ml"): vol.Coerce(float),
+        vol.Optional("timestamp"): cv.string,
     }
 )
 
@@ -305,6 +313,21 @@ async def async_setup_services(hass: HomeAssistant) -> None:
                 translation_placeholders={"error": str(err)},
             ) from err
 
+    async def handle_add_hydration(call: ServiceCall) -> None:
+        """Handle add_hydration service call."""
+        client = _get_client(hass)
+        try:
+            await client.set_hydration(
+                value_in_ml=call.data["value_in_ml"],
+                timestamp=call.data.get("timestamp"),
+            )
+        except Exception as err:
+            raise HomeAssistantError(
+                translation_domain=DOMAIN,
+                translation_key="add_hydration_failed",
+                translation_placeholders={"error": str(err)},
+            ) from err
+
     hass.services.async_register(
         DOMAIN, SERVICE_SET_ACTIVE_GEAR, handle_set_active_gear, schema=SET_ACTIVE_GEAR_SCHEMA
     )
@@ -323,6 +346,9 @@ async def async_setup_services(hass: HomeAssistant) -> None:
     hass.services.async_register(
         DOMAIN, SERVICE_ADD_GEAR_TO_ACTIVITY, handle_add_gear_to_activity, schema=ADD_GEAR_TO_ACTIVITY_SCHEMA
     )
+    hass.services.async_register(
+        DOMAIN, SERVICE_ADD_HYDRATION, handle_add_hydration, schema=ADD_HYDRATION_SCHEMA
+    )
 
 
 async def async_unload_services(hass: HomeAssistant) -> None:
@@ -333,3 +359,4 @@ async def async_unload_services(hass: HomeAssistant) -> None:
     hass.services.async_remove(DOMAIN, SERVICE_CREATE_ACTIVITY)
     hass.services.async_remove(DOMAIN, SERVICE_UPLOAD_ACTIVITY)
     hass.services.async_remove(DOMAIN, SERVICE_ADD_GEAR_TO_ACTIVITY)
+    hass.services.async_remove(DOMAIN, SERVICE_ADD_HYDRATION)

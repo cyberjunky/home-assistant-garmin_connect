@@ -98,7 +98,9 @@
       "body_fat": { "name": "Body fat" },
       "body_water": { "name": "Body water" },
       "bone_mass": { "name": "Bone mass" },
+      "bp_category": { "name": "Blood pressure category" },
       "bp_diastolic": { "name": "Blood pressure diastolic" },
+      "bp_measurement_time": { "name": "Blood pressure measurement time" },
       "bp_pulse": { "name": "Blood pressure pulse" },
       "bp_systolic": { "name": "Blood pressure systolic" },
       "burned_calories": { "name": "Burned calories" },
@@ -198,6 +200,7 @@
       "user_points": { "name": "User points" },
       "vigorous_intensity": { "name": "Vigorous intensity minutes" },
       "visceral_fat": { "name": "Visceral fat" },
+      "vo2_max": { "name": "VO2 Max" },
       "weekly_distance_avg": { "name": "Weekly distance average" },
       "weekly_step_avg": { "name": "Weekly step average" },
       "weight": { "name": "Weight" },
@@ -219,6 +222,14 @@
         "entity_id": { "name": "Gear sensor entity", "description": "Alternative to gear_uuid — select a gear sensor entity." },
         "activity_type": { "name": "Activity type", "description": "The activity type for which to set the gear as default." },
         "setting": { "name": "Setting", "description": "The gear setting to apply." }
+      }
+    },
+    "add_hydration": {
+      "name": "Add hydration",
+      "description": "Log a hydration intake to Garmin Connect.",
+      "fields": {
+        "value_in_ml": { "name": "Amount (mL)", "description": "Hydration amount in millilitres. Negative values subtract from today's intake." },
+        "timestamp": { "name": "Timestamp", "description": "Measurement time (ISO 8601, defaults to now)." }
       }
     },
     "add_body_composition": {
@@ -282,6 +293,7 @@
   },
   "exceptions": {
     "add_blood_pressure_failed": { "message": "Failed to add blood pressure: {error}" },
+    "add_hydration_failed": { "message": "Failed to log hydration: {error}" },
     "add_body_composition_failed": { "message": "Failed to add body composition: {error}" },
     "add_gear_to_activity_failed": { "message": "Failed to add gear to activity: {error}" },
     "create_activity_failed": { "message": "Failed to create activity: {error}" },
