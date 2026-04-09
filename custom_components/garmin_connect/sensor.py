@@ -744,11 +744,9 @@ TRAINING_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         translation_key="endurance_score",
         coordinator_type=CoordinatorType.TRAINING,
         state_class=SensorStateClass.MEASUREMENT,
-        value_fn=lambda data: data.get("enduranceScore", {}).get("overallScore"),
+        value_fn=lambda data: (data.get("enduranceScore") or {}).get("overallScore"),
         attributes_fn=lambda data: {
-            k: v
-            for k, v in data.get("enduranceScore", {}).items()
-            if k != "overallScore"
+            k: v for k, v in (data.get("enduranceScore") or {}).items() if k != "overallScore"
         },
     ),
     GarminConnectSensorEntityDescription(
@@ -756,11 +754,9 @@ TRAINING_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         translation_key="hill_score",
         coordinator_type=CoordinatorType.TRAINING,
         state_class=SensorStateClass.MEASUREMENT,
-        value_fn=lambda data: data.get("hillScore", {}).get("overallScore"),
+        value_fn=lambda data: (data.get("hillScore") or {}).get("overallScore"),
         attributes_fn=lambda data: {
-            k: v
-            for k, v in data.get("hillScore", {}).items()
-            if k != "overallScore"
+            k: v for k, v in (data.get("hillScore") or {}).items() if k != "overallScore"
         },
     ),
     GarminConnectSensorEntityDescription(
@@ -772,16 +768,14 @@ TRAINING_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         if isinstance(data.get("trainingReadiness"), dict)
         else (
             data.get("trainingReadiness", [{}])[0].get("score")
-            if isinstance(data.get("trainingReadiness"), list)
-            and data.get("trainingReadiness")
+            if isinstance(data.get("trainingReadiness"), list) and data.get("trainingReadiness")
             else None
         ),
         attributes_fn=lambda data: data.get("trainingReadiness", {})
         if isinstance(data.get("trainingReadiness"), dict)
         else (
             data.get("trainingReadiness", [{}])[0]
-            if isinstance(data.get("trainingReadiness"), list)
-            and data.get("trainingReadiness")
+            if isinstance(data.get("trainingReadiness"), list) and data.get("trainingReadiness")
             else {}
         ),
     ),
@@ -789,25 +783,21 @@ TRAINING_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         key="trainingStatus",
         translation_key="training_status",
         coordinator_type=CoordinatorType.TRAINING,
-        value_fn=lambda data: data.get("trainingStatus", {}).get(
-            "trainingStatusPhrase"
-        ),
-        attributes_fn=lambda data: data.get("trainingStatus", {}),
+        value_fn=lambda data: (data.get("trainingStatus") or {}).get("trainingStatusPhrase"),
+        attributes_fn=lambda data: data.get("trainingStatus") or {},
     ),
     GarminConnectSensorEntityDescription(
         key="morningTrainingReadiness",
         translation_key="morning_training_readiness",
         coordinator_type=CoordinatorType.TRAINING,
         native_unit_of_measurement=PERCENTAGE,
-        value_fn=lambda data: data.get("morningTrainingReadiness", {}).get("score"),
+        value_fn=lambda data: (data.get("morningTrainingReadiness") or {}).get("score"),
         attributes_fn=lambda data: {
-            "level": data.get("morningTrainingReadiness", {}).get("level"),
-            "sleep_score": data.get("morningTrainingReadiness", {}).get("sleepScore"),
-            "recovery_score": data.get("morningTrainingReadiness", {}).get(
-                "recoveryScore"
-            ),
-            "hrv_status": data.get("morningTrainingReadiness", {}).get("hrvStatus"),
-            "acuteLoad": data.get("morningTrainingReadiness", {}).get("acuteLoad"),
+            "level": (data.get("morningTrainingReadiness") or {}).get("level"),
+            "sleep_score": (data.get("morningTrainingReadiness") or {}).get("sleepScore"),
+            "recovery_score": (data.get("morningTrainingReadiness") or {}).get("recoveryScore"),
+            "hrv_status": (data.get("morningTrainingReadiness") or {}).get("hrvStatus"),
+            "acuteLoad": (data.get("morningTrainingReadiness") or {}).get("acuteLoad"),
         },
     ),
     GarminConnectSensorEntityDescription(
@@ -815,20 +805,20 @@ TRAINING_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         translation_key="lactate_threshold_hr",
         coordinator_type=CoordinatorType.TRAINING,
         native_unit_of_measurement="bpm",
-        value_fn=lambda data: data.get("lactateThreshold", {})
-        .get("speed_and_heart_rate", {})
-        .get("heartRate"),
-        attributes_fn=lambda data: data.get("lactateThreshold", {}),
+        value_fn=lambda data: (
+            (data.get("lactateThreshold") or {}).get("speed_and_heart_rate") or {}
+        ).get("heartRate"),
+        attributes_fn=lambda data: data.get("lactateThreshold") or {},
     ),
     GarminConnectSensorEntityDescription(
         key="lactateThresholdSpeed",
         translation_key="lactate_threshold_speed",
         coordinator_type=CoordinatorType.TRAINING,
         native_unit_of_measurement="m/s",
-        value_fn=lambda data: data.get("lactateThreshold", {})
-        .get("speed_and_heart_rate", {})
-        .get("speed"),
-        attributes_fn=lambda data: data.get("lactateThreshold", {}),
+        value_fn=lambda data: (
+            (data.get("lactateThreshold") or {}).get("speed_and_heart_rate") or {}
+        ).get("speed"),
+        attributes_fn=lambda data: data.get("lactateThreshold") or {},
     ),
     # HRV — ha_garmin flattens hrvStatus from _get_hrv_data_raw via _add_computed_fields
     GarminConnectSensorEntityDescription(
@@ -836,10 +826,8 @@ TRAINING_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         translation_key="hrv_status",
         coordinator_type=CoordinatorType.TRAINING,
         attributes_fn=lambda data: {
-            k: v for k, v in data.get("hrvStatus", {}).items() if k != "status"
-        }
-        if data.get("hrvStatus")
-        else {},
+            k: v for k, v in (data.get("hrvStatus") or {}).items() if k != "status"
+        },
         preserve_value=True,
     ),
     GarminConnectSensorEntityDescription(
@@ -872,7 +860,7 @@ TRAINING_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         coordinator_type=CoordinatorType.TRAINING,
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement="ms",
-        attributes_fn=lambda data: data.get("hrvStatus", {}).get("baseline", {}),
+        attributes_fn=lambda data: (data.get("hrvStatus") or {}).get("baseline") or {},
         preserve_value=True,
     ),
 )
@@ -1157,9 +1145,7 @@ GEAR_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         translation_key="next_alarm",
         coordinator_type=CoordinatorType.GEAR,
         device_class=SensorDeviceClass.TIMESTAMP,
-        value_fn=lambda data: data.get("nextAlarm", [None])[0]
-        if data.get("nextAlarm")
-        else None,
+        value_fn=lambda data: data.get("nextAlarm", [None])[0] if data.get("nextAlarm") else None,
         attributes_fn=lambda data: {
             "next_alarms": data.get("nextAlarm"),
         },
@@ -1289,12 +1275,7 @@ def _menstrual_fertile_window_end(data: dict[str, Any]) -> str | None:
     start = s.get("startDate")
     fw_start = s.get("fertileWindowStart")
     fw_len = s.get("lengthOfFertileWindow")
-    if (
-        not start
-        or not isinstance(fw_start, int)
-        or not isinstance(fw_len, int)
-        or fw_len <= 0
-    ):
+    if not start or not isinstance(fw_start, int) or not isinstance(fw_len, int) or fw_len <= 0:
         return None
     try:
         start_date = datetime.datetime.strptime(start, "%Y-%m-%d").date()
@@ -1311,9 +1292,7 @@ MENSTRUAL_CYCLE_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         coordinator_type=CoordinatorType.MENSTRUAL,
         entity_registry_enabled_default=False,
         value_fn=lambda data: (
-            _MENSTRUAL_PHASE_MAP.get(
-                int(_menstrual_day_summary(data)["currentPhase"]), "Unknown"
-            )
+            _MENSTRUAL_PHASE_MAP.get(int(_menstrual_day_summary(data)["currentPhase"]), "Unknown")
             if isinstance(_menstrual_day_summary(data).get("currentPhase"), int)
             else None
         ),
@@ -1322,9 +1301,7 @@ MENSTRUAL_CYCLE_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
             "day_in_cycle": _menstrual_day_summary(data).get("dayInCycle"),
             "period_length": _menstrual_day_summary(data).get("periodLength"),
             "cycle_type": _menstrual_day_summary(data).get("cycleType"),
-            "days_until_next_phase": _menstrual_day_summary(data).get(
-                "daysUntilNextPhase"
-            ),
+            "days_until_next_phase": _menstrual_day_summary(data).get("daysUntilNextPhase"),
         },
     ),
     GarminConnectSensorEntityDescription(
@@ -1434,9 +1411,7 @@ async def async_setup_entry(
     for coord_type, descriptions in _COORDINATOR_SENSOR_MAP:
         coordinator = getattr(coordinators, _COORDINATOR_ATTR[coord_type])
         for description in descriptions:
-            entities.append(
-                GarminConnectSensor(coordinator, description, entry.entry_id)
-            )
+            entities.append(GarminConnectSensor(coordinator, description, entry.entry_id))
 
     # Dynamic gear sensors
     gear_data = coordinators.gear.data or {}
