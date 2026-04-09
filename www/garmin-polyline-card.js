@@ -7,36 +7,32 @@ const LEAFLET_VERSION = '1.9.4';
 const LEAFLET_JS  = `https://unpkg.com/leaflet@${LEAFLET_VERSION}/dist/leaflet.js`;
 const LEAFLET_CSS = `https://unpkg.com/leaflet@${LEAFLET_VERSION}/dist/leaflet.css`;
 
-// Load Leaflet JS + CSS into document.head once, return a Promise that resolves
-// when both are ready. Shadow DOM elements cannot reliably use a <link> in the
-// shadow root because the stylesheet loads asynchronously and Leaflet reads CSS
-// dimensions synchronously on init — injecting into head avoids the race.
+// Load Leaflet JS and fetch the CSS text (so it can be injected into shadow roots).
+// document.head stylesheets do NOT pierce shadow DOM — only inlined <style> text does.
+let _leafletReady = null;
+let _leafletCSSText = '';
+
 function loadLeaflet() {
-  if (loadLeaflet._promise) return loadLeaflet._promise;
-
-  loadLeaflet._promise = new Promise((resolve, reject) => {
-    // CSS — inject only once
-    if (!document.querySelector(`link[href="${LEAFLET_CSS}"]`)) {
-      const link = document.createElement('link');
-      link.rel = 'stylesheet';
-      link.href = LEAFLET_CSS;
-      document.head.appendChild(link);
+  if (_leafletReady) return _leafletReady;
+  _leafletReady = (async () => {
+    // Fetch CSS text first — needed before map init
+    if (!_leafletCSSText) {
+      const resp = await fetch(LEAFLET_CSS);
+      _leafletCSSText = await resp.text();
     }
-
-    if (window.L) {
-      resolve();
-      return;
+    // Load JS
+    if (!window.L) {
+      await new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.crossOrigin = 'anonymous';
+        script.src = LEAFLET_JS;
+        script.onload = resolve;
+        script.onerror = () => reject(new Error('Failed to load Leaflet from CDN'));
+        document.head.appendChild(script);
+      });
     }
-
-    const script = document.createElement('script');
-    script.crossOrigin = 'anonymous';
-    script.src = LEAFLET_JS;
-    script.onload = resolve;
-    script.onerror = () => reject(new Error('Failed to load Leaflet from CDN'));
-    document.head.appendChild(script);
-  });
-
-  return loadLeaflet._promise;
+  })();
+  return _leafletReady;
 }
 
 
@@ -70,7 +66,6 @@ class GarminPolylineCard extends HTMLElement {
     this._hass = hass;
     if (!this._config) return;
 
-    // Only re-render when the relevant attribute actually changes
     const stateObj = hass.states[this._config.entity];
     const polylineData = stateObj?.attributes[this._config.attribute];
     const key = polylineData ? JSON.stringify(polylineData) : null;
@@ -155,7 +150,11 @@ class GarminPolylineCard extends HTMLElement {
       return;
     }
 
+    // Inject Leaflet CSS as a <style> block so it applies inside the shadow root.
+    // A <link> in the shadow root loads async and Leaflet reads dimensions sync on init.
+    // _leafletCSSText may be empty on first call; loadLeaflet() fills it before _initMap runs.
     this.shadowRoot.innerHTML = `
+      <style>${_leafletCSSText}</style>
       <ha-card header="${this._config.title}">
         <div id="map" style="height: ${this._config.height}; width: 100%;"></div>
         <div style="padding: 8px 16px; font-size: 12px; color: var(--secondary-text-color);">
@@ -164,9 +163,12 @@ class GarminPolylineCard extends HTMLElement {
       </ha-card>
     `;
 
-    loadLeaflet()
-      .then(() => this._initMapWhenReady(coordinates))
-      .catch(err => console.error('garmin-polyline-card:', err));
+    loadLeaflet().then(() => {
+      // Re-inject CSS now that we have the text (first-call case)
+      const style = this.shadowRoot.querySelector('style');
+      if (style && !style.textContent) style.textContent = _leafletCSSText;
+      this._initMapWhenReady(coordinates);
+    }).catch(err => console.error('garmin-polyline-card:', err));
   }
 
   _initMapWhenReady(coordinates, retries = 0) {
@@ -239,7 +241,6 @@ class GarminPolylineCard extends HTMLElement {
     this._map.invalidateSize();
     this._map.fitBounds(this._polyline.getBounds(), { padding: [20, 20] });
 
-    // Second pass — shadow DOM containers sometimes report wrong dimensions on first paint
     setTimeout(() => {
       if (this._map && this._polyline) {
         this._map.invalidateSize();
