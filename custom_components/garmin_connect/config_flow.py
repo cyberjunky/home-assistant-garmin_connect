@@ -17,6 +17,7 @@ from ha_garmin import (
 )
 from homeassistant.config_entries import (
     SOURCE_REAUTH,
+    SOURCE_RECONFIGURE,
     ConfigEntry,
     ConfigFlow,
     ConfigFlowResult,
@@ -101,6 +102,13 @@ class GarminConnectConfigFlow(ConfigFlow, domain=DOMAIN):
         await self.hass.config_entries.async_reload(entry.entry_id)
         return self.async_abort(reason="reauth_successful")
 
+    async def _async_finish_reconfigure(self) -> ConfigFlowResult:
+        """Update tokens on the existing entry and reload it."""
+        entry = self._get_reconfigure_entry()
+        self.hass.config_entries.async_update_entry(entry, data=self._token_data())
+        await self.hass.config_entries.async_reload(entry.entry_id)
+        return self.async_abort(reason="reconfigure_successful")
+
     async def _async_create_new_entry(self, username: str) -> ConfigFlowResult:
         """Finalize a new config entry after successful authentication."""
         if TYPE_CHECKING:
@@ -109,7 +117,7 @@ class GarminConnectConfigFlow(ConfigFlow, domain=DOMAIN):
         try:
             client = GarminClient(self._auth, is_cn=self._is_cn)
             profile = await client.get_user_profile()
-        except (GarminConnectError, ClientError):
+        except GarminConnectError, ClientError:
             pass
         else:
             unique_id = str(profile.profile_id)
@@ -171,6 +179,8 @@ class GarminConnectConfigFlow(ConfigFlow, domain=DOMAIN):
             else:
                 if self.source == SOURCE_REAUTH:
                     return await self._async_finish_reauth()
+                if self.source == SOURCE_RECONFIGURE:
+                    return await self._async_finish_reconfigure()
                 if TYPE_CHECKING:
                     assert self._username is not None
                 return await self._async_create_new_entry(self._username)
@@ -243,10 +253,7 @@ class GarminConnectConfigFlow(ConfigFlow, domain=DOMAIN):
             except GarminConnectError:
                 errors["base"] = "unknown"
             else:
-                entry = self._get_reconfigure_entry()
-                self.hass.config_entries.async_update_entry(entry, data=self._token_data())
-                await self.hass.config_entries.async_reload(entry.entry_id)
-                return self.async_abort(reason="reconfigure_successful")
+                return await self._async_finish_reconfigure()
 
         return self.async_show_form(
             step_id="reconfigure",
