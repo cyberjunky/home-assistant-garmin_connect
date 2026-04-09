@@ -1525,6 +1525,7 @@ class GarminConnectGearSensor(CoordinatorEntity[GearCoordinator], SensorEntity):
         self._gear_name = gear_name
         self._attr_native_unit_of_measurement = UnitOfLength.METERS
         self._attr_device_class = SensorDeviceClass.DISTANCE
+        self._attr_state_class = SensorStateClass.TOTAL_INCREASING
         self._attr_suggested_display_precision = 0
         clean_name = gear_name.lower().replace(" ", "_").replace("-", "_")
         self._attr_unique_id = f"{entry_id}_gear_{clean_name}"
