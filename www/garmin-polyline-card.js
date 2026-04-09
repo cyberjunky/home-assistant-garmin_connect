@@ -181,12 +181,17 @@ class GarminPolylineCard extends HTMLElement {
       scrollWheelZoom: false
     });
 
-    // Custom tile layer that strips the Referer header so tile servers
-    // don't block requests coming from localhost (Home Assistant).
+    // Custom tile layer that sets referrerPolicy BEFORE src so the browser
+    // sends no Referer header — required when HA runs on localhost.
     const NoRefererTileLayer = L.TileLayer.extend({
       createTile(coords, done) {
-        const tile = L.TileLayer.prototype.createTile.call(this, coords, done);
-        tile.referrerPolicy = 'no-referrer';
+        const tile = document.createElement('img');
+        tile.referrerPolicy = 'no-referrer';  // must be before src
+        L.DomEvent.on(tile, 'load', L.Util.bind(this._tileOnLoad, this, done, tile));
+        L.DomEvent.on(tile, 'error', L.Util.bind(this._tileOnError, this, done, tile));
+        tile.alt = '';
+        tile.setAttribute('role', 'presentation');
+        tile.src = this.getTileUrl(coords);
         return tile;
       }
     });
@@ -203,8 +208,13 @@ class GarminPolylineCard extends HTMLElement {
       opacity: 0.8
     }).addTo(this._map);
 
-    this._map.invalidateSize();
-    this._map.fitBounds(this._polyline.getBounds(), { padding: [20, 20] });
+    // Defer so the browser has painted the container before Leaflet measures it
+    setTimeout(() => {
+      if (this._map && this._polyline) {
+        this._map.invalidateSize();
+        this._map.fitBounds(this._polyline.getBounds(), { padding: [20, 20] });
+      }
+    }, 50);
 
     if (coordinates.length > 0) {
       L.circleMarker(coordinates[0], {
