@@ -182,17 +182,9 @@ def mock_training_data() -> dict:
     """Sample data for TrainingCoordinator (fetch_training_data output)."""
     return {
         "trainingReadiness": {"score": 72, "level": "GOOD"},
-        "trainingStatus": {
-            "trainingStatusPhrase": "PRODUCTIVE",
-            "mostRecentVO2Max": {
-                "generic": {
-                    "calendarDate": "2026-04-08",
-                    "vo2MaxValue": 37.0,
-                    "vo2MaxPreciseValue": 37.1,
-                    "fitnessAge": None,
-                }
-            },
-        },
+        "trainingStatus": {"trainingStatusPhrase": "PRODUCTIVE"},
+        "vo2MaxValue": 37.0,
+        "vo2MaxPreciseValue": 37.1,
         "morningTrainingReadiness": {
             "score": 68,
             "level": "FAIR",
