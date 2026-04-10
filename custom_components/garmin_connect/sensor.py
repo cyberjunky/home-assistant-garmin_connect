@@ -10,7 +10,6 @@ from datetime import timedelta
 from enum import StrEnum
 from typing import Any, cast
 
-
 from homeassistant.components.sensor import (
     SensorDeviceClass,
     SensorEntity,
