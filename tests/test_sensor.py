@@ -388,7 +388,7 @@ def test_next_alarm_none_when_missing() -> None:
 
 def test_vo2_max_extracts_value() -> None:
     """vo2MaxValue sensor must return the flattened vo2MaxValue from ha_garmin computed fields."""
-    desc = next(d for d in TRAINING_SENSORS if d.key == "vo2MaxValue")
+    desc = next(d for d in TRAINING_SENSORS if d.key == "vo2Max")
     coord = MagicMock()
     coord.data = mock_training_data()
     sensor = GarminConnectSensor(coord, desc, "entry_id")
@@ -396,8 +396,8 @@ def test_vo2_max_extracts_value() -> None:
 
 
 def test_vo2_max_none_when_missing() -> None:
-    """vo2MaxValue sensor must return None when the key is absent."""
-    desc = next(d for d in TRAINING_SENSORS if d.key == "vo2MaxValue")
+    """vo2Max sensor must return None when vo2MaxValue is absent."""
+    desc = next(d for d in TRAINING_SENSORS if d.key == "vo2Max")
     coord = MagicMock()
     coord.data = {}
     sensor = GarminConnectSensor(coord, desc, "entry_id")

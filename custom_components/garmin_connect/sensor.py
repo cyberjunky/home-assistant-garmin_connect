@@ -864,11 +864,12 @@ TRAINING_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         preserve_value=True,
     ),
     GarminConnectSensorEntityDescription(
-        key="vo2MaxValue",
+        key="vo2Max",
         translation_key="vo2_max",
         coordinator_type=CoordinatorType.TRAINING,
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement="mL/(kg·min)",
+        value_fn=lambda data: data.get("vo2MaxValue"),
     ),
 )
 
