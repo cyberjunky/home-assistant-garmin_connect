@@ -564,6 +564,10 @@ logger:
 
 Or enable via the UI: **Settings** → **Devices & Services** → **Garmin Connect** → **Enable debug logging**.
 
+![Enable Debug Logging](screenshots/enabledebug.png)
+
+Then perform any steps to reproduce the issue and disable debug logging again. It will download the relevant log file automatically.
+
 ## Support This Project
 
 If you find this integration useful, please consider supporting its development:
