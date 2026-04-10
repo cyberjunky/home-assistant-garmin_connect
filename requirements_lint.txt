@@ -1,4 +1,4 @@
-codespell==2.4.1
+codespell==2.4.2
 fit-tool==0.9.15
 mypy==1.19.1
 pre-commit==4.5.1
