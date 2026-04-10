@@ -23,7 +23,7 @@ jobs:
         with:
           python-version: "3.13"
       - run: pip install -r requirements.txt -r requirements_lint.txt
-      - run: pre-commit run --all-files --config .github/pre-commit-config.yaml
+      - run: pre-commit run --all-files --hook-stage manual --config .github/pre-commit-config.yaml
 
   tests:
     name: Pytest
