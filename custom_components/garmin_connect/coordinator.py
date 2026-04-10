@@ -113,7 +113,7 @@ class CoreCoordinator(BaseGarminCoordinator):
             await self._update_tokens_if_changed()
         except GarminAuthError as err:
             raise ConfigEntryAuthFailed("Authentication failed") from err
-        except GarminAPIError as err:
+        except Exception as err:
             raise UpdateFailed(f"Error fetching core data: {err}") from err
         return data
 
