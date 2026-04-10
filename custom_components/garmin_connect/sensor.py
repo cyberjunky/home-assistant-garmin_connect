@@ -1520,33 +1520,33 @@ class GarminConnectSensor(CoordinatorEntity[BaseGarminCoordinator], SensorEntity
 
     @property
     def native_value(self) -> str | int | float | datetime.datetime | None:
-    """Return the state of the sensor."""
-    if not self.coordinator.data:
-        return (
-            self._last_known_value
-            if self.entity_description.preserve_value
-            else None
-        )
+        """Return the state of the sensor."""
+        if not self.coordinator.data:
+            return (
+                self._last_known_value
+                if self.entity_description.preserve_value
+                else None
+            )
 
-    if self.entity_description.value_fn is not None:
-        raw = self.entity_description.value_fn(self.coordinator.data)
-    else:
-        raw = self.coordinator.data.get(self.entity_description.key)
+        if self.entity_description.value_fn is not None:
+            raw = self.entity_description.value_fn(self.coordinator.data)
+        else:
+            raw = self.coordinator.data.get(self.entity_description.key)
 
-    # Explicitly narrow the type for mypy
-    value = cast(str | int | float | datetime.datetime | None, raw)
+        # Explicitly narrow the type for mypy
+        value = cast(str | int | float | datetime.datetime | None, raw)
 
-    if value is None:
-        return (
-            self._last_known_value
-            if self.entity_description.preserve_value
-            else None
-        )
+        if value is None:
+            return (
+                self._last_known_value
+                if self.entity_description.preserve_value
+                else None
+            )
 
-    if self.entity_description.preserve_value:
-        self._last_known_value = value
+        if self.entity_description.preserve_value:
+            self._last_known_value = value
 
-    return value
+        return value
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
