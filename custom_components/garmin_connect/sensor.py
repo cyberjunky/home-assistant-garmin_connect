@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from datetime import date as dt_date
 from datetime import timedelta
 from enum import StrEnum
-from typing import Any
+from typing import cast, Any
 
 from homeassistant.components.sensor import (
     SensorDeviceClass,
@@ -699,7 +699,8 @@ ACTIVITY_TRACKING_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         key="lastActivity",
         translation_key="last_activity",
         coordinator_type=CoordinatorType.ACTIVITY,
-        value_fn=lambda data: (data.get("lastActivity") or {}).get("activityName"),
+        value_fn=lambda data: (data.get("lastActivity")
+                               or {}).get("activityName"),
         attributes_fn=lambda data: data.get("lastActivity") or {},
     ),
     GarminConnectSensorEntityDescription(
@@ -719,7 +720,8 @@ ACTIVITY_TRACKING_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         key="lastWorkout",
         translation_key="last_workout",
         coordinator_type=CoordinatorType.ACTIVITY,
-        value_fn=lambda data: (data.get("lastWorkout") or {}).get("workoutName"),
+        value_fn=lambda data: (data.get("lastWorkout")
+                               or {}).get("workoutName"),
         attributes_fn=lambda data: data.get("lastWorkout") or {},
     ),
     GarminConnectSensorEntityDescription(
@@ -744,7 +746,8 @@ TRAINING_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         translation_key="endurance_score",
         coordinator_type=CoordinatorType.TRAINING,
         state_class=SensorStateClass.MEASUREMENT,
-        value_fn=lambda data: (data.get("enduranceScore") or {}).get("overallScore"),
+        value_fn=lambda data: (data.get("enduranceScore")
+                               or {}).get("overallScore"),
         attributes_fn=lambda data: {
             k: v for k, v in (data.get("enduranceScore") or {}).items() if k != "overallScore"
         },
@@ -754,7 +757,8 @@ TRAINING_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         translation_key="hill_score",
         coordinator_type=CoordinatorType.TRAINING,
         state_class=SensorStateClass.MEASUREMENT,
-        value_fn=lambda data: (data.get("hillScore") or {}).get("overallScore"),
+        value_fn=lambda data: (data.get("hillScore")
+                               or {}).get("overallScore"),
         attributes_fn=lambda data: {
             k: v for k, v in (data.get("hillScore") or {}).items() if k != "overallScore"
         },
@@ -783,7 +787,8 @@ TRAINING_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         key="trainingStatus",
         translation_key="training_status",
         coordinator_type=CoordinatorType.TRAINING,
-        value_fn=lambda data: (data.get("trainingStatus") or {}).get("trainingStatusPhrase"),
+        value_fn=lambda data: (data.get("trainingStatus")
+                               or {}).get("trainingStatusPhrase"),
         attributes_fn=lambda data: data.get("trainingStatus") or {},
     ),
     GarminConnectSensorEntityDescription(
@@ -791,7 +796,8 @@ TRAINING_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         translation_key="morning_training_readiness",
         coordinator_type=CoordinatorType.TRAINING,
         native_unit_of_measurement=PERCENTAGE,
-        value_fn=lambda data: (data.get("morningTrainingReadiness") or {}).get("score"),
+        value_fn=lambda data: (
+            data.get("morningTrainingReadiness") or {}).get("score"),
         attributes_fn=lambda data: {
             "level": (data.get("morningTrainingReadiness") or {}).get("level"),
             "sleep_score": (data.get("morningTrainingReadiness") or {}).get("sleepScore"),
@@ -806,7 +812,8 @@ TRAINING_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         coordinator_type=CoordinatorType.TRAINING,
         native_unit_of_measurement="bpm",
         value_fn=lambda data: (
-            (data.get("lactateThreshold") or {}).get("speed_and_heart_rate") or {}
+            (data.get("lactateThreshold") or {}).get(
+                "speed_and_heart_rate") or {}
         ).get("heartRate"),
         attributes_fn=lambda data: data.get("lactateThreshold") or {},
     ),
@@ -816,7 +823,8 @@ TRAINING_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         coordinator_type=CoordinatorType.TRAINING,
         native_unit_of_measurement="m/s",
         value_fn=lambda data: (
-            (data.get("lactateThreshold") or {}).get("speed_and_heart_rate") or {}
+            (data.get("lactateThreshold") or {}).get(
+                "speed_and_heart_rate") or {}
         ).get("speed"),
         attributes_fn=lambda data: data.get("lactateThreshold") or {},
     ),
@@ -860,7 +868,8 @@ TRAINING_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         coordinator_type=CoordinatorType.TRAINING,
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement="ms",
-        attributes_fn=lambda data: (data.get("hrvStatus") or {}).get("baseline") or {},
+        attributes_fn=lambda data: (
+            data.get("hrvStatus") or {}).get("baseline") or {},
         preserve_value=True,
     ),
     GarminConnectSensorEntityDescription(
@@ -1341,7 +1350,8 @@ MENSTRUAL_CYCLE_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         coordinator_type=CoordinatorType.MENSTRUAL,
         entity_registry_enabled_default=False,
         value_fn=lambda data: (
-            _MENSTRUAL_PHASE_MAP.get(int(_menstrual_day_summary(data)["currentPhase"]), "Unknown")
+            _MENSTRUAL_PHASE_MAP.get(
+                int(_menstrual_day_summary(data)["currentPhase"]), "Unknown")
             if isinstance(_menstrual_day_summary(data).get("currentPhase"), int)
             else None
         ),
@@ -1367,7 +1377,8 @@ MENSTRUAL_CYCLE_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         coordinator_type=CoordinatorType.MENSTRUAL,
         state_class=SensorStateClass.MEASUREMENT,
         entity_registry_enabled_default=False,
-        value_fn=lambda data: _menstrual_day_summary(data).get("daysUntilNextPhase"),
+        value_fn=lambda data: _menstrual_day_summary(
+            data).get("daysUntilNextPhase"),
     ),
     GarminConnectSensorEntityDescription(
         key="menstrualCycleStart",
@@ -1428,7 +1439,8 @@ _COORDINATOR_SENSOR_MAP: tuple[
     (CoordinatorType.CORE, CORE_SENSOR_DESCRIPTIONS),
     (CoordinatorType.ACTIVITY, ACTIVITY_TRACKING_SENSORS),
     (CoordinatorType.TRAINING, TRAINING_SENSORS),
-    (CoordinatorType.BODY, (*BODY_COMPOSITION_SENSORS, *HYDRATION_SENSORS, *FITNESS_AGE_SENSORS)),
+    (CoordinatorType.BODY, (*BODY_COMPOSITION_SENSORS,
+     *HYDRATION_SENSORS, *FITNESS_AGE_SENSORS)),
     (CoordinatorType.GOALS, GOALS_SENSORS),
     (CoordinatorType.GEAR, GEAR_SENSORS),
     (CoordinatorType.BLOOD_PRESSURE, BLOOD_PRESSURE_SENSORS),
@@ -1460,12 +1472,14 @@ async def async_setup_entry(
     for coord_type, descriptions in _COORDINATOR_SENSOR_MAP:
         coordinator = getattr(coordinators, _COORDINATOR_ATTR[coord_type])
         for description in descriptions:
-            entities.append(GarminConnectSensor(coordinator, description, entry.entry_id))
+            entities.append(GarminConnectSensor(
+                coordinator, description, entry.entry_id))
 
     # Dynamic gear sensors
     gear_data = coordinators.gear.data or {}
     for gear_stat in gear_data.get("gearStats", []):
-        gear_name = gear_stat.get("displayName") or gear_stat.get("gearName") or "Unknown"
+        gear_name = gear_stat.get("displayName") or gear_stat.get(
+            "gearName") or "Unknown"
         gear_uuid = gear_stat.get("uuid") or gear_stat.get("gearUuid", "")
         if gear_uuid:
             entities.append(
@@ -1506,22 +1520,33 @@ class GarminConnectSensor(CoordinatorEntity[BaseGarminCoordinator], SensorEntity
 
     @property
     def native_value(self) -> str | int | float | datetime.datetime | None:
-        """Return the state of the sensor."""
-        if not self.coordinator.data:
-            return self._last_known_value if self.entity_description.preserve_value else None
+    """Return the state of the sensor."""
+    if not self.coordinator.data:
+        return (
+            self._last_known_value
+            if self.entity_description.preserve_value
+            else None
+        )
 
-        if self.entity_description.value_fn is not None:
-            value = self.entity_description.value_fn(self.coordinator.data)
-        else:
-            value = self.coordinator.data.get(self.entity_description.key)
+    if self.entity_description.value_fn is not None:
+        raw = self.entity_description.value_fn(self.coordinator.data)
+    else:
+        raw = self.coordinator.data.get(self.entity_description.key)
 
-        if value is None:
-            return self._last_known_value if self.entity_description.preserve_value else None
+    # Explicitly narrow the type for mypy
+    value = cast(str | int | float | datetime.datetime | None, raw)
 
-        if self.entity_description.preserve_value:
-            self._last_known_value = value
+    if value is None:
+        return (
+            self._last_known_value
+            if self.entity_description.preserve_value
+            else None
+        )
 
-        return value
+    if self.entity_description.preserve_value:
+        self._last_known_value = value
+
+    return value
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
@@ -1570,9 +1595,13 @@ class GarminConnectGearSensor(CoordinatorEntity[GearCoordinator], SensorEntity):
         """Return total distance for this gear in meters."""
         if not self.coordinator.data:
             return None
-        for gear_stat in self.coordinator.data.get("gearStats", []):
+
+        gear_stats = self.coordinator.data.get("gearStats", [])
+        for gear_stat in gear_stats:
             if (gear_stat.get("uuid") or gear_stat.get("gearUuid")) == self._gear_uuid:
-                return gear_stat.get("totalDistance")
+                raw = gear_stat.get("totalDistance")
+                return cast(float | int | None, raw)
+
         return None
 
     @property
