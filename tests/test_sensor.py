@@ -349,12 +349,14 @@ def test_bp_measurement_time_returns_string() -> None:
 
 
 def test_next_alarm_returns_first() -> None:
-    """nextAlarm sensor must return the first alarm string."""
+    """nextAlarm sensor must return a timezone-aware datetime parsed from the first alarm string."""
+    import datetime
+
     desc = next(d for d in GEAR_SENSORS if d.key == "nextAlarm")
     coord = MagicMock()
     coord.data = mock_gear_data()
     sensor = GarminConnectSensor(coord, desc, "entry_id")
-    assert sensor.native_value == "2026-01-25T06:30:00+00:00"
+    assert sensor.native_value == datetime.datetime.fromisoformat("2026-01-25T06:30:00+00:00")
 
 
 def test_next_alarm_none_when_empty_list() -> None:

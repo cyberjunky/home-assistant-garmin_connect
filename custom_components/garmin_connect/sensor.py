@@ -1162,6 +1162,8 @@ GEAR_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         coordinator_type=CoordinatorType.GEAR,
         device_class=SensorDeviceClass.TIMESTAMP,
         value_fn=lambda data: (
+            lambda raw: datetime.datetime.fromisoformat(raw) if raw else None
+        )(
             data.get("nextAlarm")[0]
             if isinstance(data.get("nextAlarm"), list) and data.get("nextAlarm")
             else (
