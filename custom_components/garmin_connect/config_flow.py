@@ -98,14 +98,16 @@ class GarminConnectConfigFlow(ConfigFlow, domain=DOMAIN):
     async def _async_finish_reauth(self) -> ConfigFlowResult:
         """Update tokens on the existing entry and reload it."""
         entry = self._get_reauth_entry()
-        self.hass.config_entries.async_update_entry(entry, data=self._token_data())
+        self.hass.config_entries.async_update_entry(
+            entry, data=self._token_data())
         await self.hass.config_entries.async_reload(entry.entry_id)
         return self.async_abort(reason="reauth_successful")
 
     async def _async_finish_reconfigure(self) -> ConfigFlowResult:
         """Update tokens on the existing entry and reload it."""
         entry = self._get_reconfigure_entry()
-        self.hass.config_entries.async_update_entry(entry, data=self._token_data())
+        self.hass.config_entries.async_update_entry(
+            entry, data=self._token_data())
         await self.hass.config_entries.async_reload(entry.entry_id)
         return self.async_abort(reason="reconfigure_successful")
 
@@ -117,7 +119,7 @@ class GarminConnectConfigFlow(ConfigFlow, domain=DOMAIN):
         try:
             client = GarminClient(self._auth, is_cn=self._is_cn)
             profile = await client.get_user_profile()
-        except GarminConnectError, ClientError:
+        except (GarminConnectError, ClientError):
             pass
         else:
             unique_id = str(profile.profile_id)
@@ -283,7 +285,8 @@ class GarminConnectOptionsFlow(OptionsFlow):
                         default=current_scan_interval,
                     ): vol.All(
                         vol.Coerce(int),
-                        vol.Range(min=MIN_SCAN_INTERVAL, max=MAX_SCAN_INTERVAL),
+                        vol.Range(min=MIN_SCAN_INTERVAL,
+                                  max=MAX_SCAN_INTERVAL),
                     ),
                 }
             ),
