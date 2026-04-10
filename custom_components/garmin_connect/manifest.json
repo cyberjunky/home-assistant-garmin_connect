@@ -9,6 +9,6 @@
   "issue_tracker": "https://github.com/cyberjunky/home-assistant-garmin_connect/issues",
   "loggers": ["ha_garmin"],
   "quality_scale": "gold",
-  "requirements": ["ha-garmin==0.1.6"],
+  "requirements": ["ha-garmin==0.1.7"],
   "version": "3.0.0"
 }

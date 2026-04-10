@@ -869,7 +869,11 @@ TRAINING_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         coordinator_type=CoordinatorType.TRAINING,
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement="mL/(kg·min)",
-        value_fn=lambda data: data.get("vo2MaxValue"),
+        value_fn=lambda data: data.get("vo2MaxValue") or (
+            ((data.get("trainingStatus") or {}).get("mostRecentVO2Max") or {})
+            .get("generic", {})
+            .get("vo2MaxValue")
+        ),
     ),
 )
 
@@ -1144,6 +1148,14 @@ GOALS_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
 )
 
 
+def _parse_iso(value: str) -> datetime.datetime | None:
+    """Parse an ISO datetime string, returning None on failure."""
+    try:
+        return datetime.datetime.fromisoformat(value)
+    except (ValueError, TypeError):
+        return None
+
+
 # ── GEAR coordinator sensors ──────────────────────────────────────────────────
 # Data from ha_garmin.fetch_gear_data() — dynamic gear sensors
 
@@ -1153,16 +1165,15 @@ GEAR_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         translation_key="next_alarm",
         coordinator_type=CoordinatorType.GEAR,
         device_class=SensorDeviceClass.TIMESTAMP,
-        value_fn=lambda data: (
-            lambda raw: datetime.datetime.fromisoformat(raw) if raw else None
-        )(
-            data.get("nextAlarm")[0]
-            if isinstance(data.get("nextAlarm"), list) and data.get("nextAlarm")
-            else (
-                data.get("nextAlarm", {}).get("alarmTime")
-                if isinstance(data.get("nextAlarm"), dict)
-                else None
-            )
+        value_fn=lambda data: next(
+            (
+                dt
+                for a in (data.get("nextAlarm") or [])
+                if isinstance(a, str)
+                for dt in [_parse_iso(a)]
+                if dt is not None
+            ),
+            None,
         ),
         attributes_fn=lambda data: {"next_alarms": data.get("nextAlarm")},
     ),
