@@ -1,0 +1,36 @@
+name: Tests
+
+on:
+  push:
+    branches:
+      - main
+      - ng
+  pull_request:
+    branches:
+      - main
+      - ng
+
+permissions: {}
+
+jobs:
+  lint:
+    name: Pre-commit checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - run: pip install -r requirements.txt -r requirements_lint.txt
+      - run: pre-commit run --all-files --config .github/pre-commit-config.yaml
+
+  tests:
+    name: Pytest
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - run: pip install -r requirements.txt -r requirements_lint.txt
+      - run: pytest tests/ -q
