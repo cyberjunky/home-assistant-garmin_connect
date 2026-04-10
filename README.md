@@ -551,9 +551,7 @@ After upgrading, go to **Settings** → **Devices & Services**, find Garmin Conn
 
 ### Rate limit errors
 
-If you see 429 or rate limit errors:
-1. Increase the scan interval in options (e.g., to 600 seconds)
-2. Wait 15–60 minutes before reloading the integration
+If you see 429 or rate limit errors wait 5-30 minutes before reloading the integration
 
 ### Enable debug logging
 
@@ -565,6 +563,10 @@ logger:
 ```
 
 Or enable via the UI: **Settings** → **Devices & Services** → **Garmin Connect** → **Enable debug logging**.
+
+![Enable Debug Logging](screenshots/enabledebug.png)
+
+Then perform any steps to reproduce the issue and disable debug logging again. It will download the relevant log file automatically.
 
 ## Support This Project
 
