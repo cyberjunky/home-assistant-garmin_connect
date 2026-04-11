@@ -469,3 +469,18 @@ def test_gear_sensor_unique_id() -> None:
         coord, gear_uuid="abc-123", gear_name="My Trail Shoes", entry_id="my_entry"
     )
     assert sensor._attr_unique_id == "my_entry_gear_abc-123"
+
+
+def test_gear_sensor_unique_id_unnamed_gear_no_collision() -> None:
+    """Two unnamed gear items with different UUIDs must have distinct unique_ids."""
+    coord = MagicMock()
+    coord.data = {}
+    sensor_a = GarminConnectGearSensor(
+        coord, gear_uuid="abc-123", gear_name=None, entry_id="my_entry"
+    )
+    sensor_b = GarminConnectGearSensor(
+        coord, gear_uuid="def-456", gear_name=None, entry_id="my_entry"
+    )
+    assert sensor_a._attr_unique_id == "my_entry_gear_abc-123"
+    assert sensor_b._attr_unique_id == "my_entry_gear_def-456"
+    assert sensor_a._attr_unique_id != sensor_b._attr_unique_id
