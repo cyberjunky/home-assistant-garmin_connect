@@ -25,6 +25,7 @@ from homeassistant.const import (
     UnitOfVolume,
 )
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
@@ -1475,8 +1476,28 @@ async def async_setup_entry(
             entities.append(GarminConnectSensor(
                 coordinator, description, entry.entry_id))
 
-    # Dynamic gear sensors
+    # Migrate gear sensor unique_ids from old name-slug format to UUID format.
+    # Previously: f"{entry_id}_gear_{name.lower().replace(' ', '_').replace('-', '_')}"
+    # Now:        f"{entry_id}_gear_{gear_uuid}"
+    ent_reg = er.async_get(hass)
     gear_data = coordinators.gear.data or {}
+    for gear_stat in gear_data.get("gearStats", []):
+        gear_name = gear_stat.get("displayName") or gear_stat.get(
+            "gearName") or "Unknown"
+        gear_uuid = gear_stat.get("uuid") or gear_stat.get("gearUuid", "")
+        if not gear_uuid:
+            continue
+        old_unique_id = (
+            f"{entry.entry_id}_gear_"
+            f"{gear_name.lower().replace(' ', '_').replace('-', '_')}"
+        )
+        new_unique_id = f"{entry.entry_id}_gear_{gear_uuid}"
+        if old_unique_id != new_unique_id:
+            entity_id = ent_reg.async_get_entity_id("sensor", DOMAIN, old_unique_id)
+            if entity_id:
+                ent_reg.async_update_entity(entity_id, new_unique_id=new_unique_id)
+
+    # Dynamic gear sensors
     for gear_stat in gear_data.get("gearStats", []):
         gear_name = gear_stat.get("displayName") or gear_stat.get(
             "gearName") or "Unknown"
