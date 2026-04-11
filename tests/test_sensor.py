@@ -462,10 +462,10 @@ def test_gear_sensor_name_property() -> None:
 
 
 def test_gear_sensor_unique_id() -> None:
-    """Gear sensor unique_id must be '{entry_id}_gear_{cleaned_name}'."""
+    """Gear sensor unique_id must be '{entry_id}_gear_{gear_uuid}'."""
     coord = MagicMock()
     coord.data = {}
     sensor = GarminConnectGearSensor(
-        coord, gear_uuid="uuid", gear_name="My Trail Shoes", entry_id="my_entry"
+        coord, gear_uuid="abc-123", gear_name="My Trail Shoes", entry_id="my_entry"
     )
-    assert sensor._attr_unique_id == "my_entry_gear_my_trail_shoes"
+    assert sensor._attr_unique_id == "my_entry_gear_abc-123"
