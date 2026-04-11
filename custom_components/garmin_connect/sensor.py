@@ -1576,8 +1576,7 @@ class GarminConnectGearSensor(CoordinatorEntity[GearCoordinator], SensorEntity):
         self._attr_device_class = SensorDeviceClass.DISTANCE
         self._attr_state_class = SensorStateClass.TOTAL_INCREASING
         self._attr_suggested_display_precision = 0
-        clean_name = self._gear_name.lower().replace(" ", "_").replace("-", "_")
-        self._attr_unique_id = f"{entry_id}_gear_{clean_name}"
+        self._attr_unique_id = f"{entry_id}_gear_{gear_uuid}"
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, entry_id)},
             name="Garmin Connect",
