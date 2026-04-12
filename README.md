@@ -28,7 +28,7 @@ The integration provides **130+ sensors** across the following categories:
 - **Sleep analysis** — Total sleep, deep/light/REM sleep, sleep score
 - **Body Battery** — Current level, charged/drained values
 - **Body composition** — Weight, BMI, body fat, muscle mass, bone mass, hydration
-- **Training metrics** — Training readiness, training status, lactate threshold, endurance/hill scores
+- **Training metrics** — Training readiness, training status, lactate threshold, endurance/hill scores, power-to-weight and FTP by sport
 - **Activities & workouts** — Last activity, recent activities list, workout tracking
 - **Goals & badges** — Active/future goals, goal history, earned badges
 - **Blood pressure** — Systolic, diastolic, pulse measurements
@@ -88,7 +88,7 @@ The integration uses cloud polling to fetch data from Garmin Connect servers. Da
 |-------------|------|
 | Core | Steps, distance, calories, heart rate, stress, sleep, body battery, SpO2, respiration, intensity |
 | Activity | Last activity, recent activities, workouts |
-| Training | Training readiness/status, HRV, lactate threshold, endurance/hill scores |
+| Training | Training readiness/status, HRV, lactate threshold, endurance/hill scores, power-to-weight and FTP by sport |
 | Body | Weight, BMI, body fat, muscle mass, hydration, fitness age |
 | Goals | Active/future goals, goal history, badges, user points |
 | Gear | Shoes, bikes, equipment usage and distance |
@@ -227,7 +227,11 @@ All sensors are created under a single "Garmin Connect" device. Entity IDs follo
 | VO2 Max | Most recent VO2 Max value (mL/(kg·min)) |
 | Lactate Threshold HR | Lactate threshold heart rate (bpm) |
 | Lactate Threshold Speed | Lactate threshold pace (m/s) |
+| Power to Weight [Sport] | Dynamic per-sport power-to-weight sensor (W/kg), e.g. Running, Cycling |
+| FTP [Sport] | Dynamic per-sport functional threshold power sensor (W), e.g. Running, Cycling |
 | Next Alarm | Next scheduled alarm time |
+
+> Power-to-weight and FTP sensors are created dynamically for each available sport in your Garmin training data. Names are formatted like `Power to Weight Running` and `FTP Running`.
 
 ### Goals & Achievements
 

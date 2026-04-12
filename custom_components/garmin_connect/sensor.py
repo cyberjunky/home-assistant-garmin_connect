@@ -21,6 +21,7 @@ from homeassistant.const import (
     UnitOfEnergy,
     UnitOfLength,
     UnitOfMass,
+    UnitOfPower,
     UnitOfTime,
     UnitOfVolume,
 )
@@ -35,6 +36,7 @@ from .coordinator import (
     BaseGarminCoordinator,
     GarminConnectConfigEntry,
     GearCoordinator,
+    TrainingCoordinator,
 )
 
 # Limit parallel updates to prevent API rate limiting
@@ -1468,7 +1470,7 @@ async def async_setup_entry(
     """Set up Garmin Connect sensors."""
     coordinators = entry.runtime_data
 
-    entities: list[GarminConnectSensor | GarminConnectGearSensor] = []
+    entities: list[GarminConnectSensor | GarminConnectGearSensor | GarminConnectPowerToWeightSensor] = []
 
     for coord_type, descriptions in _COORDINATOR_SENSOR_MAP:
         coordinator = getattr(coordinators, _COORDINATOR_ATTR[coord_type])
@@ -1508,6 +1510,22 @@ async def async_setup_entry(
                     coordinators.gear,
                     gear_uuid=gear_uuid,
                     gear_name=gear_name,
+                    entry_id=entry.entry_id,
+                )
+            )
+
+    # Dynamic power-to-weight sensors (one PTW + one FTP sensor per sport)
+    ptw_list: list[dict[str, Any]] = (coordinators.training.data or {}).get("powerToWeight") or []
+    for ptw_entry in ptw_list:
+        sport = ptw_entry.get("sport")
+        if not sport:
+            continue
+        for sensor_type in ("ptw", "ftp"):
+            entities.append(
+                GarminConnectPowerToWeightSensor(
+                    coordinators.training,
+                    sport=sport,
+                    sensor_type=sensor_type,
                     entry_id=entry.entry_id,
                 )
             )
@@ -1644,3 +1662,80 @@ class GarminConnectGearSensor(CoordinatorEntity[GearCoordinator], SensorEntity):
                     "default_for_activity": gear_stat.get("defaultForActivity", []),
                 }
         return {}
+
+
+class GarminConnectPowerToWeightSensor(CoordinatorEntity[TrainingCoordinator], SensorEntity):
+    """Representation of a dynamic Garmin Connect power-to-weight or FTP sensor."""
+
+    _attr_has_entity_name = True
+    _attr_state_class = SensorStateClass.MEASUREMENT
+
+    def __init__(
+        self,
+        coordinator: TrainingCoordinator,
+        sport: str,
+        sensor_type: str,
+        entry_id: str,
+    ) -> None:
+        """Initialize the power-to-weight sensor.
+
+        sensor_type must be 'ptw' (power-to-weight in W/kg) or 'ftp' (watts).
+        """
+        super().__init__(coordinator)
+        self._sport = sport
+        self._sensor_type = sensor_type
+        sport_display = sport.replace("_", " ").title()
+        if sensor_type == "ptw":
+            self._attr_name = f"Power to Weight {sport_display}"
+            self._attr_native_unit_of_measurement = "W/kg"
+            self._attr_suggested_display_precision = 2
+        else:
+            self._attr_name = f"FTP {sport_display}"
+            self._attr_native_unit_of_measurement = UnitOfPower.WATT
+            self._attr_device_class = SensorDeviceClass.POWER
+        self._attr_unique_id = f"{entry_id}_{sensor_type}_{sport.lower()}"
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, entry_id)},
+            name="Garmin Connect",
+            manufacturer="Garmin",
+            entry_type=DeviceEntryType.SERVICE,
+        )
+
+    def _get_entry(self) -> dict[str, Any] | None:
+        """Return the powerToWeight entry for this sport, or None."""
+        ptw_list: list[dict[str, Any]] = (
+            self.coordinator.data or {}
+        ).get("powerToWeight") or []
+        for entry in ptw_list:
+            if entry.get("sport") == self._sport:
+                return entry
+        return None
+
+    @property
+    def native_value(self) -> float | int | None:
+        """Return the sensor value."""
+        entry = self._get_entry()
+        if entry is None:
+            return None
+        key = "powerToWeight" if self._sensor_type == "ptw" else "functionalThresholdPower"
+        return cast(float | int | None, entry.get(key))
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """Return additional state attributes."""
+        entry = self._get_entry()
+        if entry is None:
+            return {}
+        attrs: dict[str, Any] = {
+            "sport": self._sport,
+            "weight_kg": entry.get("weight"),
+            "calendar_date": entry.get("calendarDate"),
+            "ftp_created": entry.get("ftpCreateTime"),
+            "weight_created": entry.get("weightCreateTime"),
+            "is_stale": entry.get("isStale"),
+        }
+        if self._sensor_type == "ptw":
+            attrs["ftp"] = entry.get("functionalThresholdPower")
+        else:
+            attrs["power_to_weight"] = entry.get("powerToWeight")
+        return attrs
