@@ -292,6 +292,38 @@ STRESS_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
 # Sleep Sensors — ha_garmin computes *Minutes from *Seconds
 SLEEP_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
     GarminConnectSensorEntityDescription(
+        key="sleepNeed",
+        translation_key="sleep_need",
+        device_class=SensorDeviceClass.DURATION,
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=UnitOfTime.MINUTES,
+        preserve_value=True,
+    ),
+    GarminConnectSensorEntityDescription(
+        key="bedtime",
+        translation_key="bedtime",
+        device_class=SensorDeviceClass.TIMESTAMP,
+        preserve_value=True,
+    ),
+    GarminConnectSensorEntityDescription(
+        key="optimalBedtime",
+        translation_key="optimal_bedtime",
+        device_class=SensorDeviceClass.TIMESTAMP,
+        preserve_value=True,
+    ),
+    GarminConnectSensorEntityDescription(
+        key="wakeTime",
+        translation_key="wake_time",
+        device_class=SensorDeviceClass.TIMESTAMP,
+        preserve_value=True,
+    ),
+    GarminConnectSensorEntityDescription(
+        key="optimalWakeTime",
+        translation_key="optimal_wake_time",
+        device_class=SensorDeviceClass.TIMESTAMP,
+        preserve_value=True,
+    ),
+    GarminConnectSensorEntityDescription(
         key="sleepingMinutes",
         translation_key="sleeping_time",
         device_class=SensorDeviceClass.DURATION,
@@ -1470,7 +1502,8 @@ async def async_setup_entry(
     """Set up Garmin Connect sensors."""
     coordinators = entry.runtime_data
 
-    entities: list[GarminConnectSensor | GarminConnectGearSensor | GarminConnectPowerToWeightSensor] = []
+    entities: list[GarminConnectSensor | GarminConnectGearSensor |
+                   GarminConnectPowerToWeightSensor] = []
 
     for coord_type, descriptions in _COORDINATOR_SENSOR_MAP:
         coordinator = getattr(coordinators, _COORDINATOR_ATTR[coord_type])
@@ -1478,10 +1511,31 @@ async def async_setup_entry(
             entities.append(GarminConnectSensor(
                 coordinator, description, entry.entry_id))
 
+    # Migrate the legacy entity_id created from duplicate translated names:
+    # sleepTimeMinutes was previously shown as "Sleep duration", which often
+    # resulted in entity_id suffixes like sensor.garmin_connect_sleep_duration_2.
+    ent_reg = er.async_get(hass)
+
+    # Find and rename the _2 suffixed sleep duration entity if it exists
+    for entity in ent_reg.entities.values():
+        if (
+            entity.domain == "sensor"
+            and entity.platform == DOMAIN
+            and entity.entity_id == "sensor.garmin_connect_sleep_duration_2"
+        ):
+            try:
+                ent_reg.async_update_entity(
+                    entity.entity_id,
+                    new_entity_id="sensor.garmin_connect_sleep_duration",
+                )
+            except (ValueError, KeyError):
+                pass
+            break
+
     # Migrate gear sensor unique_ids from old name-slug format to UUID format.
     # Previously: f"{entry_id}_gear_{name.lower().replace(' ', '_').replace('-', '_')}"
     # Now:        f"{entry_id}_gear_{gear_uuid}"
-    ent_reg = er.async_get(hass)
+
     gear_data = coordinators.gear.data or {}
     for gear_stat in gear_data.get("gearStats", []):
         gear_name = gear_stat.get("displayName") or gear_stat.get(
@@ -1495,9 +1549,11 @@ async def async_setup_entry(
         )
         new_unique_id = f"{entry.entry_id}_gear_{gear_uuid}"
         if old_unique_id != new_unique_id:
-            entity_id = ent_reg.async_get_entity_id("sensor", DOMAIN, old_unique_id)
+            entity_id = ent_reg.async_get_entity_id(
+                "sensor", DOMAIN, old_unique_id)
             if entity_id:
-                ent_reg.async_update_entity(entity_id, new_unique_id=new_unique_id)
+                ent_reg.async_update_entity(
+                    entity_id, new_unique_id=new_unique_id)
 
     # Dynamic gear sensors
     for gear_stat in gear_data.get("gearStats", []):
@@ -1515,7 +1571,8 @@ async def async_setup_entry(
             )
 
     # Dynamic power-to-weight sensors (one PTW + one FTP sensor per sport)
-    ptw_list: list[dict[str, Any]] = (coordinators.training.data or {}).get("powerToWeight") or []
+    ptw_list: list[dict[str, Any]] = (
+        coordinators.training.data or {}).get("powerToWeight") or []
     for ptw_entry in ptw_list:
         sport = ptw_entry.get("sport")
         if not sport:

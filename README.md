@@ -25,7 +25,7 @@ The integration provides **130+ sensors** across the following categories:
 - **Heart rate monitoring** — Resting, min, max, and 7-day average heart rate
 - **HRV (Heart Rate Variability)** — Status, weekly/nightly averages, baseline metrics
 - **Stress tracking** — Average/max stress levels, stress duration breakdowns
-- **Sleep analysis** — Total sleep, deep/light/REM sleep, sleep score
+- **Sleep analysis** — Total sleep, deep/light/REM sleep, sleep score, sleep need, bedtime/wake targets
 - **Body Battery** — Current level, charged/drained values
 - **Body composition** — Weight, BMI, body fat, muscle mass, bone mass, hydration
 - **Training metrics** — Training readiness, training status, lactate threshold, endurance/hill scores, power-to-weight and FTP by sport
@@ -159,9 +159,13 @@ All sensors are created under a single "Garmin Connect" device. Entity IDs follo
 | Sensor | Description |
 |--------|-------------|
 | Sleep Score | Overall sleep quality score |
+| Sleep Need | Target sleep need in minutes |
 | Sleep Duration | Total time asleep |
+| Total Sleep Duration | Total sleep window duration |
 | Awake Duration | Time awake during sleep |
 | Deep / Light / REM Sleep | Time in each sleep stage |
+| Bedtime / Wake Time | Actual bedtime and wake timestamps |
+| Optimal Bedtime / Optimal Wake Time | Recommended sleep timing timestamps |
 | Nap Time | Daytime nap duration |
 | Unmeasurable Sleep | Unclassified sleep time |
 
