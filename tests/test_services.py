@@ -182,7 +182,7 @@ async def test_set_active_gear_by_entity_id(mock_hass: MagicMock) -> None:
 
 async def test_set_active_gear_by_entity_id_targets_entity_account(
     mock_hass: MagicMock,
-) -> None:
+):
     """set_active_gear must use the account that owns the gear entity."""
     second_entry = _make_entry("entry_2", "profile_2", "user2@example.com")
     mock_hass.config_entries.async_entries.return_value.append(second_entry)
@@ -292,7 +292,7 @@ async def test_add_body_composition(mock_hass: MagicMock) -> None:
 
 async def test_add_body_composition_targets_entity_config_entry(
     mock_hass: MagicMock,
-) -> None:
+):
     """add_body_composition must target the account that owns entity_id."""
     second_entry = _make_entry("entry_2", "profile_2", "user2@example.com")
     mock_hass.config_entries.async_entries.return_value.append(second_entry)
@@ -322,7 +322,7 @@ async def test_add_body_composition_targets_entity_config_entry(
 
 async def test_add_body_composition_entity_not_found_raises(
     mock_hass: MagicMock,
-) -> None:
+):
     """add_body_composition must raise when the requested entity is unknown."""
     await async_setup_services(mock_hass)
     handler = _get_handler(mock_hass, "add_body_composition")
