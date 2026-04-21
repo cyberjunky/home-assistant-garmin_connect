@@ -352,6 +352,7 @@ Record body composition metrics to Garmin Connect.
 
 | Parameter | Required | Description |
 |-----------|----------|-------------|
+| `entity_id` | No | Garmin Connect entity whose account should receive the measurement |
 | `weight` | Yes | Weight in kg |
 | `timestamp` | No | ISO datetime (defaults to now) |
 | `bmi` | No | Body Mass Index |
@@ -369,6 +370,7 @@ Record body composition metrics to Garmin Connect.
 ```yaml
 action: garmin_connect.add_body_composition
 data:
+  entity_id: sensor.garmin_connect_weight
   weight: 82.3
   percent_fat: 23.6
   muscle_mass: 35.5

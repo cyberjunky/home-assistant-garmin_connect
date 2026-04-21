@@ -41,148 +41,71 @@ add_body_composition:
   name: Add body composition
   description: Upload a body composition measurement to Garmin Connect.
   fields:
+    entity_id:
+      name: Garmin Connect entity
+      description: Optional Garmin Connect entity whose account should receive the measurement.
+      selector:
+        entity:
+          integration: garmin_connect
     weight:
       name: Weight (kg)
       description: Body weight in kilograms.
       required: true
       selector:
         number:
-          min: 20
+          min: 0
           max: 300
           step: 0.1
           unit_of_measurement: kg
     timestamp:
       name: Timestamp
-      description: "Measurement time (ISO 8601, e.g. 2024-01-15T08:30:00). Defaults to now."
-      example: "2024-01-15T08:30:00"
+      description: When the measurement was recorded (defaults to now).
       selector:
         text:
     bmi:
       name: BMI
       selector:
         number:
-          min: 10
-          max: 60
-          step: 0.1
     percent_fat:
-      name: Body fat (%)
+      name: Body fat percentage
       selector:
         number:
-          min: 1
-          max: 70
-          step: 0.1
-          unit_of_measurement: "%"
     percent_hydration:
-      name: Body hydration (%)
+      name: Hydration percentage
       selector:
         number:
-          min: 1
-          max: 80
-          step: 0.1
-          unit_of_measurement: "%"
     visceral_fat_mass:
-      name: Visceral fat mass (kg)
+      name: Visceral fat mass
       selector:
         number:
-          min: 0
-          max: 50
-          step: 0.1
-          unit_of_measurement: kg
     bone_mass:
-      name: Bone mass (kg)
+      name: Bone mass
       selector:
         number:
-          min: 0
-          max: 10
-          step: 0.1
-          unit_of_measurement: kg
     muscle_mass:
-      name: Muscle mass (kg)
+      name: Muscle mass
       selector:
         number:
-          min: 0
-          max: 150
-          step: 0.1
-          unit_of_measurement: kg
     basal_met:
-      name: Basal metabolic rate (kcal)
+      name: Basal metabolism
       selector:
         number:
-          min: 500
-          max: 5000
-          step: 1
-          unit_of_measurement: kcal
     active_met:
-      name: Active metabolic rate (kcal)
+      name: Active metabolism
       selector:
         number:
-          min: 500
-          max: 10000
-          step: 1
-          unit_of_measurement: kcal
     physique_rating:
       name: Physique rating
       selector:
         number:
-          min: 1
-          max: 9
-          step: 1
     metabolic_age:
       name: Metabolic age
       selector:
         number:
-          min: 10
-          max: 100
-          step: 1
     visceral_fat_rating:
       name: Visceral fat rating
       selector:
         number:
-          min: 1
-          max: 59
-          step: 1
-
-add_blood_pressure:
-  name: Add blood pressure
-  description: Upload a blood pressure reading to Garmin Connect.
-  fields:
-    systolic:
-      name: Systolic (mmHg)
-      required: true
-      selector:
-        number:
-          min: 60
-          max: 250
-          step: 1
-          unit_of_measurement: mmHg
-    diastolic:
-      name: Diastolic (mmHg)
-      required: true
-      selector:
-        number:
-          min: 40
-          max: 150
-          step: 1
-          unit_of_measurement: mmHg
-    pulse:
-      name: Pulse (bpm)
-      required: true
-      selector:
-        number:
-          min: 30
-          max: 220
-          step: 1
-          unit_of_measurement: bpm
-    timestamp:
-      name: Timestamp
-      description: "Measurement time (ISO 8601). Defaults to now."
-      example: "2024-01-15T08:30:00"
-      selector:
-        text:
-    notes:
-      name: Notes
-      selector:
-        text:
 
 create_activity:
   name: Create activity
