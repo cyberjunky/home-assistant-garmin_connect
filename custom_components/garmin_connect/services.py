@@ -151,7 +151,8 @@ def _get_client(
         if entry is None:
             raise HomeAssistantError(
                 translation_domain=DOMAIN,
-                translation_key="integration_not_loaded",
+                translation_key="entity_not_found",
+                translation_placeholders={"entity_id": entity_id},
             )
 
     if getattr(entry, "runtime_data", None) is None:
