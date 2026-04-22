@@ -131,6 +131,7 @@ Add body composition metrics to Garmin Connect.
 
 | Data attribute | Required | Description |
 | ---------------------- | -------- | ----------- |
+| `entity_id` | No | Garmin Connect entity whose account should receive the measurement |
 | `weight` | Yes | Weight in kilograms |
 | `timestamp` | No | ISO format timestamp |
 | `bmi` | No | Body Mass Index |

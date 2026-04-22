@@ -241,6 +241,7 @@
       "name": "Add body composition",
       "description": "Add body composition metrics to Garmin Connect.",
       "fields": {
+        "entity_id": { "name": "Garmin Connect entity", "description": "Optional Garmin Connect entity whose account should receive the measurement." },
         "weight": { "name": "Weight", "description": "Weight in kilograms." },
         "timestamp": { "name": "Timestamp", "description": "When the measurement was recorded (defaults to now)." },
         "bmi": { "name": "BMI", "description": "Body Mass Index." },

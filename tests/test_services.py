@@ -1,7 +1,7 @@
 """Tests for Garmin Connect services."""
 
 from pathlib import Path
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from homeassistant.exceptions import HomeAssistantError
@@ -12,8 +12,6 @@ from custom_components.garmin_connect.services import (
     async_unload_services,
 )
 
-# ── Fixtures / helpers ────────────────────────────────────────────────────────
-
 
 @pytest.fixture
 def mock_hass() -> MagicMock:
@@ -21,15 +19,24 @@ def mock_hass() -> MagicMock:
     hass = MagicMock()
     hass.config.time_zone = "Europe/Amsterdam"
 
+    mock_entry = _make_entry("entry_1", "profile_1", "user1@example.com")
+
+    hass.config_entries.async_entries.return_value = [mock_entry]
+    return hass
+
+
+def _make_entry(entry_id: str, unique_id: str, title: str) -> MagicMock:
+    """Return a mock config entry with a Garmin client."""
     mock_client = AsyncMock()
     mock_coordinators = MagicMock()
     mock_coordinators.core.client = mock_client
 
     mock_entry = MagicMock()
+    mock_entry.entry_id = entry_id
+    mock_entry.unique_id = unique_id
+    mock_entry.title = title
     mock_entry.runtime_data = mock_coordinators
-
-    hass.config_entries.async_entries.return_value = [mock_entry]
-    return hass
+    return mock_entry
 
 
 def _get_handler(mock_hass: MagicMock, service_name: str):
@@ -46,7 +53,12 @@ def _get_client(mock_hass: MagicMock) -> AsyncMock:
     return entry.runtime_data.core.client
 
 
-# ── Registration / unregistration ─────────────────────────────────────────────
+def _get_client_for_entry(mock_hass: MagicMock, entry_id: str) -> AsyncMock:
+    """Get the mock client for a specific mock config entry."""
+    for entry in mock_hass.config_entries.async_entries.return_value:
+        if entry.entry_id == entry_id:
+            return entry.runtime_data.core.client
+    raise ValueError(f"Entry {entry_id} not configured")
 
 
 async def test_setup_registers_all_services(mock_hass: MagicMock) -> None:
@@ -85,9 +97,6 @@ async def test_unload_removes_all_services(mock_hass: MagicMock) -> None:
     }
 
 
-# ── _get_client error paths ───────────────────────────────────────────────────
-
-
 async def test_service_no_entry_raises(mock_hass: MagicMock) -> None:
     """Services must raise HomeAssistantError when no config entry exists."""
     mock_hass.config_entries.async_entries.return_value = []
@@ -116,9 +125,6 @@ async def test_service_entry_not_loaded_raises(mock_hass: MagicMock) -> None:
 
     with pytest.raises(HomeAssistantError):
         await handler(call)
-
-
-# ── set_active_gear ───────────────────────────────────────────────────────────
 
 
 async def test_set_active_gear_by_uuid(mock_hass: MagicMock) -> None:
@@ -159,10 +165,53 @@ async def test_set_active_gear_by_entity_id(mock_hass: MagicMock) -> None:
         "setting": "set as default",
     }
 
-    await handler(call)
+    registry_entry = MagicMock()
+    registry_entry.config_entry_id = "entry_1"
+
+    with patch("custom_components.garmin_connect.services.er.async_get") as async_get:
+        async_get.return_value.async_get.return_value = registry_entry
+        await handler(call)
 
     client = _get_client(mock_hass)
     client.set_active_gear.assert_awaited_once_with(
+        activity_type="running",
+        setting="set as default",
+        gear_uuid="resolved-uuid",
+    )
+
+
+async def test_set_active_gear_by_entity_id_targets_entity_account(
+    mock_hass: MagicMock,
+):
+    """set_active_gear must use the account that owns the gear entity."""
+    second_entry = _make_entry("entry_2", "profile_2", "user2@example.com")
+    mock_hass.config_entries.async_entries.return_value.append(second_entry)
+
+    state = MagicMock()
+    state.attributes = {"gear_uuid": "resolved-uuid"}
+    mock_hass.states.get.return_value = state
+
+    registry_entry = MagicMock()
+    registry_entry.config_entry_id = "entry_2"
+
+    await async_setup_services(mock_hass)
+    handler = _get_handler(mock_hass, "set_active_gear")
+    first_client = _get_client_for_entry(mock_hass, "entry_1")
+    second_client = _get_client_for_entry(mock_hass, "entry_2")
+
+    call = MagicMock()
+    call.data = {
+        "entity_id": "sensor.second_garmin_shoes",
+        "activity_type": "running",
+        "setting": "set as default",
+    }
+
+    with patch("custom_components.garmin_connect.services.er.async_get") as async_get:
+        async_get.return_value.async_get.return_value = registry_entry
+        await handler(call)
+
+    first_client.set_active_gear.assert_not_awaited()
+    second_client.set_active_gear.assert_awaited_once_with(
         activity_type="running",
         setting="set as default",
         gear_uuid="resolved-uuid",
@@ -219,9 +268,6 @@ async def test_set_active_gear_entity_no_uuid_raises(mock_hass: MagicMock) -> No
         await handler(call)
 
 
-# ── add_body_composition ──────────────────────────────────────────────────────
-
-
 async def test_add_body_composition(mock_hass: MagicMock) -> None:
     """add_body_composition must call client with the supplied fields."""
     await async_setup_services(mock_hass)
@@ -244,6 +290,52 @@ async def test_add_body_composition(mock_hass: MagicMock) -> None:
     assert kwargs["muscle_mass"] == 35.0
 
 
+async def test_add_body_composition_targets_entity_config_entry(
+    mock_hass: MagicMock,
+):
+    """add_body_composition must target the account that owns entity_id."""
+    second_entry = _make_entry("entry_2", "profile_2", "user2@example.com")
+    mock_hass.config_entries.async_entries.return_value.append(second_entry)
+
+    registry_entry = MagicMock()
+    registry_entry.config_entry_id = "entry_2"
+
+    await async_setup_services(mock_hass)
+    handler = _get_handler(mock_hass, "add_body_composition")
+    first_client = _get_client_for_entry(mock_hass, "entry_1")
+    second_client = _get_client_for_entry(mock_hass, "entry_2")
+
+    call = MagicMock()
+    call.data = {
+        "entity_id": "sensor.second_garmin_weight",
+        "weight": 72.0,
+    }
+
+    with patch("custom_components.garmin_connect.services.er.async_get") as async_get:
+        async_get.return_value.async_get.return_value = registry_entry
+        await handler(call)
+
+    first_client.add_body_composition.assert_not_awaited()
+    second_client.add_body_composition.assert_awaited_once()
+    assert second_client.add_body_composition.call_args.kwargs["weight"] == 72.0
+
+
+async def test_add_body_composition_entity_not_found_raises(
+    mock_hass: MagicMock,
+):
+    """add_body_composition must raise when the requested entity is unknown."""
+    await async_setup_services(mock_hass)
+    handler = _get_handler(mock_hass, "add_body_composition")
+
+    call = MagicMock()
+    call.data = {"entity_id": "sensor.missing_weight", "weight": 80.0}
+
+    with patch("custom_components.garmin_connect.services.er.async_get") as async_get:
+        async_get.return_value.async_get.return_value = None
+        with pytest.raises(HomeAssistantError):
+            await handler(call)
+
+
 async def test_add_body_composition_api_error_raises(mock_hass: MagicMock) -> None:
     """add_body_composition must wrap API errors in HomeAssistantError."""
     await async_setup_services(mock_hass)
@@ -256,9 +348,6 @@ async def test_add_body_composition_api_error_raises(mock_hass: MagicMock) -> No
 
     with pytest.raises(HomeAssistantError):
         await handler(call)
-
-
-# ── add_blood_pressure ────────────────────────────────────────────────────────
 
 
 async def test_add_blood_pressure(mock_hass: MagicMock) -> None:
@@ -298,9 +387,6 @@ async def test_add_blood_pressure_wraps_exception(mock_hass: MagicMock) -> None:
 
     with pytest.raises(HomeAssistantError):
         await handler(call)
-
-
-# ── create_activity ───────────────────────────────────────────────────────────
 
 
 async def test_create_activity(mock_hass: MagicMock) -> None:
@@ -350,9 +436,6 @@ async def test_create_activity_defaults_to_now(mock_hass: MagicMock) -> None:
     assert ".000" in kwargs["start_datetime"]
 
 
-# ── upload_activity ───────────────────────────────────────────────────────────
-
-
 async def test_upload_activity(mock_hass: MagicMock, tmp_path: Path) -> None:
     """upload_activity must call client.upload_activity when the file exists."""
     await async_setup_services(mock_hass)
@@ -380,9 +463,6 @@ async def test_upload_activity_file_not_found_raises(mock_hass: MagicMock) -> No
 
     with pytest.raises(HomeAssistantError):
         await handler(call)
-
-
-# ── add_gear_to_activity ──────────────────────────────────────────────────────
 
 
 async def test_add_gear_to_activity_by_uuid(mock_hass: MagicMock) -> None:
@@ -415,7 +495,12 @@ async def test_add_gear_to_activity_by_entity(mock_hass: MagicMock) -> None:
     call = MagicMock()
     call.data = {"activity_id": 99999, "entity_id": "sensor.garmin_shoes"}
 
-    await handler(call)
+    registry_entry = MagicMock()
+    registry_entry.config_entry_id = "entry_1"
+
+    with patch("custom_components.garmin_connect.services.er.async_get") as async_get:
+        async_get.return_value.async_get.return_value = registry_entry
+        await handler(call)
 
     client.add_gear_to_activity.assert_awaited_once_with(
         gear_uuid="entity-uuid",
@@ -433,9 +518,6 @@ async def test_add_gear_to_activity_no_gear_raises(mock_hass: MagicMock) -> None
 
     with pytest.raises(HomeAssistantError):
         await handler(call)
-
-
-# ── add_hydration ─────────────────────────────────────────────────────────────
 
 
 async def test_add_hydration(mock_hass: MagicMock) -> None:

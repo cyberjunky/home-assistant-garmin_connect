@@ -41,6 +41,12 @@ add_body_composition:
   name: Add body composition
   description: Upload a body composition measurement to Garmin Connect.
   fields:
+    entity_id:
+      name: Garmin Connect entity
+      description: Optional Garmin Connect entity whose account should receive the measurement.
+      selector:
+        entity:
+          integration: garmin_connect
     weight:
       name: Weight (kg)
       description: Body weight in kilograms.
