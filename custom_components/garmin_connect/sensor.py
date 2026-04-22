@@ -914,8 +914,8 @@ TRAINING_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement="mL/(kg·min)",
         value_fn=lambda data: data.get("vo2MaxValue") or (
-            ((data.get("trainingStatus") or {}).get("mostRecentVO2Max") or {})
-            .get("generic", {})
+            (((data.get("trainingStatus") or {}).get("mostRecentVO2Max") or {})
+             .get("generic") or {})
             .get("vo2MaxValue")
         ),
     ),
