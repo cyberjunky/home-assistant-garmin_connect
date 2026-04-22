@@ -25,7 +25,7 @@ from homeassistant.const import (
     UnitOfTime,
     UnitOfVolume,
 )
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
@@ -734,8 +734,7 @@ ACTIVITY_TRACKING_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         key="lastActivity",
         translation_key="last_activity",
         coordinator_type=CoordinatorType.ACTIVITY,
-        value_fn=lambda data: (data.get("lastActivity")
-                               or {}).get("activityName"),
+        value_fn=lambda data: (data.get("lastActivity") or {}).get("activityName"),
         attributes_fn=lambda data: data.get("lastActivity") or {},
     ),
     GarminConnectSensorEntityDescription(
@@ -755,8 +754,7 @@ ACTIVITY_TRACKING_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         key="lastWorkout",
         translation_key="last_workout",
         coordinator_type=CoordinatorType.ACTIVITY,
-        value_fn=lambda data: (data.get("lastWorkout")
-                               or {}).get("workoutName"),
+        value_fn=lambda data: (data.get("lastWorkout") or {}).get("workoutName"),
         attributes_fn=lambda data: data.get("lastWorkout") or {},
     ),
     GarminConnectSensorEntityDescription(
@@ -781,8 +779,7 @@ TRAINING_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         translation_key="endurance_score",
         coordinator_type=CoordinatorType.TRAINING,
         state_class=SensorStateClass.MEASUREMENT,
-        value_fn=lambda data: (data.get("enduranceScore")
-                               or {}).get("overallScore"),
+        value_fn=lambda data: (data.get("enduranceScore") or {}).get("overallScore"),
         attributes_fn=lambda data: {
             k: v for k, v in (data.get("enduranceScore") or {}).items() if k != "overallScore"
         },
@@ -792,8 +789,7 @@ TRAINING_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         translation_key="hill_score",
         coordinator_type=CoordinatorType.TRAINING,
         state_class=SensorStateClass.MEASUREMENT,
-        value_fn=lambda data: (data.get("hillScore")
-                               or {}).get("overallScore"),
+        value_fn=lambda data: (data.get("hillScore") or {}).get("overallScore"),
         attributes_fn=lambda data: {
             k: v for k, v in (data.get("hillScore") or {}).items() if k != "overallScore"
         },
@@ -803,27 +799,14 @@ TRAINING_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         translation_key="training_readiness",
         coordinator_type=CoordinatorType.TRAINING,
         native_unit_of_measurement=PERCENTAGE,
-        value_fn=lambda data: data.get("trainingReadiness", {}).get("score")
-        if isinstance(data.get("trainingReadiness"), dict)
-        else (
-            data.get("trainingReadiness", [{}])[0].get("score")
-            if isinstance(data.get("trainingReadiness"), list) and data.get("trainingReadiness")
-            else None
-        ),
-        attributes_fn=lambda data: data.get("trainingReadiness", {})
-        if isinstance(data.get("trainingReadiness"), dict)
-        else (
-            data.get("trainingReadiness", [{}])[0]
-            if isinstance(data.get("trainingReadiness"), list) and data.get("trainingReadiness")
-            else {}
-        ),
+        value_fn=lambda data: (data.get("trainingReadiness") or {}).get("score"),
+        attributes_fn=lambda data: data.get("trainingReadiness") or {},
     ),
     GarminConnectSensorEntityDescription(
         key="trainingStatus",
         translation_key="training_status",
         coordinator_type=CoordinatorType.TRAINING,
-        value_fn=lambda data: (data.get("trainingStatus")
-                               or {}).get("trainingStatusPhrase"),
+        value_fn=lambda data: (data.get("trainingStatus") or {}).get("trainingStatusPhrase"),
         attributes_fn=lambda data: data.get("trainingStatus") or {},
     ),
     GarminConnectSensorEntityDescription(
@@ -831,8 +814,7 @@ TRAINING_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         translation_key="morning_training_readiness",
         coordinator_type=CoordinatorType.TRAINING,
         native_unit_of_measurement=PERCENTAGE,
-        value_fn=lambda data: (
-            data.get("morningTrainingReadiness") or {}).get("score"),
+        value_fn=lambda data: (data.get("morningTrainingReadiness") or {}).get("score"),
         attributes_fn=lambda data: {
             "level": (data.get("morningTrainingReadiness") or {}).get("level"),
             "sleep_score": (data.get("morningTrainingReadiness") or {}).get("sleepScore"),
@@ -847,8 +829,7 @@ TRAINING_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         coordinator_type=CoordinatorType.TRAINING,
         native_unit_of_measurement="bpm",
         value_fn=lambda data: (
-            (data.get("lactateThreshold") or {}).get(
-                "speed_and_heart_rate") or {}
+            (data.get("lactateThreshold") or {}).get("speed_and_heart_rate") or {}
         ).get("heartRate"),
         attributes_fn=lambda data: data.get("lactateThreshold") or {},
     ),
@@ -858,8 +839,7 @@ TRAINING_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         coordinator_type=CoordinatorType.TRAINING,
         native_unit_of_measurement="m/s",
         value_fn=lambda data: (
-            (data.get("lactateThreshold") or {}).get(
-                "speed_and_heart_rate") or {}
+            (data.get("lactateThreshold") or {}).get("speed_and_heart_rate") or {}
         ).get("speed"),
         attributes_fn=lambda data: data.get("lactateThreshold") or {},
     ),
@@ -903,8 +883,7 @@ TRAINING_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         coordinator_type=CoordinatorType.TRAINING,
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement="ms",
-        attributes_fn=lambda data: (
-            data.get("hrvStatus") or {}).get("baseline") or {},
+        attributes_fn=lambda data: (data.get("hrvStatus") or {}).get("baseline") or {},
         preserve_value=True,
     ),
     GarminConnectSensorEntityDescription(
@@ -913,10 +892,12 @@ TRAINING_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         coordinator_type=CoordinatorType.TRAINING,
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement="mL/(kg·min)",
-        value_fn=lambda data: data.get("vo2MaxValue") or (
-            (((data.get("trainingStatus") or {}).get("mostRecentVO2Max") or {})
-             .get("generic") or {})
-            .get("vo2MaxValue")
+        value_fn=lambda data: data.get("vo2MaxValue")
+        or (
+            (
+                ((data.get("trainingStatus") or {}).get("mostRecentVO2Max") or {}).get("generic")
+                or {}
+            ).get("vo2MaxValue")
         ),
     ),
 )
@@ -1385,8 +1366,7 @@ MENSTRUAL_CYCLE_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         coordinator_type=CoordinatorType.MENSTRUAL,
         entity_registry_enabled_default=False,
         value_fn=lambda data: (
-            _MENSTRUAL_PHASE_MAP.get(
-                int(_menstrual_day_summary(data)["currentPhase"]), "Unknown")
+            _MENSTRUAL_PHASE_MAP.get(int(_menstrual_day_summary(data)["currentPhase"]), "Unknown")
             if isinstance(_menstrual_day_summary(data).get("currentPhase"), int)
             else None
         ),
@@ -1412,8 +1392,7 @@ MENSTRUAL_CYCLE_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         coordinator_type=CoordinatorType.MENSTRUAL,
         state_class=SensorStateClass.MEASUREMENT,
         entity_registry_enabled_default=False,
-        value_fn=lambda data: _menstrual_day_summary(
-            data).get("daysUntilNextPhase"),
+        value_fn=lambda data: _menstrual_day_summary(data).get("daysUntilNextPhase"),
     ),
     GarminConnectSensorEntityDescription(
         key="menstrualCycleStart",
@@ -1474,8 +1453,7 @@ _COORDINATOR_SENSOR_MAP: tuple[
     (CoordinatorType.CORE, CORE_SENSOR_DESCRIPTIONS),
     (CoordinatorType.ACTIVITY, ACTIVITY_TRACKING_SENSORS),
     (CoordinatorType.TRAINING, TRAINING_SENSORS),
-    (CoordinatorType.BODY, (*BODY_COMPOSITION_SENSORS,
-     *HYDRATION_SENSORS, *FITNESS_AGE_SENSORS)),
+    (CoordinatorType.BODY, (*BODY_COMPOSITION_SENSORS, *HYDRATION_SENSORS, *FITNESS_AGE_SENSORS)),
     (CoordinatorType.GOALS, GOALS_SENSORS),
     (CoordinatorType.GEAR, GEAR_SENSORS),
     (CoordinatorType.BLOOD_PRESSURE, BLOOD_PRESSURE_SENSORS),
@@ -1502,14 +1480,14 @@ async def async_setup_entry(
     """Set up Garmin Connect sensors."""
     coordinators = entry.runtime_data
 
-    entities: list[GarminConnectSensor | GarminConnectGearSensor |
-                   GarminConnectPowerToWeightSensor] = []
+    entities: list[
+        GarminConnectSensor | GarminConnectGearSensor | GarminConnectPowerToWeightSensor
+    ] = []
 
     for coord_type, descriptions in _COORDINATOR_SENSOR_MAP:
         coordinator = getattr(coordinators, _COORDINATOR_ATTR[coord_type])
         for description in descriptions:
-            entities.append(GarminConnectSensor(
-                coordinator, description, entry.entry_id))
+            entities.append(GarminConnectSensor(coordinator, description, entry.entry_id))
 
     # Migrate the legacy entity_id created from duplicate translated names:
     # sleepTimeMinutes was previously shown as "Sleep duration", which often
@@ -1538,29 +1516,26 @@ async def async_setup_entry(
 
     gear_data = coordinators.gear.data or {}
     for gear_stat in gear_data.get("gearStats", []):
-        gear_name = gear_stat.get("displayName") or gear_stat.get(
-            "gearName") or "Unknown"
+        gear_name = gear_stat.get("displayName") or gear_stat.get("gearName") or "Unknown"
         gear_uuid = gear_stat.get("uuid") or gear_stat.get("gearUuid", "")
         if not gear_uuid:
             continue
         old_unique_id = (
-            f"{entry.entry_id}_gear_"
-            f"{gear_name.lower().replace(' ', '_').replace('-', '_')}"
+            f"{entry.entry_id}_gear_{gear_name.lower().replace(' ', '_').replace('-', '_')}"
         )
         new_unique_id = f"{entry.entry_id}_gear_{gear_uuid}"
         if old_unique_id != new_unique_id:
-            entity_id = ent_reg.async_get_entity_id(
-                "sensor", DOMAIN, old_unique_id)
+            entity_id = ent_reg.async_get_entity_id("sensor", DOMAIN, old_unique_id)
             if entity_id:
-                ent_reg.async_update_entity(
-                    entity_id, new_unique_id=new_unique_id)
+                ent_reg.async_update_entity(entity_id, new_unique_id=new_unique_id)
 
     # Dynamic gear sensors
+    known_gear_uuids: set[str] = set()
     for gear_stat in gear_data.get("gearStats", []):
-        gear_name = gear_stat.get("displayName") or gear_stat.get(
-            "gearName") or "Unknown"
+        gear_name = gear_stat.get("displayName") or gear_stat.get("gearName") or "Unknown"
         gear_uuid = gear_stat.get("uuid") or gear_stat.get("gearUuid", "")
         if gear_uuid:
+            known_gear_uuids.add(gear_uuid)
             entities.append(
                 GarminConnectGearSensor(
                     coordinators.gear,
@@ -1570,9 +1545,33 @@ async def async_setup_entry(
                 )
             )
 
+    @callback
+    def _async_add_new_gear() -> None:
+        """Dynamically add gear entities when new gear appears in coordinator data."""
+        if not coordinators.gear.data:
+            return
+        new_entities: list[GarminConnectGearSensor] = []
+        for gear_stat in coordinators.gear.data.get("gearStats", []):
+            gear_uuid = gear_stat.get("uuid") or gear_stat.get("gearUuid", "")
+            if not gear_uuid or gear_uuid in known_gear_uuids:
+                continue
+            known_gear_uuids.add(gear_uuid)
+            gear_name = gear_stat.get("displayName") or gear_stat.get("gearName") or "Unknown"
+            new_entities.append(
+                GarminConnectGearSensor(
+                    coordinators.gear,
+                    gear_uuid=gear_uuid,
+                    gear_name=gear_name,
+                    entry_id=entry.entry_id,
+                )
+            )
+        if new_entities:
+            async_add_entities(new_entities)
+
+    entry.async_on_unload(coordinators.gear.async_add_listener(_async_add_new_gear))
+
     # Dynamic power-to-weight sensors (one PTW + one FTP sensor per sport)
-    ptw_list: list[dict[str, Any]] = (
-        coordinators.training.data or {}).get("powerToWeight") or []
+    ptw_list: list[dict[str, Any]] = (coordinators.training.data or {}).get("powerToWeight") or []
     for ptw_entry in ptw_list:
         sport = ptw_entry.get("sport")
         if not sport:
@@ -1618,11 +1617,7 @@ class GarminConnectSensor(CoordinatorEntity[BaseGarminCoordinator], SensorEntity
     def native_value(self) -> str | int | float | datetime.datetime | None:
         """Return the state of the sensor."""
         if not self.coordinator.data:
-            return (
-                self._last_known_value
-                if self.entity_description.preserve_value
-                else None
-            )
+            return self._last_known_value if self.entity_description.preserve_value else None
 
         if self.entity_description.value_fn is not None:
             raw = self.entity_description.value_fn(self.coordinator.data)
@@ -1633,11 +1628,7 @@ class GarminConnectSensor(CoordinatorEntity[BaseGarminCoordinator], SensorEntity
         value = cast(str | int | float | datetime.datetime | None, raw)
 
         if value is None:
-            return (
-                self._last_known_value
-                if self.entity_description.preserve_value
-                else None
-            )
+            return self._last_known_value if self.entity_description.preserve_value else None
 
         if self.entity_description.preserve_value:
             self._last_known_value = value
@@ -1760,9 +1751,7 @@ class GarminConnectPowerToWeightSensor(CoordinatorEntity[TrainingCoordinator], S
 
     def _get_entry(self) -> dict[str, Any] | None:
         """Return the powerToWeight entry for this sport, or None."""
-        ptw_list: list[dict[str, Any]] = (
-            self.coordinator.data or {}
-        ).get("powerToWeight") or []
+        ptw_list: list[dict[str, Any]] = (self.coordinator.data or {}).get("powerToWeight") or []
         for entry in ptw_list:
             if entry.get("sport") == self._sport:
                 return entry

@@ -75,8 +75,7 @@ class BaseGarminCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         async with self._refresh_lock:
             if (
                 self.auth.di_token != self.config_entry.data[CONF_TOKEN]
-                or self.auth.di_refresh_token
-                != self.config_entry.data[CONF_REFRESH_TOKEN]
+                or self.auth.di_refresh_token != self.config_entry.data[CONF_REFRESH_TOKEN]
                 or self.auth.di_client_id != self.config_entry.data[CONF_CLIENT_ID]
             ):
                 self.hass.config_entries.async_update_entry(
@@ -102,9 +101,7 @@ class CoreCoordinator(BaseGarminCoordinator):
     ) -> None:
         """Initialize."""
         scan_interval = entry.options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
-        super().__init__(
-            hass, entry, client, auth, "core", timedelta(seconds=scan_interval)
-        )
+        super().__init__(hass, entry, client, auth, "core", timedelta(seconds=scan_interval))
 
     async def _async_update_data(self) -> dict[str, Any]:
         """Fetch core data from Garmin Connect."""
@@ -130,9 +127,7 @@ class ActivityCoordinator(BaseGarminCoordinator):
     ) -> None:
         """Initialize."""
         scan_interval = entry.options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
-        super().__init__(
-            hass, entry, client, auth, "activity", timedelta(seconds=scan_interval)
-        )
+        super().__init__(hass, entry, client, auth, "activity", timedelta(seconds=scan_interval))
 
     async def _async_update_data(self) -> dict[str, Any]:
         """Fetch activity data from Garmin Connect."""
@@ -158,9 +153,7 @@ class TrainingCoordinator(BaseGarminCoordinator):
     ) -> None:
         """Initialize."""
         scan_interval = entry.options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
-        super().__init__(
-            hass, entry, client, auth, "training", timedelta(seconds=scan_interval)
-        )
+        super().__init__(hass, entry, client, auth, "training", timedelta(seconds=scan_interval))
 
     async def _async_update_data(self) -> dict[str, Any]:
         """Fetch training data from Garmin Connect."""
@@ -186,9 +179,7 @@ class BodyCoordinator(BaseGarminCoordinator):
     ) -> None:
         """Initialize."""
         scan_interval = entry.options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
-        super().__init__(
-            hass, entry, client, auth, "body", timedelta(seconds=scan_interval)
-        )
+        super().__init__(hass, entry, client, auth, "body", timedelta(seconds=scan_interval))
 
     async def _async_update_data(self) -> dict[str, Any]:
         """Fetch body data from Garmin Connect."""
@@ -214,9 +205,7 @@ class GoalsCoordinator(BaseGarminCoordinator):
     ) -> None:
         """Initialize."""
         scan_interval = entry.options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
-        super().__init__(
-            hass, entry, client, auth, "goals", timedelta(seconds=scan_interval)
-        )
+        super().__init__(hass, entry, client, auth, "goals", timedelta(seconds=scan_interval))
 
     async def _async_update_data(self) -> dict[str, Any]:
         """Fetch goals data from Garmin Connect."""
@@ -242,16 +231,12 @@ class GearCoordinator(BaseGarminCoordinator):
     ) -> None:
         """Initialize."""
         scan_interval = entry.options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
-        super().__init__(
-            hass, entry, client, auth, "gear", timedelta(seconds=scan_interval)
-        )
+        super().__init__(hass, entry, client, auth, "gear", timedelta(seconds=scan_interval))
 
     async def _async_update_data(self) -> dict[str, Any]:
         """Fetch gear data from Garmin Connect."""
         try:
-            data = await self.client.fetch_gear_data(
-                timezone=self.hass.config.time_zone
-            )
+            data = await self.client.fetch_gear_data(timezone=self.hass.config.time_zone)
             await self._update_tokens_if_changed()
         except GarminAuthError as err:
             raise ConfigEntryAuthFailed("Authentication failed") from err
@@ -305,9 +290,7 @@ class MenstrualCoordinator(BaseGarminCoordinator):
     ) -> None:
         """Initialize."""
         scan_interval = entry.options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
-        super().__init__(
-            hass, entry, client, auth, "menstrual", timedelta(seconds=scan_interval)
-        )
+        super().__init__(hass, entry, client, auth, "menstrual", timedelta(seconds=scan_interval))
 
     async def _async_update_data(self) -> dict[str, Any]:
         """Fetch menstrual data from Garmin Connect."""

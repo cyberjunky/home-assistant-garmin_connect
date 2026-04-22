@@ -27,6 +27,7 @@ SERVICE_CREATE_ACTIVITY = "create_activity"
 SERVICE_UPLOAD_ACTIVITY = "upload_activity"
 SERVICE_ADD_GEAR_TO_ACTIVITY = "add_gear_to_activity"
 SERVICE_ADD_HYDRATION = "add_hydration"
+SERVICE_ADD_NUTRITION = "add_nutrition_log"
 
 # Service schemas
 SET_ACTIVE_GEAR_SCHEMA = vol.Schema(
@@ -63,6 +64,7 @@ ADD_BODY_COMPOSITION_SCHEMA = vol.Schema(
 
 ADD_BLOOD_PRESSURE_SCHEMA = vol.Schema(
     {
+        vol.Optional("entity_id"): cv.entity_id,
         vol.Required("systolic"): vol.All(vol.Coerce(int), vol.Range(min=60, max=250)),
         vol.Required("diastolic"): vol.All(vol.Coerce(int), vol.Range(min=40, max=150)),
         vol.Required("pulse"): vol.All(vol.Coerce(int), vol.Range(min=30, max=220)),
@@ -73,6 +75,7 @@ ADD_BLOOD_PRESSURE_SCHEMA = vol.Schema(
 
 CREATE_ACTIVITY_SCHEMA = vol.Schema(
     {
+        vol.Optional("entity_id"): cv.entity_id,
         vol.Required("activity_name"): cv.string,
         vol.Required("activity_type"): vol.In(
             [
@@ -86,9 +89,7 @@ CREATE_ACTIVITY_SCHEMA = vol.Schema(
             ]
         ),
         vol.Optional("start_datetime"): cv.string,
-        vol.Required("duration_min"): vol.All(
-            vol.Coerce(int), vol.Range(min=1, max=1440)
-        ),
+        vol.Required("duration_min"): vol.All(vol.Coerce(int), vol.Range(min=1, max=1440)),
         vol.Optional("distance_km", default=0.0): vol.Coerce(float),
         vol.Optional("time_zone"): cv.string,
     }
@@ -96,6 +97,7 @@ CREATE_ACTIVITY_SCHEMA = vol.Schema(
 
 UPLOAD_ACTIVITY_SCHEMA = vol.Schema(
     {
+        vol.Optional("entity_id"): cv.entity_id,
         vol.Required("file_path"): cv.string,
     }
 )
@@ -110,7 +112,20 @@ ADD_GEAR_TO_ACTIVITY_SCHEMA = vol.Schema(
 
 ADD_HYDRATION_SCHEMA = vol.Schema(
     {
+        vol.Optional("entity_id"): cv.entity_id,
         vol.Required("value_in_ml"): vol.Coerce(float),
+        vol.Optional("timestamp"): cv.string,
+    }
+)
+
+ADD_NUTRITION_SCHEMA = vol.Schema(
+    {
+        vol.Optional("entity_id"): cv.entity_id,
+        vol.Required("calories"): vol.All(vol.Coerce(float), vol.Range(min=0, max=10000)),
+        vol.Optional("carbs"): vol.All(vol.Coerce(float), vol.Range(min=0, max=2000)),
+        vol.Optional("protein"): vol.All(vol.Coerce(float), vol.Range(min=0, max=2000)),
+        vol.Optional("fat"): vol.All(vol.Coerce(float), vol.Range(min=0, max=2000)),
+        vol.Optional("name", default="Quick Add"): cv.string,
         vol.Optional("timestamp"): cv.string,
     }
 )
@@ -241,7 +256,7 @@ async def async_setup_services(hass: HomeAssistant) -> None:
 
     async def handle_add_blood_pressure(call: ServiceCall) -> None:
         """Handle add_blood_pressure service call."""
-        client = _get_client(hass)
+        client = _get_client(hass, entity_id=call.data.get("entity_id"))
         try:
             await client.set_blood_pressure(
                 systolic=call.data["systolic"],
@@ -259,7 +274,7 @@ async def async_setup_services(hass: HomeAssistant) -> None:
 
     async def handle_create_activity(call: ServiceCall) -> None:
         """Handle create_activity service call."""
-        client = _get_client(hass)
+        client = _get_client(hass, entity_id=call.data.get("entity_id"))
         start_datetime = call.data.get("start_datetime")
         if not start_datetime:
             start_datetime = datetime.now().strftime("%Y-%m-%dT%H:%M:%S.000")
@@ -284,7 +299,7 @@ async def async_setup_services(hass: HomeAssistant) -> None:
 
     async def handle_upload_activity(call: ServiceCall) -> None:
         """Handle upload_activity service call."""
-        client = _get_client(hass)
+        client = _get_client(hass, entity_id=call.data.get("entity_id"))
         file_path = call.data["file_path"]
         path = Path(file_path)
         if not path.is_absolute():
@@ -346,7 +361,7 @@ async def async_setup_services(hass: HomeAssistant) -> None:
 
     async def handle_add_hydration(call: ServiceCall) -> None:
         """Handle add_hydration service call."""
-        client = _get_client(hass)
+        client = _get_client(hass, entity_id=call.data.get("entity_id"))
         try:
             await client.set_hydration(
                 value_in_ml=call.data["value_in_ml"],
@@ -356,6 +371,25 @@ async def async_setup_services(hass: HomeAssistant) -> None:
             raise HomeAssistantError(
                 translation_domain=DOMAIN,
                 translation_key="add_hydration_failed",
+                translation_placeholders={"error": str(err)},
+            ) from err
+
+    async def handle_add_nutrition(call: ServiceCall) -> None:
+        """Handle add_nutrition_log service call."""
+        client = _get_client(hass, entity_id=call.data.get("entity_id"))
+        try:
+            await client.add_nutrition_log(
+                calories=call.data["calories"],
+                carbs=call.data.get("carbs"),
+                protein=call.data.get("protein"),
+                fat=call.data.get("fat"),
+                name=call.data.get("name", "Quick Add"),
+                timestamp=call.data.get("timestamp"),
+            )
+        except Exception as err:
+            raise HomeAssistantError(
+                translation_domain=DOMAIN,
+                translation_key="add_nutrition_failed",
                 translation_placeholders={"error": str(err)},
             ) from err
 
@@ -401,6 +435,12 @@ async def async_setup_services(hass: HomeAssistant) -> None:
         handle_add_hydration,
         schema=ADD_HYDRATION_SCHEMA,
     )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_ADD_NUTRITION,
+        handle_add_nutrition,
+        schema=ADD_NUTRITION_SCHEMA,
+    )
 
 
 async def async_unload_services(hass: HomeAssistant) -> None:
@@ -412,3 +452,4 @@ async def async_unload_services(hass: HomeAssistant) -> None:
     hass.services.async_remove(DOMAIN, SERVICE_UPLOAD_ACTIVITY)
     hass.services.async_remove(DOMAIN, SERVICE_ADD_GEAR_TO_ACTIVITY)
     hass.services.async_remove(DOMAIN, SERVICE_ADD_HYDRATION)
+    hass.services.async_remove(DOMAIN, SERVICE_ADD_NUTRITION)

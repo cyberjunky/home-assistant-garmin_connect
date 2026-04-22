@@ -38,9 +38,7 @@ async def async_get_config_entry_diagnostics(
         coordinator_info[field.name] = {
             "last_update_success": coordinator.last_update_success,
             "update_interval_seconds": (
-                coordinator.update_interval.total_seconds()
-                if coordinator.update_interval
-                else None
+                coordinator.update_interval.total_seconds() if coordinator.update_interval else None
             ),
             "data_keys_count": len(data_keys),
             "data_keys_sample": data_keys[:50] if len(data_keys) > 50 else data_keys,

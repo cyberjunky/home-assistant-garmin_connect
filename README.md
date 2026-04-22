@@ -382,6 +382,7 @@ Record a blood pressure measurement.
 
 | Parameter | Required | Description |
 |-----------|----------|-------------|
+| `entity_id` | No | Garmin Connect entity whose account should receive the measurement |
 | `systolic` | Yes | Systolic pressure (60–250 mmHg) |
 | `diastolic` | Yes | Diastolic pressure (40–150 mmHg) |
 | `pulse` | Yes | Pulse rate (30–220 bpm) |
@@ -391,6 +392,7 @@ Record a blood pressure measurement.
 ```yaml
 action: garmin_connect.add_blood_pressure
 data:
+  entity_id: sensor.garmin_connect_blood_pressure_systolic
   systolic: 120
   diastolic: 80
   pulse: 60
@@ -403,12 +405,14 @@ Log a hydration intake to Garmin Connect. Use a negative value to subtract from 
 
 | Parameter | Required | Description |
 |-----------|----------|-------------|
+| `entity_id` | No | Garmin Connect entity whose account should receive the measurement |
 | `value_in_ml` | Yes | Amount in millilitres (negative to subtract) |
 | `timestamp` | No | ISO datetime (defaults to now) |
 
 ```yaml
 action: garmin_connect.add_hydration
 data:
+  entity_id: sensor.garmin_connect_hydration
   value_in_ml: 250
 ```
 
@@ -418,6 +422,7 @@ Create a manual activity in Garmin Connect.
 
 | Parameter | Required | Description |
 |-----------|----------|-------------|
+| `entity_id` | No | Garmin Connect entity whose account should receive the activity |
 | `activity_name` | Yes | Name of the activity |
 | `activity_type` | Yes | `running`, `cycling`, `walking`, `hiking`, `swimming`, `fitness_equipment`, `other` |
 | `duration_min` | Yes | Duration in minutes (1–1440) |
@@ -428,6 +433,7 @@ Create a manual activity in Garmin Connect.
 ```yaml
 action: garmin_connect.create_activity
 data:
+  entity_id: sensor.garmin_connect_last_activity
   activity_name: "Morning Run"
   activity_type: running
   duration_min: 30
@@ -440,12 +446,39 @@ Upload an activity file (FIT, GPX, TCX) to Garmin Connect.
 
 | Parameter | Required | Description |
 |-----------|----------|-------------|
+| `entity_id` | No | Garmin Connect entity whose account should receive the upload |
 | `file_path` | Yes | Absolute path or relative to HA config directory |
 
 ```yaml
 action: garmin_connect.upload_activity
 data:
+  entity_id: sensor.garmin_connect_last_activity
   file_path: "activities/morning_run.fit"
+```
+
+### garmin_connect.add_nutrition_log
+
+Log a Quick Add nutrition entry to Garmin Connect. Requires a Connect+ subscription and initial nutrition setup in the Garmin Connect app.
+
+| Parameter | Required | Description |
+|-----------|----------|-------------|
+| `entity_id` | No | Garmin Connect entity whose account should receive the entry |
+| `calories` | Yes | Calories (0–10000 kcal) |
+| `carbs` | No | Carbohydrates in grams |
+| `protein` | No | Protein in grams |
+| `fat` | No | Fat in grams |
+| `name` | No | Label for the entry (defaults to `Quick Add`) |
+| `timestamp` | No | ISO datetime (defaults to now) |
+
+```yaml
+action: garmin_connect.add_nutrition_log
+data:
+  entity_id: sensor.garmin_connect_calories
+  calories: 650
+  carbs: 80
+  protein: 35
+  fat: 20
+  name: "Lunch"
 ```
 
 ### garmin_connect.add_gear_to_activity

@@ -309,6 +309,7 @@
     "no_gear_specified": { "message": "No gear specified. Provide either a gear sensor entity or a gear_uuid." },
     "no_integration_configured": { "message": "Garmin Connect integration is not configured." },
     "set_active_gear_failed": { "message": "Failed to set active gear: {error}" },
-    "upload_activity_failed": { "message": "Failed to upload activity: {error}" }
+    "upload_activity_failed": { "message": "Failed to upload activity: {error}" },
+    "add_nutrition_failed": { "message": "Failed to log nutrition: {error}" }
   }
 }
