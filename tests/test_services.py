@@ -62,7 +62,7 @@ def _get_client_for_entry(mock_hass: MagicMock, entry_id: str) -> AsyncMock:
 
 
 async def test_setup_registers_all_services(mock_hass: MagicMock) -> None:
-    """async_setup_services must register all 7 service handlers."""
+    """async_setup_services must register all 8 service handlers."""
     await async_setup_services(mock_hass)
 
     registered = {
@@ -76,11 +76,12 @@ async def test_setup_registers_all_services(mock_hass: MagicMock) -> None:
         "upload_activity",
         "add_gear_to_activity",
         "add_hydration",
+        "add_nutrition_log",
     }
 
 
 async def test_unload_removes_all_services(mock_hass: MagicMock) -> None:
-    """async_unload_services must remove all 7 services."""
+    """async_unload_services must remove all 8 services."""
     await async_unload_services(mock_hass)
 
     removed = {
@@ -94,6 +95,7 @@ async def test_unload_removes_all_services(mock_hass: MagicMock) -> None:
         "upload_activity",
         "add_gear_to_activity",
         "add_hydration",
+        "add_nutrition_log",
     }
 
 
@@ -580,6 +582,68 @@ async def test_add_hydration_wraps_exception(mock_hass: MagicMock) -> None:
 
     call = MagicMock()
     call.data = {"value_in_ml": 250.0}
+
+    with pytest.raises(HomeAssistantError):
+        await handler(call)
+
+async def test_add_nutrition_log(mock_hass: MagicMock) -> None:
+    """add_nutrition_log must call client.add_nutrition_log with required calories."""
+    await async_setup_services(mock_hass)
+    handler = _get_handler(mock_hass, "add_nutrition_log")
+    client = _get_client(mock_hass)
+
+    call = MagicMock()
+    call.data = {"calories": 500.0, "name": "Quick Add"}
+
+    await handler(call)
+
+    client.add_nutrition_log.assert_awaited_once_with(
+        calories=500.0,
+        carbs=None,
+        protein=None,
+        fat=None,
+        name="Quick Add",
+        timestamp=None,
+    )
+
+
+async def test_add_nutrition_log_all_fields(mock_hass: MagicMock) -> None:
+    """add_nutrition_log must forward all optional macros and fields."""
+    await async_setup_services(mock_hass)
+    handler = _get_handler(mock_hass, "add_nutrition_log")
+    client = _get_client(mock_hass)
+
+    call = MagicMock()
+    call.data = {
+        "calories": 650.0,
+        "carbs": 80.0,
+        "protein": 35.0,
+        "fat": 20.0,
+        "name": "Lunch",
+        "timestamp": "2026-04-22T12:30:00",
+    }
+
+    await handler(call)
+
+    client.add_nutrition_log.assert_awaited_once_with(
+        calories=650.0,
+        carbs=80.0,
+        protein=35.0,
+        fat=20.0,
+        name="Lunch",
+        timestamp="2026-04-22T12:30:00",
+    )
+
+
+async def test_add_nutrition_log_wraps_exception(mock_hass: MagicMock) -> None:
+    """add_nutrition_log must wrap API errors in HomeAssistantError."""
+    await async_setup_services(mock_hass)
+    handler = _get_handler(mock_hass, "add_nutrition_log")
+    client = _get_client(mock_hass)
+    client.add_nutrition_log.side_effect = RuntimeError("API error")
+
+    call = MagicMock()
+    call.data = {"calories": 300.0, "name": "Quick Add"}
 
     with pytest.raises(HomeAssistantError):
         await handler(call)
