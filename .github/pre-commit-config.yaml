@@ -10,7 +10,7 @@ repos:
         args:
           - --quiet-level=2
           - --ignore-words-list=hass,ba,fo
-          - --skip=tests/fixtures/*,custom_components/garmin_connect/translations/*
+          - --skip=tests/fixtures/*,custom_components/garmin_connect/translations/*,www
 
       - id: pyupgrade
         name: Run pyupgrade
