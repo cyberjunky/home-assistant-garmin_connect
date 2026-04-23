@@ -10,5 +10,5 @@
   "loggers": ["ha_garmin"],
   "quality_scale": "gold",
   "requirements": ["ha-garmin==0.1.14"],
-  "version": "3.0.2"
+  "version": "3.0.3-beta"
 }
