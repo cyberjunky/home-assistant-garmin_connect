@@ -155,7 +155,7 @@ def _get_client(
                 translation_placeholders={"entity_id": entity_id},
             )
 
-        entry = next(
+        matched = next(
             (
                 candidate
                 for candidate in entries
@@ -163,12 +163,13 @@ def _get_client(
             ),
             None,
         )
-        if entry is None:
+        if matched is None:
             raise HomeAssistantError(
                 translation_domain=DOMAIN,
                 translation_key="entity_not_found",
                 translation_placeholders={"entity_id": entity_id},
             )
+        entry = matched
 
     if getattr(entry, "runtime_data", None) is None:
         raise HomeAssistantError(
