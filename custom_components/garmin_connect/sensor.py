@@ -1516,7 +1516,7 @@ async def async_setup_entry(
 
     gear_data = coordinators.gear.data or {}
     for gear_stat in gear_data.get("gearStats", []):
-        gear_name = gear_stat.get("displayName") or gear_stat.get("gearName") or "Unknown"
+        gear_name = gear_stat.get("gearName") or gear_stat.get("customMakeModel") or "Unknown"
         gear_uuid = gear_stat.get("uuid") or gear_stat.get("gearUuid", "")
         if not gear_uuid:
             continue
@@ -1532,7 +1532,7 @@ async def async_setup_entry(
     # Dynamic gear sensors
     known_gear_uuids: set[str] = set()
     for gear_stat in gear_data.get("gearStats", []):
-        gear_name = gear_stat.get("displayName") or gear_stat.get("gearName") or "Unknown"
+        gear_name = gear_stat.get("gearName") or gear_stat.get("customMakeModel") or "Unknown"
         gear_uuid = gear_stat.get("uuid") or gear_stat.get("gearUuid", "")
         if gear_uuid:
             known_gear_uuids.add(gear_uuid)
@@ -1556,7 +1556,7 @@ async def async_setup_entry(
             if not gear_uuid or gear_uuid in known_gear_uuids:
                 continue
             known_gear_uuids.add(gear_uuid)
-            gear_name = gear_stat.get("displayName") or gear_stat.get("gearName") or "Unknown"
+            gear_name = gear_stat.get("gearName") or gear_stat.get("customMakeModel") or "Unknown"
             new_entities.append(
                 GarminConnectGearSensor(
                     coordinators.gear,
