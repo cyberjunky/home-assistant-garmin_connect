@@ -65,9 +65,7 @@ async def test_setup_registers_all_services(mock_hass: MagicMock) -> None:
     """async_setup_services must register all 8 service handlers."""
     await async_setup_services(mock_hass)
 
-    registered = {
-        call[0][1] for call in mock_hass.services.async_register.call_args_list
-    }
+    registered = {call[0][1] for call in mock_hass.services.async_register.call_args_list}
     assert registered == {
         "set_active_gear",
         "add_body_composition",
@@ -84,9 +82,7 @@ async def test_unload_removes_all_services(mock_hass: MagicMock) -> None:
     """async_unload_services must remove all 8 services."""
     await async_unload_services(mock_hass)
 
-    removed = {
-        call[0][1] for call in mock_hass.services.async_remove.call_args_list
-    }
+    removed = {call[0][1] for call in mock_hass.services.async_remove.call_args_list}
     assert removed == {
         "set_active_gear",
         "add_body_composition",
@@ -585,6 +581,7 @@ async def test_add_hydration_wraps_exception(mock_hass: MagicMock) -> None:
 
     with pytest.raises(HomeAssistantError):
         await handler(call)
+
 
 async def test_add_nutrition_log(mock_hass: MagicMock) -> None:
     """add_nutrition_log must call client.add_nutrition_log with required calories."""

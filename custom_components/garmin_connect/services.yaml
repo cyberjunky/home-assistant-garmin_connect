@@ -14,6 +14,7 @@ set_active_gear:
       selector:
         entity:
           integration: garmin_connect
+          domain: sensor
     activity_type:
       name: Activity type
       description: The activity type to assign the gear to.
@@ -160,6 +161,7 @@ add_blood_pressure:
       selector:
         entity:
           integration: garmin_connect
+          domain: sensor
     systolic:
       name: Systolic (mmHg)
       required: true
@@ -208,6 +210,7 @@ create_activity:
       selector:
         entity:
           integration: garmin_connect
+          domain: sensor
     activity_name:
       name: Activity name
       required: true
@@ -266,6 +269,7 @@ upload_activity:
       selector:
         entity:
           integration: garmin_connect
+          domain: sensor
     file_path:
       name: File path
       description: Absolute path to the activity file on the HA host.
@@ -279,11 +283,13 @@ add_hydration:
   description: Log a hydration intake (or deduction) to Garmin Connect.
   fields:
     entity_id:
-      name: Garmin Connect entity
-      description: Optional Garmin Connect entity whose account should receive the measurement.
+      name: Garmin Connect hydration entity
+      description: Optional Garmin Connect hydration sensor whose account should receive the measurement.
       selector:
         entity:
           integration: garmin_connect
+          domain: sensor
+          device_class: volume
     value_in_ml:
       name: Amount (mL)
       description: Hydration amount in millilitres. Use a negative value to subtract from today's intake.
@@ -324,6 +330,7 @@ add_gear_to_activity:
       selector:
         entity:
           integration: garmin_connect
+          domain: sensor
 add_nutrition_log:
   name: Add nutrition log
   description: >
@@ -336,6 +343,7 @@ add_nutrition_log:
       selector:
         entity:
           integration: garmin_connect
+          domain: sensor
     calories:
       name: Calories (kcal)
       description: Calories to log.

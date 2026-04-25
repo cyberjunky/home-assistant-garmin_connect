@@ -52,16 +52,10 @@ async def test_user_step_invalid_auth() -> None:
     flow = GarminConnectConfigFlow()
     flow.hass = MagicMock()
     flow.hass.config.country = "US"
-    flow.hass.async_add_executor_job = AsyncMock(
-        side_effect=lambda fn, *a: _sync_call(fn, *a)
-    )
+    flow.hass.async_add_executor_job = AsyncMock(side_effect=lambda fn, *a: _sync_call(fn, *a))
 
-    with patch(
-        "custom_components.garmin_connect.config_flow.GarminAuth", return_value=auth
-    ):
-        result = await flow.async_step_user(
-            {"username": "test@example.com", "password": "wrong"}
-        )
+    with patch("custom_components.garmin_connect.config_flow.GarminAuth", return_value=auth):
+        result = await flow.async_step_user({"username": "test@example.com", "password": "wrong"})
 
     assert result["type"] == "form"
     assert result["errors"] == {"base": "invalid_auth"}
@@ -75,16 +69,10 @@ async def test_user_step_garmin_connect_error() -> None:
     flow = GarminConnectConfigFlow()
     flow.hass = MagicMock()
     flow.hass.config.country = "US"
-    flow.hass.async_add_executor_job = AsyncMock(
-        side_effect=lambda fn, *a: _sync_call(fn, *a)
-    )
+    flow.hass.async_add_executor_job = AsyncMock(side_effect=lambda fn, *a: _sync_call(fn, *a))
 
-    with patch(
-        "custom_components.garmin_connect.config_flow.GarminAuth", return_value=auth
-    ):
-        result = await flow.async_step_user(
-            {"username": "test@example.com", "password": "pass"}
-        )
+    with patch("custom_components.garmin_connect.config_flow.GarminAuth", return_value=auth):
+        result = await flow.async_step_user({"username": "test@example.com", "password": "pass"})
 
     assert result["type"] == "form"
     assert result["errors"] == {"base": "unknown"}
@@ -98,16 +86,10 @@ async def test_user_step_rate_limit() -> None:
     flow = GarminConnectConfigFlow()
     flow.hass = MagicMock()
     flow.hass.config.country = "US"
-    flow.hass.async_add_executor_job = AsyncMock(
-        side_effect=lambda fn, *a: _sync_call(fn, *a)
-    )
+    flow.hass.async_add_executor_job = AsyncMock(side_effect=lambda fn, *a: _sync_call(fn, *a))
 
-    with patch(
-        "custom_components.garmin_connect.config_flow.GarminAuth", return_value=auth
-    ):
-        result = await flow.async_step_user(
-            {"username": "test@example.com", "password": "pass"}
-        )
+    with patch("custom_components.garmin_connect.config_flow.GarminAuth", return_value=auth):
+        result = await flow.async_step_user({"username": "test@example.com", "password": "pass"})
 
     assert result["type"] == "form"
     assert result["errors"] == {"base": "rate_limit"}
@@ -121,16 +103,10 @@ async def test_user_step_mfa_required_transitions() -> None:
     flow = GarminConnectConfigFlow()
     flow.hass = MagicMock()
     flow.hass.config.country = "US"
-    flow.hass.async_add_executor_job = AsyncMock(
-        side_effect=lambda fn, *a: _sync_call(fn, *a)
-    )
+    flow.hass.async_add_executor_job = AsyncMock(side_effect=lambda fn, *a: _sync_call(fn, *a))
 
-    with patch(
-        "custom_components.garmin_connect.config_flow.GarminAuth", return_value=auth
-    ):
-        result = await flow.async_step_user(
-            {"username": "test@example.com", "password": "pass"}
-        )
+    with patch("custom_components.garmin_connect.config_flow.GarminAuth", return_value=auth):
+        result = await flow.async_step_user({"username": "test@example.com", "password": "pass"})
 
     assert result["type"] == "form"
     assert result["step_id"] == "mfa"
@@ -147,9 +123,7 @@ async def test_mfa_step_invalid_code() -> None:
     flow.hass = MagicMock()
     flow._auth = MagicMock()
     flow._auth.complete_mfa = MagicMock(side_effect=GarminAuthError("bad code"))
-    flow.hass.async_add_executor_job = AsyncMock(
-        side_effect=lambda fn, *a: _sync_call(fn, *a)
-    )
+    flow.hass.async_add_executor_job = AsyncMock(side_effect=lambda fn, *a: _sync_call(fn, *a))
 
     result = await flow.async_step_mfa({"mfa_code": "000000"})
 
@@ -165,9 +139,7 @@ async def test_mfa_step_rate_limit() -> None:
     flow.hass = MagicMock()
     flow._auth = MagicMock()
     flow._auth.complete_mfa = MagicMock(side_effect=GarminRateLimitError("429"))
-    flow.hass.async_add_executor_job = AsyncMock(
-        side_effect=lambda fn, *a: _sync_call(fn, *a)
-    )
+    flow.hass.async_add_executor_job = AsyncMock(side_effect=lambda fn, *a: _sync_call(fn, *a))
 
     result = await flow.async_step_mfa({"mfa_code": "000000"})
 

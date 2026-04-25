@@ -421,9 +421,7 @@ def test_gear_sensor_none_for_unknown_uuid() -> None:
     """Gear sensor must return None when UUID is not in gearStats."""
     coord = MagicMock()
     coord.data = {"gearStats": []}
-    sensor = GarminConnectGearSensor(
-        coord, gear_uuid="missing", gear_name="Gone", entry_id="eid"
-    )
+    sensor = GarminConnectGearSensor(coord, gear_uuid="missing", gear_name="Gone", entry_id="eid")
     assert sensor.native_value is None
 
 

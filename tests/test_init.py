@@ -96,8 +96,14 @@ async def test_setup_entry_stores_all_coordinators() -> None:
 
     assert isinstance(entry.runtime_data, GarminConnectCoordinators)
     for field in (
-        "core", "activity", "training", "body", "goals", "gear",
-        "blood_pressure", "menstrual",
+        "core",
+        "activity",
+        "training",
+        "body",
+        "goals",
+        "gear",
+        "blood_pressure",
+        "menstrual",
     ):
         assert getattr(entry.runtime_data, field) is coord
 
@@ -202,9 +208,7 @@ async def test_unload_entry_unregisters_services_when_last_entry() -> None:
     hass.config_entries.async_unload_platforms = AsyncMock(return_value=True)
 
     unload_services = AsyncMock()
-    with patch(
-        "custom_components.garmin_connect.async_unload_services", unload_services
-    ):
+    with patch("custom_components.garmin_connect.async_unload_services", unload_services):
         result = await async_unload_entry(hass, entry)
 
     assert result is True
@@ -219,9 +223,7 @@ async def test_unload_entry_keeps_services_when_other_entries_exist() -> None:
     hass.config_entries.async_unload_platforms = AsyncMock(return_value=True)
 
     unload_services = AsyncMock()
-    with patch(
-        "custom_components.garmin_connect.async_unload_services", unload_services
-    ):
+    with patch("custom_components.garmin_connect.async_unload_services", unload_services):
         result = await async_unload_entry(hass, entry1)
 
     assert result is True
@@ -250,9 +252,7 @@ async def test_migrate_v1_to_v2_bumps_version_and_triggers_reauth() -> None:
         result = await async_migrate_entry(mock_hass, mock_entry)
 
     assert result is True
-    mock_hass.config_entries.async_update_entry.assert_called_once_with(
-        mock_entry, version=2
-    )
+    mock_hass.config_entries.async_update_entry.assert_called_once_with(mock_entry, version=2)
     mock_entry.async_start_reauth.assert_called_once_with(mock_hass)
 
 

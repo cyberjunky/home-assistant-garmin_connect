@@ -61,9 +61,7 @@ def mock_client() -> Generator[MagicMock]:
         client.fetch_body_data = AsyncMock(return_value=mock_body_data())
         client.fetch_goals_data = AsyncMock(return_value=mock_goals_data())
         client.fetch_gear_data = AsyncMock(return_value=mock_gear_data())
-        client.fetch_blood_pressure_data = AsyncMock(
-            return_value=mock_blood_pressure_data()
-        )
+        client.fetch_blood_pressure_data = AsyncMock(return_value=mock_blood_pressure_data())
         client.fetch_menstrual_data = AsyncMock(return_value={})
         yield client
 
@@ -194,9 +192,7 @@ def mock_training_data() -> dict:
         },
         "enduranceScore": {"overallScore": 45, "runningScore": 50},
         "hillScore": {"overallScore": 30, "cyclingScore": 25},
-        "lactateThreshold": {
-            "speed_and_heart_rate": {"heartRate": 162, "speed": 3.2}
-        },
+        "lactateThreshold": {"speed_and_heart_rate": {"heartRate": 162, "speed": 3.2}},
         "hrvStatusText": "Balanced",
         "hrvWeeklyAvg": 45,
         "hrvLastNightAvg": 42,
