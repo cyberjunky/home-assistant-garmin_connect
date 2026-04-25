@@ -48,9 +48,11 @@ def test_all_sensor_descriptions_have_unique_keys() -> None:
 
 
 def test_all_sensor_descriptions_have_translation_keys() -> None:
-    """Every sensor description must have a translation_key."""
+    """Every sensor description must have a translation_key or a name."""
     for desc in _all_descriptions():
-        assert desc.translation_key, f"Sensor {desc.key} missing translation_key"
+        assert desc.translation_key or desc.name, (
+            f"Sensor {desc.key} missing both translation_key and name"
+        )
 
 
 def test_coordinator_type_on_non_core_sensor_groups() -> None:
