@@ -291,7 +291,7 @@ Gear sensors are dynamically created for each piece of equipment registered in G
 
 ## Activity Route Map
 
-The `Last Activity` sensor includes a `polyline` attribute with GPS coordinates when the activity has GPS data (`hasPolyline: true`). This can be displayed on a map using the included custom Lovelace card.
+GPS route data is stored in a dedicated **`sensor.garmin_connect_last_activity_route`** sensor. Its state is the number of GPS points in the track; the `polyline` attribute holds the full coordinate list. This is kept separate from the main `Last Activity` sensor to avoid exceeding Home Assistant's 16 KB attribute limit on longer activities.
 
 **Installation:**
 
@@ -305,11 +305,23 @@ The `Last Activity` sensor includes a `polyline` attribute with GPS coordinates 
 
 ```yaml
 type: custom:garmin-polyline-card
-entity: sensor.garmin_connect_last_activity
+entity: sensor.garmin_connect_last_activity_route
 attribute: polyline
 title: Last Activity Route
 height: 400px
 color: "#FF5722"
+```
+
+**Excluding the route sensor from the recorder (optional):**
+
+The route sensor stores potentially large polyline data. If you only use it for live map display and don't need history, you can exclude it from the recorder to save database space:
+
+```yaml
+# configuration.yaml
+recorder:
+  exclude:
+    entities:
+      - sensor.garmin_connect_last_activity_route
 ```
 
 | Option | Default | Description |
