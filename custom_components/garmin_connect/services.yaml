@@ -283,13 +283,12 @@ add_hydration:
   description: Log a hydration intake (or deduction) to Garmin Connect.
   fields:
     entity_id:
-      name: Garmin Connect hydration entity
-      description: Optional Garmin Connect hydration sensor whose account should receive the measurement.
+      name: Garmin Connect entity
+      description: Optional Garmin Connect entity whose account should receive the measurement.
       selector:
         entity:
           integration: garmin_connect
           domain: sensor
-          device_class: volume
     value_in_ml:
       name: Amount (mL)
       description: Hydration amount in millilitres. Use a negative value to subtract from today's intake.
