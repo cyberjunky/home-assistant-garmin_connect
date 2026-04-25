@@ -137,7 +137,6 @@
       "last_7_days_avg_resting_heart_rate": { "name": "7-day average resting heart rate" },
       "last_activities": { "name": "Last activities" },
       "last_activity": { "name": "Last activity" },
-      "last_activity_route": { "name": "Last activity route" },
       "last_synced": { "name": "Last synced" },
       "last_workout": { "name": "Last workout" },
       "last_workouts": { "name": "Last workouts" },
