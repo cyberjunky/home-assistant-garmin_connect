@@ -10,7 +10,7 @@ pytest-asyncio
 pytest-cov
 pytest-homeassistant-custom-component
 pyupgrade==3.21.2
-ruff==0.15.11
+ruff==0.15.12
 types-pytz==2026.1.1.20260408
 types-requests
 vulture==2.16
