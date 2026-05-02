@@ -843,20 +843,19 @@ TRAINING_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         translation_key="lactate_threshold_hr",
         coordinator_type=CoordinatorType.TRAINING,
         native_unit_of_measurement="bpm",
-        value_fn=lambda data: (
-            (data.get("lactateThreshold") or {}).get("speed_and_heart_rate") or {}
-        ).get("heartRate"),
+        # Garmin API returns "hearRate" (typo), ha_garmin merges the list into a flat dict
+        value_fn=lambda data: (data.get("lactateThreshold") or {}).get("hearRate"),
         attributes_fn=lambda data: data.get("lactateThreshold") or {},
+        preserve_value=True,
     ),
     GarminConnectSensorEntityDescription(
         key="lactateThresholdSpeed",
         translation_key="lactate_threshold_speed",
         coordinator_type=CoordinatorType.TRAINING,
         native_unit_of_measurement="m/s",
-        value_fn=lambda data: (
-            (data.get("lactateThreshold") or {}).get("speed_and_heart_rate") or {}
-        ).get("speed"),
+        value_fn=lambda data: (data.get("lactateThreshold") or {}).get("speed"),
         attributes_fn=lambda data: data.get("lactateThreshold") or {},
+        preserve_value=True,
     ),
     # HRV — ha_garmin flattens hrvStatus from _get_hrv_data_raw via _add_computed_fields
     GarminConnectSensorEntityDescription(
@@ -907,13 +906,8 @@ TRAINING_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         coordinator_type=CoordinatorType.TRAINING,
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement="mL/(kg·min)",
-        value_fn=lambda data: data.get("vo2MaxValue")
-        or (
-            (
-                ((data.get("trainingStatus") or {}).get("mostRecentVO2Max") or {}).get("generic")
-                or {}
-            ).get("vo2MaxValue")
-        ),
+        value_fn=lambda data: data.get("vo2MaxValue"),
+        preserve_value=True,
     ),
 )
 

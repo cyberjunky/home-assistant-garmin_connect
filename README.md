@@ -291,12 +291,15 @@ Gear sensors are dynamically created for each piece of equipment registered in G
 
 ## Activity Route Map
 
-The `Last Activity` sensor includes a `polyline` attribute with GPS coordinates when the activity has GPS data (`hasPolyline: true`). This can be displayed on a map using the included custom Lovelace card.
+The `Last Activity Route` sensor (`sensor.garmin_connect_last_activity_route`) contains a `polyline` attribute with GPS coordinates when the activity has GPS data. This can be displayed on a map using the included custom Lovelace card.
 
 **Installation:**
 
-1. Copy `www/garmin-polyline-card.js` to your `<config>/www/` folder
-2. Add as a resource: **Settings → Dashboards → ⋮ → Resources → Add Resource**
+1. Copy all three files from the `www/` folder to your `<config>/www/` folder:
+   - `garmin-polyline-card.js`
+   - `leaflet.js`
+   - `leaflet.css`
+2. Add the card as a resource: **Settings → Dashboards → ⋮ → Resources → Add Resource**
    - URL: `/local/garmin-polyline-card.js`
    - Type: JavaScript Module
 3. Hard refresh your browser (Ctrl+Shift+R)
@@ -305,12 +308,14 @@ The `Last Activity` sensor includes a `polyline` attribute with GPS coordinates 
 
 ```yaml
 type: custom:garmin-polyline-card
-entity: sensor.garmin_connect_last_activity
+entity: sensor.YOUR_PREFIX_last_activity_route
 attribute: polyline
 title: Last Activity Route
 height: 400px
 color: "#FF5722"
 ```
+
+> **Note:** The entity ID depends on your account name. Find yours in **Settings → Devices & Services → Garmin Connect** or search for `last_activity_route` in Developer Tools → States.
 
 | Option | Default | Description |
 |--------|---------|-------------|
@@ -553,7 +558,7 @@ template:
           {% set today = now().strftime('%Y-%m-%d') %}
           {% set activities = state_attr('sensor.garmin_connect_last_activities', 'last_activities') | default([]) %}
           {% set running = namespace(total=0) %}
-          {% for a in activities if a.activityType == 'running' and today in a.startTimeLocal %}
+          {% for a in activities if a.activityType == 'running' and (a.startTime | as_datetime | as_local).strftime('%Y-%m-%d') == today %}
             {% set running.total = running.total + a.distance %}
           {% endfor %}
           {{ (running.total / 1000) | round(2) }}

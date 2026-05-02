@@ -4,8 +4,11 @@ set -e
 
 cd "$(dirname "$0")/.."
 
-# Determine the Home Assistant command to use
-if command -v hass &> /dev/null; then
+# Determine the Home Assistant command to use — prefer the venv to avoid
+# system Python version mismatches (e.g. pycares/aiodns incompatibility).
+if [ -f ".venv/bin/python3" ]; then
+  HASS_CMD=".venv/bin/python3 -m homeassistant"
+elif command -v hass &> /dev/null; then
   HASS_CMD="hass"
 else
   HASS_CMD="python3 -m homeassistant"

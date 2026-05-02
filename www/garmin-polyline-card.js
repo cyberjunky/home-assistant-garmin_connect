@@ -101,7 +101,7 @@ class GarminPolylineCard extends HTMLElement {
   }
 
   _renderMap(coordinates, stateObj) {
-    const activityName = stateObj.state || 'Activity';
+    const activityName = stateObj.attributes.activity_name || stateObj.state || 'Activity';
 
     if (this._map) {
       // Update existing map — guard against Leaflet not being ready
@@ -243,7 +243,7 @@ class GarminPolylineCard extends HTMLElement {
 
   static getStubConfig() {
     return {
-      entity: 'sensor.garmin_connect_last_activity',
+      entity: '',
       attribute: 'polyline',
       title: 'Activity Route'
     };

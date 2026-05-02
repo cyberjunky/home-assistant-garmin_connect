@@ -192,7 +192,7 @@ def mock_training_data() -> dict:
         },
         "enduranceScore": {"overallScore": 45, "runningScore": 50},
         "hillScore": {"overallScore": 30, "cyclingScore": 25},
-        "lactateThreshold": {"speed_and_heart_rate": {"heartRate": 162, "speed": 3.2}},
+        "lactateThreshold": {"hearRate": 162, "speed": 3.2},
         "hrvStatusText": "Balanced",
         "hrvWeeklyAvg": 45,
         "hrvLastNightAvg": 42,
