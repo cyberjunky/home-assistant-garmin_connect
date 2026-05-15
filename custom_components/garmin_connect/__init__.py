@@ -10,7 +10,7 @@ from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
 
-from .const import CONF_CLIENT_ID, CONF_REFRESH_TOKEN, CONF_TOKEN, DOMAIN
+from .const import CONF_CLIENT_ID, CONF_IS_CN, CONF_REFRESH_TOKEN, CONF_TOKEN, DOMAIN
 from .coordinator import (
     ActivityCoordinator,
     BloodPressureCoordinator,
@@ -154,7 +154,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: GarminConnectConfigEntry
         _LOGGER.debug("Skipping setup for %s — reauth pending", entry.title)
         return False
 
-    is_cn = hass.config.country == "CN"
+    is_cn = entry.options.get(CONF_IS_CN, False)
     auth = GarminAuth(is_cn=is_cn)
     auth.di_token = entry.data[CONF_TOKEN]
     auth.di_refresh_token = entry.data[CONF_REFRESH_TOKEN]

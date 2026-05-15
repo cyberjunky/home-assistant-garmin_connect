@@ -25,11 +25,13 @@
       "reauth_confirm": {
         "data": {
           "password": "Password",
-          "username": "Email"
+          "username": "Email",
+          "is_cn": "Use Garmin Connect China (cn.garmin.com)"
         },
         "data_description": {
           "password": "Your Garmin Connect password",
-          "username": "Your Garmin Connect email address"
+          "username": "Your Garmin Connect email address",
+          "is_cn": "Enable for accounts registered on the Chinese Garmin Connect platform"
         },
         "description": "Enter your Garmin Connect credentials to re-authenticate.",
         "title": "Re-authenticate Integration"
@@ -37,11 +39,13 @@
       "reconfigure": {
         "data": {
           "password": "Password",
-          "username": "Email"
+          "username": "Email",
+          "is_cn": "Use Garmin Connect China (cn.garmin.com)"
         },
         "data_description": {
           "password": "Your Garmin Connect password",
-          "username": "Your Garmin Connect email address"
+          "username": "Your Garmin Connect email address",
+          "is_cn": "Enable for accounts registered on the Chinese Garmin Connect platform"
         },
         "description": "Update your Garmin Connect credentials.",
         "title": "Reconfigure Integration"
@@ -49,11 +53,13 @@
       "user": {
         "data": {
           "password": "Password",
-          "username": "Email"
+          "username": "Email",
+          "is_cn": "Use Garmin Connect China (cn.garmin.com)"
         },
         "data_description": {
           "password": "Your Garmin Connect password",
-          "username": "Your Garmin Connect email address"
+          "username": "Your Garmin Connect email address",
+          "is_cn": "Enable for accounts registered on the Chinese Garmin Connect platform"
         },
         "description": "Enter your Garmin Connect credentials."
       }
@@ -63,10 +69,12 @@
     "step": {
       "init": {
         "data": {
-          "scan_interval": "Update interval (seconds)"
+          "scan_interval": "Update interval (seconds)",
+          "is_cn": "Use Garmin Connect China (cn.garmin.com)"
         },
         "data_description": {
-          "scan_interval": "How often to fetch data from Garmin Connect (60–3600 seconds)"
+          "scan_interval": "How often to fetch data from Garmin Connect (60–3600 seconds)",
+          "is_cn": "Enable for accounts registered on the Chinese Garmin Connect platform"
         },
         "description": "Configure your Garmin Connect integration settings.",
         "title": "Garmin Connect Options"

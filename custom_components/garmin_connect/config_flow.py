@@ -27,6 +27,7 @@ from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
 
 from .const import (
     CONF_CLIENT_ID,
+    CONF_IS_CN,
     CONF_REFRESH_TOKEN,
     CONF_SCAN_INTERVAL,
     CONF_TOKEN,
@@ -40,6 +41,7 @@ STEP_USER_DATA_SCHEMA = vol.Schema(
     {
         vol.Required(CONF_USERNAME): str,
         vol.Required(CONF_PASSWORD): str,
+        vol.Optional(CONF_IS_CN, default=False): bool,
     }
 )
 
@@ -96,16 +98,24 @@ class GarminConnectConfigFlow(ConfigFlow, domain=DOMAIN):
         )
 
     async def _async_finish_reauth(self) -> ConfigFlowResult:
-        """Update tokens on the existing entry and reload it."""
+        """Update tokens and CN setting on the existing entry and reload it."""
         entry = self._get_reauth_entry()
-        self.hass.config_entries.async_update_entry(entry, data=self._token_data())
+        self.hass.config_entries.async_update_entry(
+            entry,
+            data=self._token_data(),
+            options={**entry.options, CONF_IS_CN: self._is_cn},
+        )
         await self.hass.config_entries.async_reload(entry.entry_id)
         return self.async_abort(reason="reauth_successful")
 
     async def _async_finish_reconfigure(self) -> ConfigFlowResult:
-        """Update tokens on the existing entry and reload it."""
+        """Update tokens and CN setting on the existing entry and reload it."""
         entry = self._get_reconfigure_entry()
-        self.hass.config_entries.async_update_entry(entry, data=self._token_data())
+        self.hass.config_entries.async_update_entry(
+            entry,
+            data=self._token_data(),
+            options={**entry.options, CONF_IS_CN: self._is_cn},
+        )
         await self.hass.config_entries.async_reload(entry.entry_id)
         return self.async_abort(reason="reconfigure_successful")
 
@@ -126,6 +136,7 @@ class GarminConnectConfigFlow(ConfigFlow, domain=DOMAIN):
         return self.async_create_entry(
             title=username,
             data=self._token_data(),
+            options={CONF_IS_CN: self._is_cn},
         )
 
     async def async_step_user(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
@@ -134,7 +145,7 @@ class GarminConnectConfigFlow(ConfigFlow, domain=DOMAIN):
 
         if user_input is not None:
             self._username = user_input[CONF_USERNAME]
-            self._is_cn = self.hass.config.country == "CN"
+            self._is_cn = user_input.get(CONF_IS_CN, False)
             self._auth = GarminAuth(is_cn=self._is_cn)
 
             try:
@@ -203,7 +214,7 @@ class GarminConnectConfigFlow(ConfigFlow, domain=DOMAIN):
 
         if user_input is not None:
             self._username = user_input[CONF_USERNAME]
-            self._is_cn = self.hass.config.country == "CN"
+            self._is_cn = user_input.get(CONF_IS_CN, False)
             self._auth = GarminAuth(is_cn=self._is_cn)
 
             try:
@@ -222,9 +233,18 @@ class GarminConnectConfigFlow(ConfigFlow, domain=DOMAIN):
             else:
                 return await self._async_finish_reauth()
 
+        entry = self._get_reauth_entry()
+        current_is_cn = entry.options.get(CONF_IS_CN, False)
+
         return self.async_show_form(
             step_id="reauth_confirm",
-            data_schema=STEP_USER_DATA_SCHEMA,
+            data_schema=vol.Schema(
+                {
+                    vol.Required(CONF_USERNAME): str,
+                    vol.Required(CONF_PASSWORD): str,
+                    vol.Optional(CONF_IS_CN, default=current_is_cn): bool,
+                }
+            ),
             errors=errors,
         )
 
@@ -236,7 +256,7 @@ class GarminConnectConfigFlow(ConfigFlow, domain=DOMAIN):
 
         if user_input is not None:
             self._username = user_input[CONF_USERNAME]
-            self._is_cn = self.hass.config.country == "CN"
+            self._is_cn = user_input.get(CONF_IS_CN, False)
             self._auth = GarminAuth(is_cn=self._is_cn)
 
             try:
@@ -255,9 +275,18 @@ class GarminConnectConfigFlow(ConfigFlow, domain=DOMAIN):
             else:
                 return await self._async_finish_reconfigure()
 
+        entry = self._get_reconfigure_entry()
+        current_is_cn = entry.options.get(CONF_IS_CN, False)
+
         return self.async_show_form(
             step_id="reconfigure",
-            data_schema=STEP_USER_DATA_SCHEMA,
+            data_schema=vol.Schema(
+                {
+                    vol.Required(CONF_USERNAME): str,
+                    vol.Required(CONF_PASSWORD): str,
+                    vol.Optional(CONF_IS_CN, default=current_is_cn): bool,
+                }
+            ),
             errors=errors,
         )
 
@@ -273,6 +302,7 @@ class GarminConnectOptionsFlow(OptionsFlow):
         current_scan_interval = self.config_entry.options.get(
             CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL
         )
+        current_is_cn = self.config_entry.options.get(CONF_IS_CN, False)
 
         return self.async_show_form(
             step_id="init",
@@ -285,6 +315,7 @@ class GarminConnectOptionsFlow(OptionsFlow):
                         vol.Coerce(int),
                         vol.Range(min=MIN_SCAN_INTERVAL, max=MAX_SCAN_INTERVAL),
                     ),
+                    vol.Optional(CONF_IS_CN, default=current_is_cn): bool,
                 }
             ),
         )

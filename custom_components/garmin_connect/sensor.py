@@ -821,7 +821,7 @@ TRAINING_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         key="trainingStatus",
         translation_key="training_status",
         coordinator_type=CoordinatorType.TRAINING,
-        value_fn=lambda data: (data.get("trainingStatus") or {}).get("trainingStatusPhrase"),
+        value_fn=lambda data: data.get("trainingStatusPhrase"),
         attributes_fn=lambda data: data.get("trainingStatus") or {},
     ),
     GarminConnectSensorEntityDescription(

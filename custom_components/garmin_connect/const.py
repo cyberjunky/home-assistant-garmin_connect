@@ -10,6 +10,7 @@ CONF_REFRESH_TOKEN: Final = "refresh_token"
 CONF_CLIENT_ID: Final = "client_id"
 
 # Options
+CONF_IS_CN: Final = "is_cn"
 CONF_SCAN_INTERVAL: Final = "scan_interval"
 DEFAULT_SCAN_INTERVAL: Final = 300  # 5 minutes
 MIN_SCAN_INTERVAL: Final = 60  # 1 minute
