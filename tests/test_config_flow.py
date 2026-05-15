@@ -152,11 +152,16 @@ async def test_mfa_step_rate_limit() -> None:
 
 async def test_reauth_confirm_step_shows_form() -> None:
     """Reauth confirm step must show the re-authentication form."""
+    from homeassistant.config_entries import SOURCE_REAUTH
+
     from custom_components.garmin_connect.config_flow import GarminConnectConfigFlow
 
+    mock_entry = MagicMock()
+    mock_entry.options = {}
     flow = GarminConnectConfigFlow()
     flow.hass = MagicMock()
-    flow._reauth_entry = MagicMock()
+    flow.hass.config_entries.async_get_known_entry.return_value = mock_entry
+    flow.context = {"source": SOURCE_REAUTH, "entry_id": "test_entry_id"}
 
     result = await flow.async_step_reauth_confirm(None)
 
@@ -166,11 +171,16 @@ async def test_reauth_confirm_step_shows_form() -> None:
 
 async def test_reconfigure_step_shows_form() -> None:
     """Reconfigure step must show the reconfiguration form."""
+    from homeassistant.config_entries import SOURCE_RECONFIGURE
+
     from custom_components.garmin_connect.config_flow import GarminConnectConfigFlow
 
+    mock_entry = MagicMock()
+    mock_entry.options = {}
     flow = GarminConnectConfigFlow()
     flow.hass = MagicMock()
-    flow._reconfigure_entry = MagicMock()
+    flow.hass.config_entries.async_get_known_entry.return_value = mock_entry
+    flow.context = {"source": SOURCE_RECONFIGURE, "entry_id": "test_entry_id"}
 
     result = await flow.async_step_reconfigure(None)
 
