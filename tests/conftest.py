@@ -179,7 +179,7 @@ def mock_activity_data() -> dict:
 def mock_training_data() -> dict:
     """Sample data for TrainingCoordinator (fetch_training_data output)."""
     return {
-        "trainingReadiness": {"score": 72, "level": "GOOD"},
+        "trainingReadiness": {"score": 72, "level": "GOOD", "recoveryTime": 786},
         "trainingStatusPhrase": "Productive",
         "trainingStatus": {
             "mostRecentTrainingStatus": {

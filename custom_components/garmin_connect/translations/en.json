@@ -204,6 +204,7 @@
       "total_sleep_duration": { "name": "Total sleep duration" },
       "total_steps": { "name": "Steps" },
       "total_stress_duration": { "name": "Stress duration" },
+      "recovery_time": { "name": "Recovery time" },
       "training_readiness": { "name": "Training readiness" },
       "training_status": { "name": "Training status" },
       "uncategorized_stress_duration": { "name": "Uncategorized stress duration" },

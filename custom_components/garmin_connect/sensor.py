@@ -818,6 +818,17 @@ TRAINING_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         attributes_fn=lambda data: data.get("trainingReadiness") or {},
     ),
     GarminConnectSensorEntityDescription(
+        key="recoveryTime",
+        translation_key="recovery_time",
+        coordinator_type=CoordinatorType.TRAINING,
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=UnitOfTime.MINUTES,
+        suggested_unit_of_measurement=UnitOfTime.HOURS,
+        suggested_display_precision=1,
+        value_fn=lambda data: (data.get("trainingReadiness") or {}).get("recoveryTime"),
+        preserve_value=True,
+    ),
+    GarminConnectSensorEntityDescription(
         key="trainingStatus",
         translation_key="training_status",
         coordinator_type=CoordinatorType.TRAINING,
