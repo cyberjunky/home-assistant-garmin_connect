@@ -12,7 +12,7 @@ from datetime import timedelta
 from typing import Any
 
 from ha_garmin import GarminAuth, GarminClient
-from ha_garmin.exceptions import GarminAPIError, GarminAuthError
+from ha_garmin.exceptions import GarminAuthError
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed
