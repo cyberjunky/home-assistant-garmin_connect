@@ -136,7 +136,7 @@ class ActivityCoordinator(BaseGarminCoordinator):
             await self._update_tokens_if_changed()
         except GarminAuthError as err:
             raise ConfigEntryAuthFailed("Authentication failed") from err
-        except GarminAPIError as err:
+        except Exception as err:
             raise UpdateFailed(f"Error fetching activity data: {err}") from err
         return data
 
@@ -162,7 +162,7 @@ class TrainingCoordinator(BaseGarminCoordinator):
             await self._update_tokens_if_changed()
         except GarminAuthError as err:
             raise ConfigEntryAuthFailed("Authentication failed") from err
-        except GarminAPIError as err:
+        except Exception as err:
             raise UpdateFailed(f"Error fetching training data: {err}") from err
         return data
 
@@ -188,7 +188,7 @@ class BodyCoordinator(BaseGarminCoordinator):
             await self._update_tokens_if_changed()
         except GarminAuthError as err:
             raise ConfigEntryAuthFailed("Authentication failed") from err
-        except GarminAPIError as err:
+        except Exception as err:
             raise UpdateFailed(f"Error fetching body data: {err}") from err
         return data
 
@@ -214,7 +214,7 @@ class GoalsCoordinator(BaseGarminCoordinator):
             await self._update_tokens_if_changed()
         except GarminAuthError as err:
             raise ConfigEntryAuthFailed("Authentication failed") from err
-        except GarminAPIError as err:
+        except Exception as err:
             raise UpdateFailed(f"Error fetching goals data: {err}") from err
         return data
 
@@ -240,7 +240,7 @@ class GearCoordinator(BaseGarminCoordinator):
             await self._update_tokens_if_changed()
         except GarminAuthError as err:
             raise ConfigEntryAuthFailed("Authentication failed") from err
-        except GarminAPIError as err:
+        except Exception as err:
             raise UpdateFailed(f"Error fetching gear data: {err}") from err
         return data
 
@@ -273,7 +273,7 @@ class BloodPressureCoordinator(BaseGarminCoordinator):
             await self._update_tokens_if_changed()
         except GarminAuthError as err:
             raise ConfigEntryAuthFailed("Authentication failed") from err
-        except GarminAPIError as err:
+        except Exception as err:
             raise UpdateFailed(f"Error fetching blood pressure data: {err}") from err
         return data
 
@@ -299,7 +299,7 @@ class MenstrualCoordinator(BaseGarminCoordinator):
             await self._update_tokens_if_changed()
         except GarminAuthError as err:
             raise ConfigEntryAuthFailed("Authentication failed") from err
-        except GarminAPIError as err:
+        except Exception as err:
             raise UpdateFailed(f"Error fetching menstrual data: {err}") from err
         return data
 
