@@ -35,13 +35,14 @@ repos:
       - id: mypy
         name: Run mypy type checker
         language: system
-        types: [python]
         stages: [commit-msg, post-commit, manual]
         entry: mypy
+        pass_filenames: false
         args:
           - --ignore-missing-imports
           - --check-untyped-defs
-        files: ^custom_components/.+\.py$
+          - --no-incremental
+          - custom_components/garmin_connect
 
       - id: check-yaml
         name: Check YAML files
