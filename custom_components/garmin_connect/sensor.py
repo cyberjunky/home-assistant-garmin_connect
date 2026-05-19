@@ -1105,6 +1105,11 @@ GOALS_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
                     if b.get("badgeEarnedDate")
                     else None,
                     "times_earned": b.get("badgeEarnedNumber"),
+                    "uuid": b.get("badgeUuid"),
+                    "key": b.get("badgeKey"),
+                    "category_id": b.get("badgeCategoryId"),
+                    "difficulty_id": b.get("badgeDifficultyId"),
+                    "type_ids": b.get("badgeTypeIds"),
                 }
                 for b in sorted(
                     data.get("badges", []),
