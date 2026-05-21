@@ -1,0 +1,326 @@
+{
+  "config": {
+    "abort": {
+      "already_configured": "账户已配置",
+      "reauth_successful": "重新认证成功",
+      "reconfigure_successful": "重新配置成功"
+    },
+    "error": {
+      "invalid_auth": "凭据无效",
+      "invalid_mfa": "验证码无效",
+      "rate_limit": "登录尝试次数过多 — Garmin 已限流。请几分钟后重试。",
+      "unknown": "未知错误"
+    },
+    "step": {
+      "mfa": {
+        "data": {
+          "mfa_code": "验证码"
+        },
+        "data_description": {
+          "mfa_code": "发送到您的设备或邮箱的验证码"
+        },
+        "description": "请输入 Garmin 发送的验证码。",
+        "title": "双重认证"
+      },
+      "reauth_confirm": {
+        "data": {
+          "password": "密码",
+          "username": "邮箱",
+          "is_cn": "使用 Garmin Connect 中国版 (cn.garmin.com)"
+        },
+        "data_description": {
+          "password": "您的 Garmin Connect 密码",
+          "username": "您的 Garmin Connect 邮箱地址",
+          "is_cn": "为在中国 Garmin Connect 平台注册的账户启用"
+        },
+        "description": "请输入您的 Garmin Connect 凭据以重新认证。",
+        "title": "重新认证集成"
+      },
+      "reconfigure": {
+        "data": {
+          "password": "密码",
+          "username": "邮箱",
+          "is_cn": "使用 Garmin Connect 中国版 (cn.garmin.com)"
+        },
+        "data_description": {
+          "password": "您的 Garmin Connect 密码",
+          "username": "您的 Garmin Connect 邮箱地址",
+          "is_cn": "为在中国 Garmin Connect 平台注册的账户启用"
+        },
+        "description": "更新您的 Garmin Connect 凭据。",
+        "title": "重新配置集成"
+      },
+      "user": {
+        "data": {
+          "password": "密码",
+          "username": "邮箱",
+          "is_cn": "使用 Garmin Connect 中国版 (cn.garmin.com)"
+        },
+        "data_description": {
+          "password": "您的 Garmin Connect 密码",
+          "username": "您的 Garmin Connect 邮箱地址",
+          "is_cn": "为在中国 Garmin Connect 平台注册的账户启用"
+        },
+        "description": "请输入您的 Garmin Connect 凭据。"
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "data": {
+          "scan_interval": "更新间隔(秒)",
+          "is_cn": "使用 Garmin Connect 中国版 (cn.garmin.com)"
+        },
+        "data_description": {
+          "scan_interval": "从 Garmin Connect 获取数据的频率(60–3600 秒)",
+          "is_cn": "为在中国 Garmin Connect 平台注册的账户启用"
+        },
+        "description": "配置您的 Garmin Connect 集成。",
+        "title": "Garmin Connect 选项"
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "abnormal_hr_alerts": { "name": "异常心率警报" },
+      "achievable_fitness_age": { "name": "可达健身年龄" },
+      "active_calories": { "name": "活动卡路里" },
+      "active_goals": { "name": "进行中的目标" },
+      "active_time": { "name": "活动时间" },
+      "activity_stress_duration": { "name": "活动时压力时长" },
+      "activity_stress_percentage": { "name": "活动时压力百分比" },
+      "avg_altitude": { "name": "平均海拔" },
+      "avg_spo2": { "name": "平均血氧" },
+      "avg_stress_level": { "name": "平均压力等级" },
+      "awake_duration": { "name": "清醒时长" },
+      "awake_sleep": { "name": "清醒时间" },
+      "badges": { "name": "徽章" },
+      "bmi": { "name": "BMI" },
+      "bmr_calories": { "name": "基础代谢卡路里" },
+      "body_battery_charged": { "name": "身体电量充电" },
+      "body_battery_drained": { "name": "身体电量耗电" },
+      "body_battery_highest": { "name": "身体电量最高值" },
+      "body_battery_lowest": { "name": "身体电量最低值" },
+      "body_battery_most_recent": { "name": "身体电量" },
+      "body_fat": { "name": "体脂率" },
+      "body_water": { "name": "身体水分" },
+      "bone_mass": { "name": "骨骼重量" },
+      "bp_category": { "name": "血压类别" },
+      "bp_diastolic": { "name": "舒张压" },
+      "bp_measurement_time": { "name": "血压测量时间" },
+      "bp_pulse": { "name": "血压脉率" },
+      "bp_systolic": { "name": "收缩压" },
+      "burned_calories": { "name": "已消耗卡路里" },
+      "chronological_age": { "name": "实际年龄" },
+      "consumed_calories": { "name": "摄入卡路里" },
+      "daily_step_goal": { "name": "每日步数目标" },
+      "deep_sleep": { "name": "深度睡眠" },
+      "endurance_score": { "name": "耐力得分" },
+      "fitness_age": { "name": "健身年龄" },
+      "floors_ascended": { "name": "上升楼层" },
+      "floors_ascended_distance": { "name": "上升楼层距离" },
+      "floors_ascended_goal": { "name": "上升楼层目标" },
+      "floors_descended": { "name": "下降楼层" },
+      "floors_descended_distance": { "name": "下降楼层距离" },
+      "future_goals": { "name": "未来目标" },
+      "goals_history": { "name": "目标记录" },
+      "high_stress_duration": { "name": "高度压力时长" },
+      "high_stress_percentage": { "name": "高度压力百分比" },
+      "highest_respiration": { "name": "最高呼吸频率" },
+      "highly_active_time": { "name": "高强度活动时间" },
+      "hill_score": { "name": "爬坡得分" },
+      "hrv_baseline": { "name": "HRV 基准线" },
+      "hrv_last_night_5min_high": { "name": "昨晚 HRV 5 分钟最高值" },
+      "hrv_last_night_avg": { "name": "昨晚 HRV 平均值" },
+      "hrv_status": { "name": "HRV 状态" },
+      "hrv_weekly_avg": { "name": "HRV 周平均值" },
+      "hydration": { "name": "饮水量" },
+      "hydration_activity_intake": { "name": "活动饮水量" },
+      "hydration_daily_average": { "name": "每日平均饮水量" },
+      "hydration_goal": { "name": "饮水目标" },
+      "hydration_sweat_loss": { "name": "出汗流失水分" },
+      "intensity_goal": { "name": "高强度运动时间目标" },
+      "lactate_threshold_hr": { "name": "乳酸阈值心率" },
+      "lactate_threshold_speed": { "name": "乳酸阈值配速" },
+      "last_7_days_avg_resting_heart_rate": { "name": "过去 7 天平均静息心率" },
+      "last_activities": { "name": "最近活动" },
+      "last_activity": { "name": "最近活动" },
+      "last_synced": { "name": "最近同步" },
+      "last_workout": { "name": "最近训练" },
+      "last_workouts": { "name": "最近训练" },
+      "latest_respiration": { "name": "最新呼吸频率" },
+      "latest_respiration_time": { "name": "最新呼吸频率时间" },
+      "latest_spo2": { "name": "最新血氧" },
+      "latest_spo2_time": { "name": "最新血氧时间" },
+      "light_sleep": { "name": "浅度睡眠" },
+      "low_stress_duration": { "name": "低度压力时长" },
+      "low_stress_percentage": { "name": "低度压力百分比" },
+      "lowest_respiration": { "name": "最低呼吸频率" },
+      "lowest_spo2": { "name": "最低血氧" },
+      "max_avg_heart_rate": { "name": "最高平均心率" },
+      "max_heart_rate": { "name": "最高心率" },
+      "max_stress_level": { "name": "最高压力等级" },
+      "medium_stress_duration": { "name": "中度压力时长" },
+      "medium_stress_percentage": { "name": "中度压力百分比" },
+      "menstrual_cycle_day": { "name": "月经周期日" },
+      "menstrual_cycle_phase": { "name": "月经周期阶段" },
+      "menstrual_cycle_start": { "name": "本次月经开始日" },
+      "menstrual_cycle_type": { "name": "月经周期类型" },
+      "menstrual_days_until_next_phase": { "name": "距离下一阶段天数" },
+      "menstrual_fertile_window_end": { "name": "易孕期结束日" },
+      "menstrual_fertile_window_start": { "name": "易孕期开始日" },
+      "menstrual_next_predicted_cycle_start": { "name": "预测下次月经开始日" },
+      "menstrual_period_length": { "name": "经期天数" },
+      "metabolic_age": { "name": "代谢年龄" },
+      "min_avg_heart_rate": { "name": "最低平均心率" },
+      "min_heart_rate": { "name": "最低心率" },
+      "moderate_intensity": { "name": "中等强度运动时间" },
+      "morning_training_readiness": { "name": "晨间训练准备情况" },
+      "muscle_mass": { "name": "肌肉重量" },
+      "nap_time": { "name": "小睡时间" },
+      "next_alarm": { "name": "下次闹钟" },
+      "physique_rating": { "name": "体型分数" },
+      "previous_fitness_age": { "name": "上次健身年龄" },
+      "rem_sleep": { "name": "快速眼动睡眠" },
+      "remaining_calories": { "name": "剩余卡路里" },
+      "rest_stress_duration": { "name": "休息时压力时长" },
+      "rest_stress_percentage": { "name": "休息时压力百分比" },
+      "resting_heart_rate": { "name": "静息心率" },
+      "sedentary_time": { "name": "久坐时间" },
+      "sleep_need": { "name": "所需睡眠" },
+      "bedtime": { "name": "就寝时间" },
+      "optimal_bedtime": { "name": "最佳就寝时间" },
+      "wake_time": { "name": "起床时间" },
+      "optimal_wake_time": { "name": "最佳起床时间" },
+      "sleep_duration": { "name": "睡眠时长" },
+      "sleep_score": { "name": "睡眠分数" },
+      "sleeping_time": { "name": "睡眠时间" },
+      "stress_percentage": { "name": "压力百分比" },
+      "stress_qualifier": { "name": "压力级别" },
+      "total_calories": { "name": "总卡路里" },
+      "total_distance": { "name": "总距离" },
+      "total_intensity_minutes": { "name": "高强度运动时间" },
+      "total_sleep_duration": { "name": "总睡眠时长" },
+      "total_steps": { "name": "总步数" },
+      "total_stress_duration": { "name": "压力总时长" },
+      "recovery_time": { "name": "恢复时间" },
+      "training_readiness": { "name": "训练准备情况" },
+      "training_status": { "name": "训练状态" },
+      "uncategorized_stress_duration": { "name": "未分类压力时长" },
+      "uncategorized_stress_percentage": { "name": "未分类压力百分比" },
+      "unmeasurable_sleep": { "name": "无法测量的睡眠" },
+      "user_level": { "name": "用户等级" },
+      "user_points": { "name": "积分" },
+      "vigorous_intensity": { "name": "剧烈强度运动时间" },
+      "visceral_fat": { "name": "内脏脂肪" },
+      "vo2_max": { "name": "最大摄氧量" },
+      "weekly_distance_avg": { "name": "每周平均距离" },
+      "weekly_step_avg": { "name": "每周平均步数" },
+      "weight": { "name": "体重" },
+      "wellness_active_calories": { "name": "健康活动消耗" },
+      "wellness_calories": { "name": "健康总消耗" },
+      "wellness_distance": { "name": "健康距离" },
+      "wellness_end_time": { "name": "健康监测结束时间" },
+      "wellness_start_time": { "name": "健康监测开始时间" },
+      "yesterday_distance": { "name": "昨日距离" },
+      "yesterday_steps": { "name": "昨日步数" }
+    }
+  },
+  "services": {
+    "set_active_gear": {
+      "name": "设置默认装备",
+      "description": "将装备设置为某活动类型的默认装备。",
+      "fields": {
+        "gear_uuid": { "name": "装备 UUID", "description": "装备的 UUID。" },
+        "entity_id": { "name": "装备传感器实体", "description": "gear_uuid 的替代项 — 选择一个装备传感器实体。" },
+        "activity_type": { "name": "活动类型", "description": "要将装备设为默认的活动类型。" },
+        "setting": { "name": "设置", "description": "要应用的装备设置。" }
+      }
+    },
+    "add_hydration": {
+      "name": "添加饮水记录",
+      "description": "向 Garmin Connect 记录一次饮水。",
+      "fields": {
+        "value_in_ml": { "name": "饮水量(毫升)", "description": "饮水量(毫升)。负值会从今日饮水量中扣除。" },
+        "timestamp": { "name": "时间戳", "description": "测量时间(ISO 8601,默认为当前时间)。" }
+      }
+    },
+    "add_body_composition": {
+      "name": "添加身体成分指标",
+      "description": "向 Garmin Connect 添加身体成分指标。",
+      "fields": {
+        "entity_id": { "name": "Garmin Connect 实体", "description": "可选的 Garmin Connect 实体,用于指定接收测量数据的账户。" },
+        "weight": { "name": "体重", "description": "体重(千克)。" },
+        "timestamp": { "name": "时间戳", "description": "测量记录的时间(默认为当前时间)。" },
+        "bmi": { "name": "BMI", "description": "身体质量指数。" },
+        "percent_fat": { "name": "体脂率", "description": "体脂百分比。" },
+        "percent_hydration": { "name": "水分率", "description": "身体水分百分比。" },
+        "visceral_fat_mass": { "name": "内脏脂肪重量", "description": "估计的内脏脂肪重量(千克)。" },
+        "bone_mass": { "name": "骨骼重量", "description": "估计的骨骼重量(千克)。" },
+        "muscle_mass": { "name": "肌肉重量", "description": "估计的肌肉重量(千克)。" },
+        "basal_met": { "name": "基础代谢", "description": "基础代谢率(千卡)。" },
+        "active_met": { "name": "活动代谢", "description": "活动代谢率(千卡)。" },
+        "physique_rating": { "name": "体型分数", "description": "身体体型分数(1–9)。" },
+        "metabolic_age": { "name": "代谢年龄", "description": "估计的代谢年龄(年)。" },
+        "visceral_fat_rating": { "name": "内脏脂肪等级", "description": "内脏脂肪等级(1–59)。" }
+      }
+    },
+    "add_blood_pressure": {
+      "name": "添加血压记录",
+      "description": "向 Garmin Connect 添加一次血压测量。",
+      "fields": {
+        "systolic": { "name": "收缩压", "description": "收缩压数值。" },
+        "diastolic": { "name": "舒张压", "description": "舒张压数值。" },
+        "pulse": { "name": "脉率", "description": "脉搏速率。" },
+        "timestamp": { "name": "时间戳", "description": "测量记录的时间(默认为当前时间)。" },
+        "notes": { "name": "备注", "description": "本次测量的附加备注。" }
+      }
+    },
+    "create_activity": {
+      "name": "创建活动",
+      "description": "在 Garmin Connect 中创建一项手动活动。",
+      "fields": {
+        "activity_name": { "name": "活动名称", "description": "活动的名称。" },
+        "activity_type": { "name": "活动类型", "description": "活动类型(如 running、cycling)。" },
+        "start_datetime": { "name": "开始时间", "description": "活动开始时间(ISO 格式)。" },
+        "duration_min": { "name": "时长", "description": "活动时长(分钟)。" },
+        "distance_km": { "name": "距离", "description": "活动距离(千米,可选)。" },
+        "time_zone": { "name": "时区", "description": "活动的时区。" }
+      }
+    },
+    "upload_activity": {
+      "name": "上传活动",
+      "description": "向 Garmin Connect 上传活动文件(FIT、GPX、TCX)。",
+      "fields": {
+        "file_path": { "name": "文件路径", "description": "Home Assistant 系统上活动文件的路径。" }
+      }
+    },
+    "add_gear_to_activity": {
+      "name": "为活动添加装备",
+      "description": "将装备关联到指定活动。",
+      "fields": {
+        "activity_id": { "name": "活动 ID", "description": "活动的 ID。" },
+        "gear_uuid": { "name": "装备 UUID", "description": "要添加的装备的 UUID。" },
+        "entity_id": { "name": "装备传感器实体", "description": "gear_uuid 的替代项 — 选择一个装备传感器实体。" }
+      }
+    }
+  },
+  "exceptions": {
+    "add_blood_pressure_failed": { "message": "添加血压失败:{error}" },
+    "add_hydration_failed": { "message": "记录饮水失败:{error}" },
+    "add_body_composition_failed": { "message": "添加身体成分失败:{error}" },
+    "add_gear_to_activity_failed": { "message": "为活动添加装备失败:{error}" },
+    "create_activity_failed": { "message": "创建活动失败:{error}" },
+    "entity_not_found": { "message": "未找到实体:{entity_id}" },
+    "file_not_found": { "message": "未找到文件:{file_path}" },
+    "gear_uuid_not_found": { "message": "实体 {entity_id} 没有 gear_uuid 属性。" },
+    "integration_not_loaded": { "message": "Garmin Connect 集成未加载。" },
+    "login_failed": { "message": "登录 Garmin Connect 失败。" },
+    "no_gear_specified": { "message": "未指定装备。请提供装备传感器实体或 gear_uuid。" },
+    "no_integration_configured": { "message": "Garmin Connect 集成未配置。" },
+    "set_active_gear_failed": { "message": "设置默认装备失败:{error}" },
+    "upload_activity_failed": { "message": "上传活动失败:{error}" },
+    "add_nutrition_failed": { "message": "记录营养失败:{error}" }
+  }
+}
