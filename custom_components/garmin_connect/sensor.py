@@ -57,7 +57,7 @@ class CoordinatorType(StrEnum):
 
 
 @dataclass(frozen=True, kw_only=True)
-class GarminConnectSensorEntityDescription(SensorEntityDescription):  # type: ignore[override]
+class GarminConnectSensorEntityDescription(SensorEntityDescription):
     """Describes Garmin Connect sensor entity."""
 
     coordinator_type: CoordinatorType = CoordinatorType.CORE
