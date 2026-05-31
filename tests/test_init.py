@@ -30,9 +30,10 @@ _COORD_TARGETS = [
 
 
 def _coord_mock() -> MagicMock:
-    """Return a coordinator mock with async_config_entry_first_refresh stubbed."""
+    """Return a coordinator mock with async methods stubbed."""
     c = MagicMock()
     c.async_config_entry_first_refresh = AsyncMock()
+    c.async_refresh = AsyncMock()
     c.data = {}
     return c
 
