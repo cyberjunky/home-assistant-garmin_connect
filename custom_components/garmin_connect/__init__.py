@@ -6,6 +6,7 @@ import asyncio
 import logging
 
 from ha_garmin import GarminAuth, GarminClient
+from homeassistant.config_entries import ConfigEntryNotReady
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
@@ -173,15 +174,20 @@ async def async_setup_entry(hass: HomeAssistant, entry: GarminConnectConfigEntry
         menstrual=MenstrualCoordinator(hass, entry, client, auth),
     )
 
+    try:
+        await coordinators.core.async_config_entry_first_refresh()
+    except asyncio.CancelledError as err:
+        raise ConfigEntryNotReady("Garmin API timed out during setup; will retry") from err
+
     await asyncio.gather(
-        coordinators.core.async_config_entry_first_refresh(),
-        coordinators.activity.async_config_entry_first_refresh(),
-        coordinators.training.async_config_entry_first_refresh(),
-        coordinators.body.async_config_entry_first_refresh(),
-        coordinators.goals.async_config_entry_first_refresh(),
-        coordinators.gear.async_config_entry_first_refresh(),
-        coordinators.blood_pressure.async_config_entry_first_refresh(),
-        coordinators.menstrual.async_config_entry_first_refresh(),
+        coordinators.activity.async_refresh(),
+        coordinators.training.async_refresh(),
+        coordinators.body.async_refresh(),
+        coordinators.goals.async_refresh(),
+        coordinators.gear.async_refresh(),
+        coordinators.blood_pressure.async_refresh(),
+        coordinators.menstrual.async_refresh(),
+        return_exceptions=True,
     )
 
     entry.runtime_data = coordinators
