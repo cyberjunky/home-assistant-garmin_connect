@@ -6,7 +6,6 @@ import datetime
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import date as dt_date
-from datetime import timedelta
 from enum import StrEnum
 from typing import Any, cast
 
@@ -1333,12 +1332,64 @@ def _menstrual_day_summary(data: dict[str, Any]) -> dict[str, Any]:
     return (data.get("menstrualData") or {}).get("daySummary") or {}
 
 
+def _menstrual_day_log(data: dict[str, Any]) -> dict[str, Any]:
+    """Safely return menstrual dayLog dict."""
+    return (data.get("menstrualData") or {}).get("dayLog") or {}
+
+
+def _menstrual_cycle_phase_attributes(data: dict[str, Any]) -> dict[str, Any]:
+    """Extract extensive cycle phase summary attributes."""
+    summary = _menstrual_day_summary(data)
+
+    return {
+        "cycle_start_date": summary.get("startDate"),
+        "day_in_cycle": summary.get("dayInCycle"),
+        "period_length": summary.get("periodLength"),
+        "cycle_type": summary.get("cycleType"),
+        "days_until_next_phase": summary.get("daysUntilNextPhase"),
+        "length_of_current_phase": summary.get("lengthOfCurrentPhase"),
+        "predicted_cycle_length": summary.get("predictedCycleLength"),
+    }
+
+
+def _menstrual_day_log_attributes(data: dict[str, Any]) -> dict[str, Any]:
+    """Extract extensive daily log attributes."""
+    day_log = _menstrual_day_log(data)
+
+    attrs = {
+        "calendar_date": day_log.get("calendarDate"),
+        "symptoms": day_log.get("symptoms"),
+        "moods": day_log.get("moods"),
+        "discharge": day_log.get("discharge"),
+        "flow": day_log.get("flow"),
+        "notes": day_log.get("notes"),
+        "sex_drive": day_log.get("sexDrive"),
+        "sexual_activity": day_log.get("sexualActivity"),
+        "has_baby_movement": day_log.get("hasBabyMovement"),
+        "ovulation_day": day_log.get("ovulationDay"),
+    }
+
+    return {k: v for k, v in attrs.items() if v is not None}
+
+
 def _menstrual_calendar_summaries(data: dict[str, Any]) -> list[dict[str, Any]]:
     """Safely return menstrual calendar cycleSummaries list."""
     return (data.get("menstrualCalendar") or {}).get("cycleSummaries") or []
 
 
-def _menstrual_next_predicted_cycle_start(data: dict[str, Any]) -> str | None:
+def _menstrual_cycle_start(data: dict[str, Any]) -> datetime.date | None:
+    """Return current cycle startDate."""
+    s = _menstrual_day_summary(data)
+    start = s.get("startDate")
+    if not start:
+        return None
+    try:
+        return datetime.datetime.strptime(start, "%Y-%m-%d").date()
+    except ValueError:
+        return None
+
+
+def _menstrual_next_predicted_cycle_start(data: dict[str, Any]) -> datetime.date | None:
     """Return next predicted cycle startDate from calendar."""
     today = dt_date.today()
     for cycle in _menstrual_calendar_summaries(data):
@@ -1351,38 +1402,34 @@ def _menstrual_next_predicted_cycle_start(data: dict[str, Any]) -> str | None:
             except ValueError:
                 continue
             if d >= today:
-                return str(start)
+                return d
     return None
 
 
-def _menstrual_fertile_window_start(data: dict[str, Any]) -> str | None:
+def _menstrual_fertile_window_start(data: dict[str, Any]) -> datetime.date | None:
     """Compute fertile window start date from cycle start + offset."""
+    start_date = _menstrual_cycle_start(data)
+    if not start_date:
+        return None
     s = _menstrual_day_summary(data)
-    start = s.get("startDate")
     fw_start = s.get("fertileWindowStart")
-    if not start or not isinstance(fw_start, int):
+    if not isinstance(fw_start, int):
         return None
-    try:
-        start_date = datetime.datetime.strptime(start, "%Y-%m-%d").date()
-    except ValueError:
-        return None
-    return (start_date + timedelta(days=fw_start - 1)).isoformat()
+    return start_date + datetime.timedelta(days=fw_start - 1)
 
 
-def _menstrual_fertile_window_end(data: dict[str, Any]) -> str | None:
+def _menstrual_fertile_window_end(data: dict[str, Any]) -> datetime.date | None:
     """Compute fertile window end date from start + length."""
+    start_date = _menstrual_cycle_start(data)
+    if not start_date:
+        return None
     s = _menstrual_day_summary(data)
-    start = s.get("startDate")
     fw_start = s.get("fertileWindowStart")
     fw_len = s.get("lengthOfFertileWindow")
-    if not start or not isinstance(fw_start, int) or not isinstance(fw_len, int) or fw_len <= 0:
+    if not isinstance(fw_start, int) or not isinstance(fw_len, int) or fw_len <= 0:
         return None
-    try:
-        start_date = datetime.datetime.strptime(start, "%Y-%m-%d").date()
-    except ValueError:
-        return None
-    fertile_start = start_date + timedelta(days=fw_start - 1)
-    return (fertile_start + timedelta(days=fw_len - 1)).isoformat()
+    fertile_start = start_date + datetime.timedelta(days=fw_start - 1)
+    return fertile_start + datetime.timedelta(days=fw_len - 1)
 
 
 MENSTRUAL_CYCLE_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
@@ -1396,13 +1443,7 @@ MENSTRUAL_CYCLE_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
             if isinstance(_menstrual_day_summary(data).get("currentPhase"), int)
             else None
         ),
-        attributes_fn=lambda data: {
-            "cycle_start_date": _menstrual_day_summary(data).get("startDate"),
-            "day_in_cycle": _menstrual_day_summary(data).get("dayInCycle"),
-            "period_length": _menstrual_day_summary(data).get("periodLength"),
-            "cycle_type": _menstrual_day_summary(data).get("cycleType"),
-            "days_until_next_phase": _menstrual_day_summary(data).get("daysUntilNextPhase"),
-        },
+        attributes_fn=_menstrual_cycle_phase_attributes,
     ),
     GarminConnectSensorEntityDescription(
         key="menstrualCycleDay",
@@ -1411,6 +1452,7 @@ MENSTRUAL_CYCLE_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         state_class=SensorStateClass.MEASUREMENT,
         entity_registry_enabled_default=False,
         value_fn=lambda data: _menstrual_day_summary(data).get("dayInCycle"),
+        attributes_fn=_menstrual_day_log_attributes,
     ),
     GarminConnectSensorEntityDescription(
         key="menstrualDaysUntilNextPhase",
@@ -1426,7 +1468,7 @@ MENSTRUAL_CYCLE_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         coordinator_type=CoordinatorType.MENSTRUAL,
         device_class=SensorDeviceClass.DATE,
         entity_registry_enabled_default=False,
-        value_fn=lambda data: _menstrual_day_summary(data).get("startDate"),
+        value_fn=_menstrual_cycle_start,
     ),
     GarminConnectSensorEntityDescription(
         key="menstrualNextPredictedCycleStart",
