@@ -372,6 +372,13 @@ def mock_menstrual_data() -> dict:
                     "predictedCycle": False
                 },
                 {
+                    "startDate": "2026-03-05",
+                    "periodLength": 5,
+                    "educationContentMod": 12,
+                    "lutealPhaseStart": 12,
+                    "predictedCycle": True
+                },
+                {
                     "startDate": "2026-02-14",
                     "periodLength": 5,
                     "educationContentMod": 12,

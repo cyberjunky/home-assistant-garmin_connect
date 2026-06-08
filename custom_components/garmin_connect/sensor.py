@@ -6,6 +6,7 @@ import datetime
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import date as dt_date
+from datetime import timedelta
 from enum import StrEnum
 from typing import Any, cast
 
@@ -1377,7 +1378,7 @@ def _menstrual_calendar_summaries(data: dict[str, Any]) -> list[dict[str, Any]]:
     return (data.get("menstrualCalendar") or {}).get("cycleSummaries") or []
 
 
-def _menstrual_cycle_start(data: dict[str, Any]) -> datetime.date | None:
+def _menstrual_cycle_start(data: dict[str, Any]) -> dt_date | None:
     """Return current cycle startDate."""
     s = _menstrual_day_summary(data)
     start = s.get("startDate")
@@ -1389,36 +1390,36 @@ def _menstrual_cycle_start(data: dict[str, Any]) -> datetime.date | None:
         return None
 
 
-def _menstrual_next_predicted_cycle_start(data: dict[str, Any]) -> datetime.date | None:
-    """Return next predicted cycle startDate from calendar."""
+def _menstrual_next_predicted_cycle_start(data: dict[str, Any]) -> dt_date | None:
+    """Return the closest next predicted cycle startDate from calendar."""
     today = dt_date.today()
-    for cycle in _menstrual_calendar_summaries(data):
-        if cycle.get("predictedCycle") is True:
-            start = cycle.get("startDate")
-            if not isinstance(start, str):
-                continue
-            try:
-                d = datetime.datetime.strptime(start, "%Y-%m-%d").date()
-            except ValueError:
-                continue
-            if d >= today:
-                return d
-    return None
+
+    def valid_future_dates():
+        for cycle in _menstrual_calendar_summaries(data):
+            if cycle.get("predictedCycle") is True and isinstance(cycle.get("startDate"), str):
+                try:
+                    d = datetime.datetime.strptime(cycle["startDate"], "%Y-%m-%d").date()
+                    if d >= today:
+                        yield d
+                except ValueError:
+                    pass
+
+    return min(valid_future_dates(), default=None)
 
 
-def _menstrual_fertile_window_start(data: dict[str, Any]) -> datetime.date | None:
+def _menstrual_fertile_window_start(data: dict[str, Any]) -> dt_date | None:
     """Compute fertile window start date from cycle start + offset."""
     start_date = _menstrual_cycle_start(data)
     if not start_date:
         return None
     s = _menstrual_day_summary(data)
     fw_start = s.get("fertileWindowStart")
-    if not isinstance(fw_start, int):
+    if not isinstance(fw_start, int) or fw_start <= 0:
         return None
-    return start_date + datetime.timedelta(days=fw_start - 1)
+    return start_date + timedelta(days=fw_start - 1)
 
 
-def _menstrual_fertile_window_end(data: dict[str, Any]) -> datetime.date | None:
+def _menstrual_fertile_window_end(data: dict[str, Any]) -> dt_date | None:
     """Compute fertile window end date from start + length."""
     start_date = _menstrual_cycle_start(data)
     if not start_date:
@@ -1426,10 +1427,15 @@ def _menstrual_fertile_window_end(data: dict[str, Any]) -> datetime.date | None:
     s = _menstrual_day_summary(data)
     fw_start = s.get("fertileWindowStart")
     fw_len = s.get("lengthOfFertileWindow")
-    if not isinstance(fw_start, int) or not isinstance(fw_len, int) or fw_len <= 0:
+    if (
+        not isinstance(fw_start, int)
+        or fw_start <= 0
+        or not isinstance(fw_len, int)
+        or fw_len <= 0
+    ):
         return None
-    fertile_start = start_date + datetime.timedelta(days=fw_start - 1)
-    return fertile_start + datetime.timedelta(days=fw_len - 1)
+    fertile_start = start_date + timedelta(days=fw_start - 1)
+    return fertile_start + timedelta(days=fw_len - 1)
 
 
 MENSTRUAL_CYCLE_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
@@ -1461,6 +1467,7 @@ MENSTRUAL_CYCLE_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         state_class=SensorStateClass.MEASUREMENT,
         entity_registry_enabled_default=False,
         value_fn=lambda data: _menstrual_day_summary(data).get("daysUntilNextPhase"),
+        attributes_fn=lambda _: {},
     ),
     GarminConnectSensorEntityDescription(
         key="menstrualCycleStart",
@@ -1469,6 +1476,7 @@ MENSTRUAL_CYCLE_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         device_class=SensorDeviceClass.DATE,
         entity_registry_enabled_default=False,
         value_fn=_menstrual_cycle_start,
+        attributes_fn=lambda _: {},
     ),
     GarminConnectSensorEntityDescription(
         key="menstrualNextPredictedCycleStart",
@@ -1477,6 +1485,7 @@ MENSTRUAL_CYCLE_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         device_class=SensorDeviceClass.DATE,
         entity_registry_enabled_default=False,
         value_fn=_menstrual_next_predicted_cycle_start,
+        attributes_fn=lambda _: {},
     ),
     GarminConnectSensorEntityDescription(
         key="menstrualFertileWindowStart",
@@ -1485,6 +1494,7 @@ MENSTRUAL_CYCLE_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         device_class=SensorDeviceClass.DATE,
         entity_registry_enabled_default=False,
         value_fn=_menstrual_fertile_window_start,
+        attributes_fn=lambda _: {},
     ),
     GarminConnectSensorEntityDescription(
         key="menstrualFertileWindowEnd",
@@ -1493,6 +1503,7 @@ MENSTRUAL_CYCLE_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         device_class=SensorDeviceClass.DATE,
         entity_registry_enabled_default=False,
         value_fn=_menstrual_fertile_window_end,
+        attributes_fn=lambda _: {},
     ),
     GarminConnectSensorEntityDescription(
         key="menstrualPeriodLength",
@@ -1502,6 +1513,7 @@ MENSTRUAL_CYCLE_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         state_class=SensorStateClass.MEASUREMENT,
         entity_registry_enabled_default=False,
         value_fn=lambda data: _menstrual_day_summary(data).get("periodLength"),
+        attributes_fn=lambda _: {},
     ),
     GarminConnectSensorEntityDescription(
         key="menstrualCycleType",
@@ -1509,6 +1521,7 @@ MENSTRUAL_CYCLE_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         coordinator_type=CoordinatorType.MENSTRUAL,
         entity_registry_enabled_default=False,
         value_fn=lambda data: _menstrual_day_summary(data).get("cycleType"),
+        attributes_fn=lambda _: {},
     ),
 )
 
