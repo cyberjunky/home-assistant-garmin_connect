@@ -1,6 +1,6 @@
 """Tests for Garmin Connect sensor platform."""
 
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 from custom_components.garmin_connect.sensor import (
     _COORDINATOR_SENSOR_MAP,
@@ -23,6 +23,7 @@ from .conftest import (
     mock_body_data,
     mock_gear_data,
     mock_goals_data,
+    mock_menstrual_data,
     mock_training_data,
 )
 
@@ -404,6 +405,261 @@ def test_vo2_max_none_when_missing() -> None:
     coord.data = {}
     sensor = GarminConnectSensor(coord, desc, "entry_id")
     assert sensor.native_value is None
+
+
+def test_menstrual_cycle_start_returns_date_object() -> None:
+    """Menstrual cycle start sensor must return a parsed date object, not a string."""
+    import datetime
+
+    desc = next(d for d in MENSTRUAL_CYCLE_SENSORS if d.key == "menstrualCycleStart")
+    coord = MagicMock()
+    coord.data = mock_menstrual_data()
+    sensor = GarminConnectSensor(coord, desc, "entry_id")
+    assert sensor.native_value == datetime.date.fromisoformat("2026-01-20")
+
+
+def test_menstrual_fertile_window_start_returns_none_when_fertile_window_start_is_less_than_or_zero() -> None:
+    """Menstrual fertile window start sensor must return None when fertileWindowStart <= 0"""
+    desc = next(d for d in MENSTRUAL_CYCLE_SENSORS if d.key == "menstrualFertileWindowStart")
+    coord = MagicMock()
+    coord.data = {
+        "menstrualData": {
+            "daySummary": {
+                "startDate": "2026-01-20",
+                "dayInCycle": 18,
+                "periodLength": 4,
+                "currentPhase": 4,
+                "lengthOfCurrentPhase": 12,
+                "lengthOfFertileWindow": 7,
+                "daysUntilNextPhase": 10,
+                "predictedCycleLength": 28,
+                "educationContentMod": 11,
+                "fertileWindowStart": 0,
+                "lutealPhaseStart": 12,
+                "cycleType": "REGULAR",
+                "predictedCycle": False
+            }
+        }
+    }
+    sensor = GarminConnectSensor(coord, desc, "entry_id")
+    assert sensor.native_value is None
+
+
+def test_menstrual_fertile_window_start_returns_none_when_missing() -> None:
+    """Menstrual fertile window start sensor must return None when is absent."""
+    desc = next(d for d in MENSTRUAL_CYCLE_SENSORS if d.key == "menstrualFertileWindowStart")
+    coord = MagicMock()
+    coord.data = {}
+    sensor = GarminConnectSensor(coord, desc, "entry_id")
+    assert sensor.native_value is None
+
+
+def test_menstrual_fertile_window_start_returns_date_object_when_present() -> None:
+    """Menstrual fertile window start sensor must return a parsed date object, not a string."""
+    import datetime
+
+    desc = next(d for d in MENSTRUAL_CYCLE_SENSORS if d.key == "menstrualFertileWindowStart")
+    coord = MagicMock()
+    coord.data = mock_menstrual_data()
+    sensor = GarminConnectSensor(coord, desc, "entry_id")
+    assert sensor.native_value == datetime.date.fromisoformat("2026-01-21")
+
+
+def test_menstrual_fertile_window_end_returns_none_when_missing() -> None:
+    """Menstrual fertile window end sensor must return None when is absent."""
+    desc = next(d for d in MENSTRUAL_CYCLE_SENSORS if d.key == "menstrualFertileWindowEnd")
+    coord = MagicMock()
+    coord.data = {}
+    sensor = GarminConnectSensor(coord, desc, "entry_id")
+    assert sensor.native_value is None
+
+
+def test_menstrual_fertile_window_end_returns_none_when_fertile_window_start_is_less_than_or_zero() -> None:
+    """Menstrual fertile window end sensor must return None when fertileWindowStart <= 0."""
+    desc = next(d for d in MENSTRUAL_CYCLE_SENSORS if d.key == "menstrualFertileWindowEnd")
+    coord = MagicMock()
+    coord.data = {
+        "menstrualData": {
+            "daySummary": {
+                "startDate": "2026-01-20",
+                "dayInCycle": 18,
+                "periodLength": 4,
+                "currentPhase": 4,
+                "lengthOfCurrentPhase": 12,
+                "lengthOfFertileWindow": 7,
+                "daysUntilNextPhase": 10,
+                "predictedCycleLength": 28,
+                "educationContentMod": 11,
+                "fertileWindowStart": 0,
+                "lutealPhaseStart": 12,
+                "cycleType": "REGULAR",
+                "predictedCycle": False
+            }
+        }
+    }
+    sensor = GarminConnectSensor(coord, desc, "entry_id")
+    assert sensor.native_value is None
+
+
+def test_menstrual_fertile_window_end_returns_none_when_length_of_fertile_window_is_less_than_or_zero() -> None:
+    """Menstrual fertile window end sensor must return None when lengthOfFertileWindow <= 0."""
+    desc = next(d for d in MENSTRUAL_CYCLE_SENSORS if d.key == "menstrualFertileWindowEnd")
+    coord = MagicMock()
+    coord.data = {
+        "menstrualData": {
+            "daySummary": {
+                "startDate": "2026-01-20",
+                "dayInCycle": 18,
+                "periodLength": 4,
+                "currentPhase": 4,
+                "lengthOfCurrentPhase": 12,
+                "lengthOfFertileWindow": 0,
+                "daysUntilNextPhase": 10,
+                "predictedCycleLength": 28,
+                "educationContentMod": 11,
+                "fertileWindowStart": 5,
+                "lutealPhaseStart": 12,
+                "cycleType": "REGULAR",
+                "predictedCycle": False
+            }
+        }
+    }
+    sensor = GarminConnectSensor(coord, desc, "entry_id")
+    assert sensor.native_value is None
+
+
+def test_menstrual_fertile_window_end_returns_date_object_when_present() -> None:
+    """Menstrual fertile window end sensor must return a parsed date object, not a string."""
+    import datetime
+
+    desc = next(d for d in MENSTRUAL_CYCLE_SENSORS if d.key == "menstrualFertileWindowEnd")
+    coord = MagicMock()
+    coord.data = mock_menstrual_data()
+    sensor = GarminConnectSensor(coord, desc, "entry_id")
+    assert sensor.native_value == datetime.date.fromisoformat("2026-01-27")
+
+
+@patch("custom_components.garmin_connect.sensor.dt_date")
+def test_menstrual_next_predicted_cycle_start_returns_none_when_missing(mock_date) -> None:
+    """Menstrual next predicted cycle start sensor must return None when predictedCycle entity is absent."""
+    import datetime
+
+    mock_date.today.return_value = datetime.date(2026, 1, 1)
+
+    desc = next(d for d in MENSTRUAL_CYCLE_SENSORS if d.key == "menstrualNextPredictedCycleStart")
+    coord = MagicMock()
+    coord.data = {
+        "menstrualData": {
+            "daySummary": {
+                "startDate": "2026-01-20",
+                "dayInCycle": 18,
+                "periodLength": 4,
+                "currentPhase": 4,
+                "lengthOfCurrentPhase": 12,
+                "daysUntilNextPhase": 10,
+                "predictedCycleLength": 28,
+                "educationContentMod": 11,
+                "lutealPhaseStart": 12,
+                "cycleType": "REGULAR",
+                "predictedCycle": False
+            }
+        },
+         "menstrualCalendar": {
+            "cycleSummaries": [
+                {
+                    "startDate": "2026-11-29",
+                    "periodLength": 5,
+                    "fertileWindowStart": 9,
+                    "lengthOfFertileWindow": 5,
+                    "educationContentMod": 9,
+                    "predictedCycle": False
+                }
+            ]
+        }
+    }
+    sensor = GarminConnectSensor(coord, desc, "entry_id")
+    assert sensor.native_value is None
+
+
+def test_menstrual_next_predicted_cycle_start_returns_none_when_present_and_in_the_past() -> None:
+    """Menstrual next predicted cycle start sensor must return None when present but in the past."""
+    desc = next(d for d in MENSTRUAL_CYCLE_SENSORS if d.key == "menstrualNextPredictedCycleStart")
+    coord = MagicMock()
+    coord.data = mock_menstrual_data()
+    sensor = GarminConnectSensor(coord, desc, "entry_id")
+    assert sensor.native_value is None
+
+
+@patch("custom_components.garmin_connect.sensor.dt_date")
+def test_menstrual_next_predicted_cycle_start_returns_date_object_when_present_and_in_future(mock_date) -> None:
+    """Menstrual next predicted cycle start sensor must return first predicted cycle >= today as date object."""
+    import datetime
+
+    mock_date.today.return_value = datetime.date(2026, 1, 1)
+
+    desc = next(d for d in MENSTRUAL_CYCLE_SENSORS if d.key == "menstrualNextPredictedCycleStart")
+    coord = MagicMock()
+    coord.data = mock_menstrual_data()
+    sensor = GarminConnectSensor(coord, desc, "entry_id")
+    assert sensor.native_value == datetime.date.fromisoformat("2026-02-14")
+
+
+def test_menstrual_cycle_day_attributes_return_empty_when_missing() -> None:
+    """Menstrual cycle day attributes must return empty when are absent."""
+    desc = next(d for d in MENSTRUAL_CYCLE_SENSORS if d.key == "menstrualCycleDay")
+    coord = MagicMock()
+    coord.data = {
+        "menstrualData": {
+            "daySummary": {
+                "startDate": "2026-01-20",
+                "dayInCycle": 18,
+                "periodLength": 4,
+                "currentPhase": 4,
+                "lengthOfCurrentPhase": 12,
+                "daysUntilNextPhase": 10,
+                "predictedCycleLength": 28,
+                "educationContentMod": 11,
+                "lutealPhaseStart": 12,
+                "cycleType": "REGULAR",
+                "predictedCycle": False
+            }
+        }
+    }
+    sensor = GarminConnectSensor(coord, desc, "entry_id")
+    assert sensor.native_value == 18
+    assert sensor.extra_state_attributes == {}
+
+
+def test_menstrual_cycle_day_attributes_are_populated_when_present() -> None:
+    """Menstrual cycle day attributes must be correctly mapped from data."""
+    desc = next(d for d in MENSTRUAL_CYCLE_SENSORS if d.key == "menstrualCycleDay")
+    coord = MagicMock()
+    coord.data = mock_menstrual_data()
+    sensor = GarminConnectSensor(coord, desc, "entry_id")
+    assert sensor.native_value == 18
+    attrs = sensor.extra_state_attributes
+    assert attrs["calendar_date"] == "2026-06-01"
+    assert attrs["symptoms"] == ["ACNE"]
+    assert attrs["moods"] == ["FINE"]
+    assert attrs["flow"] == "HEAVY"
+    assert attrs["notes"] == "Some note"
+    assert attrs["ovulation_day"] is True
+    assert attrs["has_baby_movement"] is False
+
+
+def test_menstrual_cycle_phase_attributes_are_populated() -> None:
+    """Menstrual cycle phase attributes must be correctly mapped from data."""
+    desc = next(d for d in MENSTRUAL_CYCLE_SENSORS if d.key == "menstrualCyclePhase")
+    coord = MagicMock()
+    coord.data = mock_menstrual_data()
+    sensor = GarminConnectSensor(coord, desc, "entry_id")
+    assert sensor.native_value == "Luteal"
+    attrs = sensor.extra_state_attributes
+    assert attrs["day_in_cycle"] == 18
+    assert attrs["period_length"] == 4
+    assert attrs["length_of_current_phase"] == 12
+    assert attrs["predicted_cycle_length"] == 28
+    assert attrs["cycle_type"] == "REGULAR"
 
 
 # ── GarminConnectGearSensor ───────────────────────────────────────────────────

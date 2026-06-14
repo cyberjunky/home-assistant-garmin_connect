@@ -62,7 +62,7 @@ def mock_client() -> Generator[MagicMock]:
         client.fetch_goals_data = AsyncMock(return_value=mock_goals_data())
         client.fetch_gear_data = AsyncMock(return_value=mock_gear_data())
         client.fetch_blood_pressure_data = AsyncMock(return_value=mock_blood_pressure_data())
-        client.fetch_menstrual_data = AsyncMock(return_value={})
+        client.fetch_menstrual_data = AsyncMock(return_value=mock_menstrual_data())
         yield client
 
 
@@ -304,4 +304,93 @@ def mock_blood_pressure_data() -> dict:
         "bpMeasurementTime": "2026-01-24T08:00:00",
         "bpCategory": 1,
         "bpCategoryName": "Normal",
+    }
+
+
+def mock_menstrual_data() -> dict:
+    """Sample data for MenstrualCoordinator."""
+    return {
+        "menstrualData": {
+            "daySummary": {
+                "startDate": "2026-01-20",
+                "dayInCycle": 18,
+                "periodLength": 4,
+                "currentPhase": 4,
+                "lengthOfCurrentPhase": 12,
+                "lengthOfFertileWindow": 7,
+                "daysUntilNextPhase": 10,
+                "predictedCycleLength": 28,
+                "educationContentMod": 11,
+                "fertileWindowStart": 2,
+                "lutealPhaseStart": 12,
+                "cycleType": "REGULAR",
+                "predictedCycle": False
+            },
+            "dayLog": {
+                "userProfilePk": 111111,
+                "calendarDate": "2026-06-01",
+                "symptoms": [
+                    "ACNE"
+                ],
+                "moods": [
+                    "FINE"
+                ],
+                "discharge": [
+                    "NO_DISCHARGE"
+                ],
+                "flow": "HEAVY",
+                "sexDrive": "LOW",
+                "sexualActivity": "PROTECTED",
+                "notes": "Some note",
+                "reportTimestamp": "2026-06-01T09:03:38.456",
+                "hasBabyMovement": False,
+                "ovulationDay": True
+            }
+        },
+        "menstrualCalendar": {
+            "cycleSummaries": [
+                {
+                    "startDate": "2025-11-29",
+                    "periodLength": 5,
+                    "fertileWindowStart": 9,
+                    "lengthOfFertileWindow": 5,
+                    "educationContentMod": 9,
+                    "predictedCycle": False
+                },
+                {
+                    "startDate": "2025-12-26",
+                    "periodLength": 4,
+                    "educationContentMod": 10,
+                    "lutealPhaseStart": 11,
+                    "predictedCycle": False
+                },
+                {
+                    "startDate": "2026-01-19",
+                    "periodLength": 6,
+                    "educationContentMod": 11,
+                    "lutealPhaseStart": 12,
+                    "predictedCycle": False
+                },
+                {
+                    "startDate": "2026-03-05",
+                    "periodLength": 5,
+                    "educationContentMod": 12,
+                    "lutealPhaseStart": 12,
+                    "predictedCycle": True
+                },
+                {
+                    "startDate": "2026-02-14",
+                    "periodLength": 5,
+                    "educationContentMod": 12,
+                    "lutealPhaseStart": 12,
+                    "predictedCycle": True
+                }
+            ],
+            "loggedSymptomDays": [
+                "2025-12-19",
+                "2026-01-25"
+            ],
+            "loggedOvulationDays": [],
+            "loggedNoteDays": []
+        }
     }
