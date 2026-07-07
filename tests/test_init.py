@@ -26,6 +26,7 @@ _COORD_TARGETS = [
     "custom_components.garmin_connect.GearCoordinator",
     "custom_components.garmin_connect.BloodPressureCoordinator",
     "custom_components.garmin_connect.MenstrualCoordinator",
+    "custom_components.garmin_connect.NutritionCoordinator",
 ]
 
 
@@ -39,7 +40,7 @@ def _coord_mock() -> MagicMock:
 
 
 def _stack_coordinators(stack: ExitStack, coord: MagicMock) -> None:
-    """Push patches for all 8 coordinator constructors onto an ExitStack."""
+    """Push patches for all 9 coordinator constructors onto an ExitStack."""
     for target in _COORD_TARGETS:
         stack.enter_context(patch(target, return_value=coord))
 
@@ -77,7 +78,7 @@ async def test_setup_entry_success() -> None:
 
 
 async def test_setup_entry_stores_all_coordinators() -> None:
-    """runtime_data must be a GarminConnectCoordinators with all 8 fields."""
+    """runtime_data must be a GarminConnectCoordinators with all 9 fields."""
     from custom_components.garmin_connect.coordinator import GarminConnectCoordinators
 
     entry = MagicMock()
@@ -105,6 +106,7 @@ async def test_setup_entry_stores_all_coordinators() -> None:
         "gear",
         "blood_pressure",
         "menstrual",
+        "nutrition",
     ):
         assert getattr(entry.runtime_data, field) is coord
 

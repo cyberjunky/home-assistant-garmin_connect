@@ -63,6 +63,7 @@ def mock_client() -> Generator[MagicMock]:
         client.fetch_gear_data = AsyncMock(return_value=mock_gear_data())
         client.fetch_blood_pressure_data = AsyncMock(return_value=mock_blood_pressure_data())
         client.fetch_menstrual_data = AsyncMock(return_value=mock_menstrual_data())
+        client.fetch_nutrition_data = AsyncMock(return_value=mock_nutrition_data())
         yield client
 
 
@@ -393,4 +394,26 @@ def mock_menstrual_data() -> dict:
             "loggedOvulationDays": [],
             "loggedNoteDays": []
         }
+    }
+
+
+def mock_nutrition_data() -> dict:
+    """Sample data for NutritionCoordinator (fetch_nutrition_data output)."""
+    return {
+        "nutritionConsumedCalories": 1850,
+        "nutritionConsumedProtein": 112.5,
+        "nutritionConsumedFat": 62.0,
+        "nutritionConsumedCarbs": 198.4,
+        "nutritionCalorieGoal": 2400,
+        "nutritionProteinGoal": 140.0,
+        "nutritionFatGoal": 80.0,
+        "nutritionCarbsGoal": 270.0,
+        "nutritionRemainingCalories": 550,
+        "nutritionLoggedEntries": 4,
+        "nutritionLastLoggedTime": datetime(2026, 7, 5, 12, 30, tzinfo=UTC),
+        "nutritionMeals": [
+            {"meal": "Breakfast", "calories": 520, "protein": 28.0, "fat": 18.0, "carbs": 60.0, "entries": 2},
+            {"meal": "Lunch", "calories": 830, "protein": 54.5, "fat": 30.0, "carbs": 88.4, "entries": 1},
+            {"meal": "Snacks", "calories": 500, "protein": 30.0, "fat": 14.0, "carbs": 50.0, "entries": 1},
+        ],
     }

@@ -10,6 +10,7 @@ from custom_components.garmin_connect.sensor import (
     GEAR_SENSORS,
     GOALS_SENSORS,
     MENSTRUAL_CYCLE_SENSORS,
+    NUTRITION_SENSORS,
     TRAINING_SENSORS,
     CoordinatorType,
     GarminConnectGearSensor,
@@ -24,6 +25,7 @@ from .conftest import (
     mock_gear_data,
     mock_goals_data,
     mock_menstrual_data,
+    mock_nutrition_data,
     mock_training_data,
 )
 
@@ -72,6 +74,8 @@ def test_coordinator_type_on_non_core_sensor_groups() -> None:
         assert desc.coordinator_type == CoordinatorType.BLOOD_PRESSURE
     for desc in MENSTRUAL_CYCLE_SENSORS:
         assert desc.coordinator_type == CoordinatorType.MENSTRUAL
+    for desc in NUTRITION_SENSORS:
+        assert desc.coordinator_type == CoordinatorType.NUTRITION
 
 
 def test_menstrual_sensors_disabled_by_default() -> None:
@@ -80,6 +84,43 @@ def test_menstrual_sensors_disabled_by_default() -> None:
         assert desc.entity_registry_enabled_default is False, (
             f"{desc.key} should be disabled by default"
         )
+
+
+def test_nutrition_sensors_disabled_by_default() -> None:
+    """All nutrition sensors must be disabled by default (Connect+ feature)."""
+    for desc in NUTRITION_SENSORS:
+        assert desc.entity_registry_enabled_default is False, (
+            f"{desc.key} should be disabled by default"
+        )
+
+
+def test_nutrition_sensor_values_from_mock_data() -> None:
+    """Nutrition sensors resolve values by key from coordinator data."""
+    data = mock_nutrition_data()
+    coordinator = MagicMock()
+    coordinator.data = data
+    for description in NUTRITION_SENSORS:
+        sensor = GarminConnectSensor(coordinator, description, "test_entry_id")
+        assert sensor.native_value == data[description.key]
+
+
+def test_nutrition_consumed_calories_meals_attribute() -> None:
+    """Consumed-calories sensor exposes the per-meal breakdown."""
+    coordinator = MagicMock()
+    coordinator.data = mock_nutrition_data()
+    description = next(d for d in NUTRITION_SENSORS if d.key == "nutritionConsumedCalories")
+    sensor = GarminConnectSensor(coordinator, description, "test_entry_id")
+    assert len(sensor.extra_state_attributes["meals"]) == 3
+
+
+def test_nutrition_sensors_unknown_when_feature_unavailable() -> None:
+    """Empty coordinator data (no Connect+) -> sensors report None/unknown."""
+    coordinator = MagicMock()
+    coordinator.data = {}
+    for description in NUTRITION_SENSORS:
+        sensor = GarminConnectSensor(coordinator, description, "test_entry_id")
+        assert sensor.native_value is None
+        assert sensor.extra_state_attributes == {}
 
 
 # ── GarminConnectSensor — basic behaviour ─────────────────────────────────────

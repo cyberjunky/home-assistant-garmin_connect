@@ -22,6 +22,7 @@ from .coordinator import (
     GearCoordinator,
     GoalsCoordinator,
     MenstrualCoordinator,
+    NutritionCoordinator,
     TrainingCoordinator,
 )
 from .services import async_setup_services, async_unload_services
@@ -172,6 +173,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: GarminConnectConfigEntry
         gear=GearCoordinator(hass, entry, client, auth),
         blood_pressure=BloodPressureCoordinator(hass, entry, client, auth),
         menstrual=MenstrualCoordinator(hass, entry, client, auth),
+        nutrition=NutritionCoordinator(hass, entry, client, auth),
     )
 
     try:
@@ -187,6 +189,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: GarminConnectConfigEntry
         coordinators.gear.async_refresh(),
         coordinators.blood_pressure.async_refresh(),
         coordinators.menstrual.async_refresh(),
+        coordinators.nutrition.async_refresh(),
         return_exceptions=True,
     )
 

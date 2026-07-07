@@ -82,7 +82,7 @@ After setup, configure these options via the integration's **Configure** button:
 
 ## Data updates
 
-The integration uses cloud polling to fetch data from Garmin Connect servers. Data is refreshed based on the configured scan interval (default: 5 minutes). Eight independent coordinators fetch data in parallel:
+The integration uses cloud polling to fetch data from Garmin Connect servers. Data is refreshed based on the configured scan interval (default: 5 minutes). Nine independent coordinators fetch data in parallel:
 
 | Coordinator | Data |
 |-------------|------|
@@ -94,6 +94,7 @@ The integration uses cloud polling to fetch data from Garmin Connect servers. Da
 | Gear | Shoes, bikes, equipment usage and distance |
 | Blood Pressure | Systolic, diastolic, pulse |
 | Menstrual | Cycle phase, day, fertile window |
+| Nutrition | Consumed calories & macros, goals, per-meal breakdown (Connect+, disabled by default) |
 
 > **Tip:** Garmin devices sync to Garmin Connect when in Bluetooth range of the paired phone or via WiFi. Sensors update after your device syncs to Garmin Connect **and** the integration polls for new data.
 
@@ -101,7 +102,7 @@ The integration uses cloud polling to fetch data from Garmin Connect servers. Da
 
 All sensors are created under a single "Garmin Connect" device. Entity IDs follow the pattern `sensor.garmin_connect_[sensor_name]`.
 
-> **Note:** Most sensors are enabled by default. Menstrual cycle sensors are disabled by default and can be enabled in the entity settings. Sensor values depend on your Garmin devices and connected apps — not all data may be available for your account.
+> **Note:** Most sensors are enabled by default. Menstrual cycle and nutrition sensors are disabled by default and can be enabled in the entity settings. Sensor values depend on your Garmin devices and connected apps — not all data may be available for your account.
 
 ### Activity & Steps
 
@@ -284,6 +285,43 @@ All sensors are created under a single "Garmin Connect" device. Entity IDs follo
 | Next Predicted Cycle Start | Predicted start of next cycle |
 
 > Menstrual cycle sensors are disabled by default and only available if tracking is enabled in your Garmin Connect account.
+
+### Nutrition
+
+> Requires a **Garmin Connect+** subscription with nutrition logging set up in the Garmin Connect app. Without Connect+, sensors report `unknown` — enable them in entity settings after confirming your account has nutrition data.
+
+| Sensor | Unit | Notes |
+|--------|------|-------|
+| Nutrition consumed calories | kcal | Per-meal breakdown in `meals` attribute |
+| Nutrition consumed protein / fat / carbs | g | Daily totals from nutrition log |
+| Nutrition calorie / protein / fat / carbs goal | kcal / g | Targets from your meal plan |
+| Nutrition remaining calories | kcal | Goal minus consumed (may be negative) |
+| Nutrition logged entries | entries | Count of food log entries today |
+| Nutrition last logged | timestamp | Most recent log entry (UTC) |
+
+Nutrition sensors are disabled by default. Enable them under **Settings → Devices & services → Garmin Connect → Entities**.
+
+> **Statistics caveat:** Editing or deleting meals in the Garmin app can decrease daily totals. Long-term statistics may not reflect retroactive changes accurately.
+
+Meals logged via the `add_nutrition_log` service appear after the next poll (default 5 minutes).
+
+**Automation example** — evening protein reminder:
+
+```yaml
+alias: Low protein reminder
+trigger:
+  - platform: time
+    at: "20:00:00"
+condition:
+  - condition: template
+    value_template: >
+      {{ states('sensor.garmin_connect_nutrition_consumed_protein') | float(0)
+         < states('sensor.garmin_connect_nutrition_protein_goal') | float(1) * 0.8 }}
+action:
+  - service: notify.mobile_app
+    data:
+      message: "You're below 80% of your protein goal today."
+```
 
 ### Gear Tracking
 
