@@ -4,7 +4,7 @@ mypy==2.1.0
 pre-commit==4.6.0
 pre-commit-hooks==6.0.0
 pycares>=5.0.1
-pylint==4.0.5
+pylint==4.0.6
 pytest
 pytest-asyncio
 pytest-cov
