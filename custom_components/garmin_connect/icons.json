@@ -40,6 +40,7 @@
       "consumed_calories": { "default": "mdi:food" },
       "daily_step_goal": { "default": "mdi:target" },
       "deep_sleep": { "default": "mdi:sleep" },
+      "devices": { "default": "mdi:watch" },
       "endurance_score": { "default": "mdi:run" },
       "fitness_age": { "default": "mdi:calendar-heart" },
       "floors_ascended": { "default": "mdi:stairs-up" },

@@ -292,6 +292,39 @@ def mock_gear_data() -> dict:
             }
         ],
         "nextAlarm": ["2026-01-25T06:30:00+00:00"],
+        "solarIntensity": [
+            {
+                "deviceId": 123456,
+                "deviceName": "Instinct 2X Solar",
+                "solarUtilization": 42.5,
+                "activityTimeGainMs": 60000,
+                "readingTimestampGmt": "2026-01-24T10:00:00.0",
+            }
+        ],
+        "devices": [
+            {
+                "deviceId": 123456,
+                "unitId": 123456,
+                "displayName": "Instinct 2X Solar",
+                "productDisplayName": "Instinct 2X Solar",
+                "applicationKey": "instinct2xsolar",
+                "serialNumber": "ABC123456",
+                "partNumber": "006-B1234-00",
+                "productSku": "010-02805-00",
+                "imageUrl": "https://example.com/instinct.png",
+                "primary": True,
+                "primaryActivityTrackerIndicator": True,
+                "deviceCategories": ["FITNESS", "WELLNESS"],
+                "wifi": True,
+            }
+        ],
+        "lastUsedDevice": {
+            "userDeviceId": 123456,
+            "lastUsedDeviceApplicationKey": "instinct2xsolar",
+            "lastUsedDeviceName": "Instinct 2X Solar",
+            "lastSyncTime": datetime(2026, 1, 24, 10, 30, tzinfo=UTC),
+            "imageUrl": "https://example.com/instinct.png",
+        },
     }
 
 

@@ -389,6 +389,65 @@ def test_next_alarm_none_when_missing() -> None:
     assert sensor.native_value is None
 
 
+def test_solar_intensity_returns_utilization() -> None:
+    """solarIntensity sensor must return solarUtilization of the first solar device."""
+    desc = next(d for d in GEAR_SENSORS if d.key == "solarIntensity")
+    coord = MagicMock()
+    coord.data = mock_gear_data()
+    sensor = GarminConnectSensor(coord, desc, "entry_id")
+    assert sensor.native_value == 42.5
+    assert sensor.extra_state_attributes["devices"][0]["deviceName"] == "Instinct 2X Solar"
+
+
+def test_solar_intensity_none_when_no_solar_devices() -> None:
+    """solarIntensity sensor must return None when no device reports solar data."""
+    desc = next(d for d in GEAR_SENSORS if d.key == "solarIntensity")
+    coord = MagicMock()
+    coord.data = {"solarIntensity": []}
+    sensor = GarminConnectSensor(coord, desc, "entry_id")
+    assert sensor.native_value is None
+
+
+def test_solar_intensity_none_when_missing() -> None:
+    """solarIntensity sensor must return None when the key is absent."""
+    desc = next(d for d in GEAR_SENSORS if d.key == "solarIntensity")
+    coord = MagicMock()
+    coord.data = {}
+    sensor = GarminConnectSensor(coord, desc, "entry_id")
+    assert sensor.native_value is None
+
+
+def test_devices_returns_count_and_details() -> None:
+    """devices sensor must return device count with details and last used device as attributes."""
+    desc = next(d for d in GEAR_SENSORS if d.key == "devices")
+    coord = MagicMock()
+    coord.data = mock_gear_data()
+    sensor = GarminConnectSensor(coord, desc, "entry_id")
+    assert sensor.native_value == 1
+    attrs = sensor.extra_state_attributes
+    assert attrs["devices"][0]["productDisplayName"] == "Instinct 2X Solar"
+    assert attrs["devices"][0]["serialNumber"] == "ABC123456"
+    assert attrs["last_used_device"]["lastUsedDeviceName"] == "Instinct 2X Solar"
+
+
+def test_devices_none_when_missing() -> None:
+    """devices sensor must return None when the key is absent."""
+    desc = next(d for d in GEAR_SENSORS if d.key == "devices")
+    coord = MagicMock()
+    coord.data = {}
+    sensor = GarminConnectSensor(coord, desc, "entry_id")
+    assert sensor.native_value is None
+
+
+def test_devices_zero_when_empty() -> None:
+    """devices sensor must return 0 when the device list is empty."""
+    desc = next(d for d in GEAR_SENSORS if d.key == "devices")
+    coord = MagicMock()
+    coord.data = {"devices": []}
+    sensor = GarminConnectSensor(coord, desc, "entry_id")
+    assert sensor.native_value == 0
+
+
 def test_vo2_max_extracts_value() -> None:
     """vo2MaxValue sensor must return the flattened vo2MaxValue from ha_garmin computed fields."""
     desc = next(d for d in TRAINING_SENSORS if d.key == "vo2Max")
