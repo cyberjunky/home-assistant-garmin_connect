@@ -108,7 +108,6 @@
       "bone_mass": { "name": "Bone mass" },
       "bp_category": { "name": "Blood pressure category" },
       "bp_diastolic": { "name": "Blood pressure diastolic" },
-      "bp_measurement_time": { "name": "Blood pressure measurement time" },
       "bp_pulse": { "name": "Blood pressure pulse" },
       "bp_systolic": { "name": "Blood pressure systolic" },
       "burned_calories": { "name": "Burned calories" },

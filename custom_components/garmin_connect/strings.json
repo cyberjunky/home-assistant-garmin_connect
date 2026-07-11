@@ -8,6 +8,7 @@
     "error": {
       "invalid_auth": "Invalid credentials",
       "invalid_mfa": "Invalid verification code",
+      "rate_limit": "Too many login attempts — Garmin is rate limiting. Please try again in a few minutes.",
       "unknown": "Unexpected error"
     },
     "step": {
@@ -24,11 +25,13 @@
       "reauth_confirm": {
         "data": {
           "password": "Password",
-          "username": "Email"
+          "username": "Email",
+          "is_cn": "Use Garmin Connect China (cn.garmin.com)"
         },
         "data_description": {
           "password": "Your Garmin Connect password",
-          "username": "Your Garmin Connect email address"
+          "username": "Your Garmin Connect email address",
+          "is_cn": "Enable for accounts registered on the Chinese Garmin Connect platform"
         },
         "description": "Enter your Garmin Connect credentials to re-authenticate.",
         "title": "Re-authenticate Integration"
@@ -36,11 +39,13 @@
       "reconfigure": {
         "data": {
           "password": "Password",
-          "username": "Email"
+          "username": "Email",
+          "is_cn": "Use Garmin Connect China (cn.garmin.com)"
         },
         "data_description": {
           "password": "Your Garmin Connect password",
-          "username": "Your Garmin Connect email address"
+          "username": "Your Garmin Connect email address",
+          "is_cn": "Enable for accounts registered on the Chinese Garmin Connect platform"
         },
         "description": "Update your Garmin Connect credentials.",
         "title": "Reconfigure Integration"
@@ -48,11 +53,13 @@
       "user": {
         "data": {
           "password": "Password",
-          "username": "Email"
+          "username": "Email",
+          "is_cn": "Use Garmin Connect China (cn.garmin.com)"
         },
         "data_description": {
           "password": "Your Garmin Connect password",
-          "username": "Your Garmin Connect email address"
+          "username": "Your Garmin Connect email address",
+          "is_cn": "Enable for accounts registered on the Chinese Garmin Connect platform"
         },
         "description": "Enter your Garmin Connect credentials."
       }
@@ -62,10 +69,12 @@
     "step": {
       "init": {
         "data": {
-          "scan_interval": "Update interval (seconds)"
+          "scan_interval": "Update interval (seconds)",
+          "is_cn": "Use Garmin Connect China (cn.garmin.com)"
         },
         "data_description": {
-          "scan_interval": "How often to fetch data from Garmin Connect (60–3600 seconds)"
+          "scan_interval": "How often to fetch data from Garmin Connect (60–3600 seconds)",
+          "is_cn": "Enable for accounts registered on the Chinese Garmin Connect platform"
         },
         "description": "Configure your Garmin Connect integration settings.",
         "title": "Garmin Connect Options"
@@ -99,7 +108,6 @@
       "bone_mass": { "name": "Bone mass" },
       "bp_category": { "name": "Blood pressure category" },
       "bp_diastolic": { "name": "Blood pressure diastolic" },
-      "bp_measurement_time": { "name": "Blood pressure measurement time" },
       "bp_pulse": { "name": "Blood pressure pulse" },
       "bp_systolic": { "name": "Blood pressure systolic" },
       "burned_calories": { "name": "Burned calories" },
@@ -246,6 +254,7 @@
       "name": "Add body composition",
       "description": "Add body composition metrics to Garmin Connect.",
       "fields": {
+        "entity_id": { "name": "Garmin Connect entity", "description": "Optional Garmin Connect entity whose account should receive the measurement." },
         "weight": { "name": "Weight", "description": "Weight in kilograms." },
         "timestamp": { "name": "Timestamp", "description": "When the measurement was recorded (defaults to now)." },
         "bmi": { "name": "BMI", "description": "Body Mass Index." },
