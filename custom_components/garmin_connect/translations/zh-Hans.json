@@ -108,7 +108,6 @@
       "bone_mass": { "name": "骨骼重量" },
       "bp_category": { "name": "血压类别" },
       "bp_diastolic": { "name": "舒张压" },
-      "bp_measurement_time": { "name": "血压测量时间" },
       "bp_pulse": { "name": "血压脉率" },
       "bp_systolic": { "name": "收缩压" },
       "burned_calories": { "name": "已消耗卡路里" },

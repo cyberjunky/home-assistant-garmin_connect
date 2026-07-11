@@ -385,15 +385,6 @@ def test_bp_category_returns_name() -> None:
     assert sensor.native_value == "Normal"
 
 
-def test_bp_measurement_time_returns_string() -> None:
-    """bpMeasurementTime sensor must return the local measurement timestamp string."""
-    desc = next(d for d in BLOOD_PRESSURE_SENSORS if d.key == "bpMeasurementTime")
-    coord = MagicMock()
-    coord.data = mock_blood_pressure_data()
-    sensor = GarminConnectSensor(coord, desc, "entry_id")
-    assert sensor.native_value == "2026-01-24T08:00:00"
-
-
 def test_next_alarm_returns_first() -> None:
     """nextAlarm sensor must return a timezone-aware datetime parsed from the first alarm string."""
     import datetime
