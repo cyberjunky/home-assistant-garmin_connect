@@ -278,6 +278,47 @@ upload_activity:
       selector:
         text:
 
+download_activity:
+  name: Download activity
+  description: Download an activity file from Garmin Connect and save it on the HA host.
+  fields:
+    entity_id:
+      name: Garmin Connect entity
+      description: Optional Garmin Connect entity whose account owns the activity.
+      selector:
+        entity:
+          integration: garmin_connect
+          domain: sensor
+    activity_id:
+      name: Activity ID
+      description: Garmin activity ID (see last_activity sensor attributes).
+      required: true
+      example: 23545484677
+      selector:
+        number:
+          mode: box
+          min: 0
+          max: 999999999999
+    file_format:
+      name: File format
+      description: File format to download. "fit" extracts the FIT file from the original recording, "original" keeps the raw zip.
+      default: fit
+      selector:
+        select:
+          options:
+            - fit
+            - original
+            - tcx
+            - gpx
+            - kml
+            - csv
+    file_path:
+      name: File path
+      description: Target file or directory. Must be in allowlist_external_dirs. Defaults to <config>/garmin_activities/activity_<id>.<format>.
+      example: "/config/garmin_activities/run.fit"
+      selector:
+        text:
+
 add_hydration:
   name: Add hydration
   description: Log a hydration intake (or deduction) to Garmin Connect.

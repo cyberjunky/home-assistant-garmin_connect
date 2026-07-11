@@ -116,6 +116,7 @@
       "consumed_calories": { "name": "摄入卡路里" },
       "daily_step_goal": { "name": "每日步数目标" },
       "deep_sleep": { "name": "深度睡眠" },
+      "devices": { "name": "设备" },
       "endurance_score": { "name": "耐力得分" },
       "fitness_age": { "name": "健身年龄" },
       "floors_ascended": { "name": "上升楼层" },
@@ -196,6 +197,7 @@
       "sleep_duration": { "name": "睡眠时长" },
       "sleep_score": { "name": "睡眠分数" },
       "sleeping_time": { "name": "睡眠时间" },
+      "solar_intensity": { "name": "太阳能强度" },
       "stress_percentage": { "name": "压力百分比" },
       "stress_qualifier": { "name": "压力级别" },
       "total_calories": { "name": "总卡路里" },
@@ -289,6 +291,16 @@
         "time_zone": { "name": "时区", "description": "活动的时区。" }
       }
     },
+    "download_activity": {
+      "name": "下载活动",
+      "description": "从 Garmin Connect 下载活动文件并保存到 Home Assistant 系统。",
+      "fields": {
+        "entity_id": { "name": "Garmin Connect 实体", "description": "可选：拥有该活动的 Garmin Connect 实体。" },
+        "activity_id": { "name": "活动 ID", "description": "Garmin 活动 ID（见 last_activity 传感器属性）。" },
+        "file_format": { "name": "文件格式", "description": "fit（从原始 zip 提取）、original（原始 zip）、tcx、gpx、kml 或 csv。" },
+        "file_path": { "name": "文件路径", "description": "目标文件或目录。自定义路径必须在 allowlist_external_dirs 中。默认为 <config>/garmin_activities/。" }
+      }
+    },
     "upload_activity": {
       "name": "上传活动",
       "description": "向 Garmin Connect 上传活动文件(FIT、GPX、TCX)。",
@@ -312,6 +324,8 @@
     "add_body_composition_failed": { "message": "添加身体成分失败:{error}" },
     "add_gear_to_activity_failed": { "message": "为活动添加装备失败:{error}" },
     "create_activity_failed": { "message": "创建活动失败:{error}" },
+    "download_activity_failed": { "message": "下载活动失败：{error}" },
+    "path_not_allowed": { "message": "路径不允许：{file_path}。请将目录添加到 allowlist_external_dirs。" },
     "entity_not_found": { "message": "未找到实体:{entity_id}" },
     "file_not_found": { "message": "未找到文件:{file_path}" },
     "gear_uuid_not_found": { "message": "实体 {entity_id} 没有 gear_uuid 属性。" },

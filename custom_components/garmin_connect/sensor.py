@@ -1229,6 +1229,34 @@ GEAR_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         ),
         attributes_fn=lambda data: {"next_alarms": data.get("nextAlarm")},
     ),
+    GarminConnectSensorEntityDescription(
+        key="solarIntensity",
+        translation_key="solar_intensity",
+        coordinator_type=CoordinatorType.GEAR,
+        native_unit_of_measurement=PERCENTAGE,
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fn=lambda data: next(
+            (
+                d.get("solarUtilization")
+                for d in (data.get("solarIntensity") or [])
+                if d.get("solarUtilization") is not None
+            ),
+            None,
+        ),
+        attributes_fn=lambda data: {"devices": data.get("solarIntensity")},
+    ),
+    GarminConnectSensorEntityDescription(
+        key="devices",
+        translation_key="devices",
+        coordinator_type=CoordinatorType.GEAR,
+        value_fn=lambda data: (
+            len(data["devices"]) if isinstance(data.get("devices"), list) else None
+        ),
+        attributes_fn=lambda data: {
+            "devices": data.get("devices"),
+            "last_used_device": data.get("lastUsedDevice"),
+        },
+    ),
 )
 
 

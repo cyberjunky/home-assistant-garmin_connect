@@ -235,6 +235,8 @@ All sensors are created under a single "Garmin Connect" device. Entity IDs follo
 | Power to Weight [Sport] | Dynamic per-sport power-to-weight sensor (W/kg), e.g. Running, Cycling |
 | FTP [Sport] | Dynamic per-sport functional threshold power sensor (W), e.g. Running, Cycling |
 | Next Alarm | Next scheduled alarm time |
+| Solar Intensity | Solar charging utilization (%) for solar-capable devices |
+| Devices | Number of registered Garmin devices, with per-device details and last used device as attributes |
 
 > Power-to-weight and FTP sensors are created dynamically for each available sport in your Garmin training data. Names are formatted like `Power to Weight Running` and `FTP Running`.
 
@@ -497,6 +499,25 @@ action: garmin_connect.upload_activity
 data:
   entity_id: sensor.garmin_connect_last_activity
   file_path: "activities/morning_run.fit"
+```
+
+### garmin_connect.download_activity
+
+Download an activity file from Garmin Connect and save it on the HA host. Supports response data with the saved path and size.
+
+| Parameter | Required | Description |
+|-----------|----------|-------------|
+| `entity_id` | No | Garmin Connect entity whose account owns the activity |
+| `activity_id` | Yes | Garmin activity ID (see `last_activity` sensor attributes) |
+| `file_format` | No | `fit` (default, extracted from original zip), `original` (raw zip), `tcx`, `gpx`, `kml`, `csv` |
+| `file_path` | No | Target file or directory. Custom paths must be in `allowlist_external_dirs`. Defaults to `<config>/garmin_activities/activity_<id>.<format>` |
+
+```yaml
+action: garmin_connect.download_activity
+data:
+  activity_id: 23545484677
+  file_format: gpx
+response_variable: download
 ```
 
 ### garmin_connect.add_nutrition_log
