@@ -758,7 +758,7 @@ ACTIVITY_TRACKING_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         translation_key="last_activities",
         coordinator_type=CoordinatorType.ACTIVITY,
         state_class=SensorStateClass.TOTAL,
-        value_fn=lambda data: len(data.get("lastActivities") or []),
+        value_fn=lambda data: _count_recent_activities(data),
         attributes_fn=lambda data: {
             "last_activities": sorted(
                 data.get("lastActivities") or [],
@@ -1206,6 +1206,23 @@ def _parse_iso(value: str) -> datetime.datetime | None:
         return datetime.datetime.fromisoformat(value)
     except (ValueError, TypeError):
         return None
+
+
+def _count_recent_activities(data: dict[str, Any]) -> int:
+    """Count activities started within the last 7 days.
+
+    The library returns the 10 most recent activities regardless of age;
+    the sensor state keeps its "activities this week" meaning.
+    """
+    cutoff = datetime.datetime.now(datetime.UTC) - timedelta(days=7)
+    return len(
+        [
+            a
+            for a in (data.get("lastActivities") or [])
+            if isinstance(a.get("startTime"), datetime.datetime)
+            and a["startTime"] >= cutoff
+        ]
+    )
 
 
 # ── GEAR coordinator sensors ──────────────────────────────────────────────────

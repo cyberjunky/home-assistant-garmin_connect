@@ -354,12 +354,14 @@ def test_last_activity_returns_name_and_attributes() -> None:
 
 
 def test_last_activities_count() -> None:
-    """lastActivities sensor must return the number of activities in the list."""
+    """lastActivities sensor must count only activities from the last 7 days."""
     desc = next(d for d in ACTIVITY_TRACKING_SENSORS if d.key == "lastActivities")
     coord = MagicMock()
     coord.data = mock_activity_data()
     sensor = GarminConnectSensor(coord, desc, "entry_id")
-    assert sensor.native_value == 2
+    # Fixture has one activity 1 day old and one 30 days old
+    assert sensor.native_value == 1
+    assert len(sensor.extra_state_attributes["last_activities"]) == 2
 
 
 def test_bp_systolic_value_and_attributes() -> None:

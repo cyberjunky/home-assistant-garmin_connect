@@ -1,7 +1,7 @@
 """Fixtures for Garmin Connect tests."""
 
 from collections.abc import Generator
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -169,8 +169,16 @@ def mock_activity_data() -> dict:
             "calories": 400,
         },
         "lastActivities": [
-            {"activityId": 12345, "activityName": "Morning Run"},
-            {"activityId": 12344, "activityName": "Walk"},
+            {
+                "activityId": 12345,
+                "activityName": "Morning Run",
+                "startTime": datetime.now(UTC) - timedelta(days=1),
+            },
+            {
+                "activityId": 12344,
+                "activityName": "Walk",
+                "startTime": datetime.now(UTC) - timedelta(days=30),
+            },
         ],
         "lastWorkout": {"workoutId": 999, "workoutName": "5k Easy"},
         "workouts": [{"workoutId": 999, "workoutName": "5k Easy"}],
