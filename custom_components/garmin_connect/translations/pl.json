@@ -158,9 +158,6 @@
       "bp_diastolic": {
         "name": "Ciśnienie rozkurczowe"
       },
-      "bp_measurement_time": {
-        "name": "Czas pomiaru ciśnienia"
-      },
       "bp_pulse": {
         "name": "Puls przy pomiarze ciśnienia"
       },

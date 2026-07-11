@@ -1354,12 +1354,6 @@ BLOOD_PRESSURE_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
             if v is not None
         },
     ),
-    GarminConnectSensorEntityDescription(
-        key="bpMeasurementTime",
-        translation_key="bp_measurement_time",
-        coordinator_type=CoordinatorType.BLOOD_PRESSURE,
-        preserve_value=True,
-    ),
 )
 
 
