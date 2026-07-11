@@ -62,7 +62,7 @@ def _get_client_for_entry(mock_hass: MagicMock, entry_id: str) -> AsyncMock:
 
 
 async def test_setup_registers_all_services(mock_hass: MagicMock) -> None:
-    """async_setup_services must register all 8 service handlers."""
+    """async_setup_services must register all 9 service handlers."""
     await async_setup_services(mock_hass)
 
     registered = {call[0][1] for call in mock_hass.services.async_register.call_args_list}
@@ -72,6 +72,7 @@ async def test_setup_registers_all_services(mock_hass: MagicMock) -> None:
         "add_blood_pressure",
         "create_activity",
         "upload_activity",
+        "download_activity",
         "add_gear_to_activity",
         "add_hydration",
         "add_nutrition_log",
@@ -79,7 +80,7 @@ async def test_setup_registers_all_services(mock_hass: MagicMock) -> None:
 
 
 async def test_unload_removes_all_services(mock_hass: MagicMock) -> None:
-    """async_unload_services must remove all 8 services."""
+    """async_unload_services must remove all 9 services."""
     await async_unload_services(mock_hass)
 
     removed = {call[0][1] for call in mock_hass.services.async_remove.call_args_list}
@@ -89,6 +90,7 @@ async def test_unload_removes_all_services(mock_hass: MagicMock) -> None:
         "add_blood_pressure",
         "create_activity",
         "upload_activity",
+        "download_activity",
         "add_gear_to_activity",
         "add_hydration",
         "add_nutrition_log",
@@ -458,6 +460,89 @@ async def test_upload_activity_file_not_found_raises(mock_hass: MagicMock) -> No
 
     call = MagicMock()
     call.data = {"file_path": "/nonexistent/activity.fit"}
+
+    with pytest.raises(HomeAssistantError):
+        await handler(call)
+
+
+async def test_download_activity_default_path(mock_hass: MagicMock, tmp_path: Path) -> None:
+    """download_activity must save the file under <config>/garmin_activities and return response."""
+    await async_setup_services(mock_hass)
+    handler = _get_handler(mock_hass, "download_activity")
+    client = _get_client(mock_hass)
+    client.download_activity.return_value = b"fake fit data"
+
+    mock_hass.config.path.side_effect = lambda *parts: str(tmp_path.joinpath(*parts))
+    mock_hass.async_add_executor_job = AsyncMock(side_effect=lambda func, *args: func(*args))
+
+    call = MagicMock()
+    call.data = {"activity_id": 12345, "file_format": "fit"}
+    call.return_response = True
+
+    response = await handler(call)
+
+    client.download_activity.assert_awaited_once_with(12345, "fit")
+    expected = tmp_path / "garmin_activities" / "activity_12345.fit"
+    assert expected.read_bytes() == b"fake fit data"
+    assert response == {
+        "file_path": str(expected),
+        "size_bytes": 13,
+        "activity_id": 12345,
+        "file_format": "fit",
+    }
+
+
+async def test_download_activity_original_gets_zip_extension(
+    mock_hass: MagicMock, tmp_path: Path
+) -> None:
+    """download_activity original format must save with .zip extension."""
+    await async_setup_services(mock_hass)
+    handler = _get_handler(mock_hass, "download_activity")
+    client = _get_client(mock_hass)
+    client.download_activity.return_value = b"PK zip data"
+
+    mock_hass.config.path.side_effect = lambda *parts: str(tmp_path.joinpath(*parts))
+    mock_hass.async_add_executor_job = AsyncMock(side_effect=lambda func, *args: func(*args))
+
+    call = MagicMock()
+    call.data = {"activity_id": 12345, "file_format": "original"}
+    call.return_response = False
+
+    response = await handler(call)
+
+    assert response is None
+    assert (tmp_path / "garmin_activities" / "activity_12345.zip").is_file()
+
+
+async def test_download_activity_custom_path_not_allowed_raises(
+    mock_hass: MagicMock,
+) -> None:
+    """download_activity must raise when a custom path is outside allowlist_external_dirs."""
+    await async_setup_services(mock_hass)
+    handler = _get_handler(mock_hass, "download_activity")
+
+    mock_hass.config.is_allowed_path.return_value = False
+
+    call = MagicMock()
+    call.data = {
+        "activity_id": 12345,
+        "file_format": "gpx",
+        "file_path": "/not/allowed/run.gpx",
+    }
+
+    with pytest.raises(HomeAssistantError):
+        await handler(call)
+
+
+async def test_download_activity_client_error_raises(mock_hass: MagicMock) -> None:
+    """download_activity must wrap client errors in HomeAssistantError."""
+    await async_setup_services(mock_hass)
+    handler = _get_handler(mock_hass, "download_activity")
+    client = _get_client(mock_hass)
+    client.download_activity.side_effect = Exception("boom")
+
+    call = MagicMock()
+    call.data = {"activity_id": 12345, "file_format": "fit"}
 
     with pytest.raises(HomeAssistantError):
         await handler(call)

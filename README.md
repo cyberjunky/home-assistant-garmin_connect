@@ -463,6 +463,25 @@ data:
   file_path: "activities/morning_run.fit"
 ```
 
+### garmin_connect.download_activity
+
+Download an activity file from Garmin Connect and save it on the HA host. Supports response data with the saved path and size.
+
+| Parameter | Required | Description |
+|-----------|----------|-------------|
+| `entity_id` | No | Garmin Connect entity whose account owns the activity |
+| `activity_id` | Yes | Garmin activity ID (see `last_activity` sensor attributes) |
+| `file_format` | No | `fit` (default, extracted from original zip), `original` (raw zip), `tcx`, `gpx`, `kml`, `csv` |
+| `file_path` | No | Target file or directory. Custom paths must be in `allowlist_external_dirs`. Defaults to `<config>/garmin_activities/activity_<id>.<format>` |
+
+```yaml
+action: garmin_connect.download_activity
+data:
+  activity_id: 23545484677
+  file_format: gpx
+response_variable: download
+```
+
 ### garmin_connect.add_nutrition_log
 
 Log a Quick Add nutrition entry to Garmin Connect. Requires a Connect+ subscription and initial nutrition setup in the Garmin Connect app.

@@ -291,6 +291,16 @@
         "time_zone": { "name": "Time zone", "description": "Time zone for the activity." }
       }
     },
+    "download_activity": {
+      "name": "Download activity",
+      "description": "Download an activity file from Garmin Connect and save it on the Home Assistant system.",
+      "fields": {
+        "entity_id": { "name": "Garmin Connect entity", "description": "Optional Garmin Connect entity whose account owns the activity." },
+        "activity_id": { "name": "Activity ID", "description": "Garmin activity ID (see last_activity sensor attributes)." },
+        "file_format": { "name": "File format", "description": "fit (extracted from original zip), original (raw zip), tcx, gpx, kml or csv." },
+        "file_path": { "name": "File path", "description": "Target file or directory. Custom paths must be in allowlist_external_dirs. Defaults to <config>/garmin_activities/." }
+      }
+    },
     "upload_activity": {
       "name": "Upload activity",
       "description": "Upload an activity file (FIT, GPX, TCX) to Garmin Connect.",
@@ -314,6 +324,8 @@
     "add_body_composition_failed": { "message": "Failed to add body composition: {error}" },
     "add_gear_to_activity_failed": { "message": "Failed to add gear to activity: {error}" },
     "create_activity_failed": { "message": "Failed to create activity: {error}" },
+    "download_activity_failed": { "message": "Failed to download activity: {error}" },
+    "path_not_allowed": { "message": "Path is not allowed: {file_path}. Add the directory to allowlist_external_dirs." },
     "entity_not_found": { "message": "Entity not found: {entity_id}" },
     "file_not_found": { "message": "File not found: {file_path}" },
     "gear_uuid_not_found": { "message": "Entity {entity_id} does not have a gear_uuid attribute." },

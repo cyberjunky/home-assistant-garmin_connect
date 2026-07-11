@@ -7,7 +7,12 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 import voluptuous as vol
-from homeassistant.core import HomeAssistant, ServiceCall
+from homeassistant.core import (
+    HomeAssistant,
+    ServiceCall,
+    ServiceResponse,
+    SupportsResponse,
+)
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import entity_registry as er
@@ -25,6 +30,7 @@ SERVICE_ADD_BODY_COMPOSITION = "add_body_composition"
 SERVICE_ADD_BLOOD_PRESSURE = "add_blood_pressure"
 SERVICE_CREATE_ACTIVITY = "create_activity"
 SERVICE_UPLOAD_ACTIVITY = "upload_activity"
+SERVICE_DOWNLOAD_ACTIVITY = "download_activity"
 SERVICE_ADD_GEAR_TO_ACTIVITY = "add_gear_to_activity"
 SERVICE_ADD_HYDRATION = "add_hydration"
 SERVICE_ADD_NUTRITION = "add_nutrition_log"
@@ -99,6 +105,17 @@ UPLOAD_ACTIVITY_SCHEMA = vol.Schema(
     {
         vol.Optional("entity_id"): cv.entity_id,
         vol.Required("file_path"): cv.string,
+    }
+)
+
+DOWNLOAD_ACTIVITY_FORMATS = ["fit", "original", "tcx", "gpx", "kml", "csv"]
+
+DOWNLOAD_ACTIVITY_SCHEMA = vol.Schema(
+    {
+        vol.Optional("entity_id"): cv.entity_id,
+        vol.Required("activity_id"): vol.Coerce(int),
+        vol.Optional("file_format", default="fit"): vol.In(DOWNLOAD_ACTIVITY_FORMATS),
+        vol.Optional("file_path"): cv.string,
     }
 )
 
@@ -320,6 +337,56 @@ async def async_setup_services(hass: HomeAssistant) -> None:
                 translation_placeholders={"error": str(err)},
             ) from err
 
+    async def handle_download_activity(call: ServiceCall) -> ServiceResponse:
+        """Handle download_activity service call."""
+        client = _get_client(hass, entity_id=call.data.get("entity_id"))
+        activity_id = call.data["activity_id"]
+        file_format = call.data["file_format"]
+        extension = "zip" if file_format == "original" else file_format
+
+        default_name = f"activity_{activity_id}.{extension}"
+        file_path = call.data.get("file_path")
+        if file_path:
+            path = Path(file_path)
+            if not path.is_absolute():
+                path = Path(hass.config.path(file_path))
+            if path.suffix == "":
+                path = path / default_name
+            # User-supplied paths must be in allowlist_external_dirs;
+            # the default location below is integration-controlled.
+            if not hass.config.is_allowed_path(str(path)):
+                raise HomeAssistantError(
+                    translation_domain=DOMAIN,
+                    translation_key="path_not_allowed",
+                    translation_placeholders={"file_path": str(path)},
+                )
+        else:
+            path = Path(hass.config.path("garmin_activities")) / default_name
+
+        try:
+            content = await client.download_activity(activity_id, file_format)
+        except Exception as err:
+            raise HomeAssistantError(
+                translation_domain=DOMAIN,
+                translation_key="download_activity_failed",
+                translation_placeholders={"error": str(err)},
+            ) from err
+
+        def _write() -> None:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(content)
+
+        await hass.async_add_executor_job(_write)
+
+        if call.return_response:
+            return {
+                "file_path": str(path),
+                "size_bytes": len(content),
+                "activity_id": activity_id,
+                "file_format": file_format,
+            }
+        return None
+
     async def handle_add_gear_to_activity(call: ServiceCall) -> None:
         """Handle add_gear_to_activity service call."""
         activity_id = call.data["activity_id"]
@@ -426,6 +493,13 @@ async def async_setup_services(hass: HomeAssistant) -> None:
     )
     hass.services.async_register(
         DOMAIN,
+        SERVICE_DOWNLOAD_ACTIVITY,
+        handle_download_activity,
+        schema=DOWNLOAD_ACTIVITY_SCHEMA,
+        supports_response=SupportsResponse.OPTIONAL,
+    )
+    hass.services.async_register(
+        DOMAIN,
         SERVICE_ADD_GEAR_TO_ACTIVITY,
         handle_add_gear_to_activity,
         schema=ADD_GEAR_TO_ACTIVITY_SCHEMA,
@@ -451,6 +525,7 @@ async def async_unload_services(hass: HomeAssistant) -> None:
     hass.services.async_remove(DOMAIN, SERVICE_ADD_BLOOD_PRESSURE)
     hass.services.async_remove(DOMAIN, SERVICE_CREATE_ACTIVITY)
     hass.services.async_remove(DOMAIN, SERVICE_UPLOAD_ACTIVITY)
+    hass.services.async_remove(DOMAIN, SERVICE_DOWNLOAD_ACTIVITY)
     hass.services.async_remove(DOMAIN, SERVICE_ADD_GEAR_TO_ACTIVITY)
     hass.services.async_remove(DOMAIN, SERVICE_ADD_HYDRATION)
     hass.services.async_remove(DOMAIN, SERVICE_ADD_NUTRITION)
