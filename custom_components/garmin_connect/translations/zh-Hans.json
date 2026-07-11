@@ -297,7 +297,7 @@
         "entity_id": { "name": "Garmin Connect 实体", "description": "可选：拥有该活动的 Garmin Connect 实体。" },
         "activity_id": { "name": "活动 ID", "description": "Garmin 活动 ID（见 last_activity 传感器属性）。" },
         "file_format": { "name": "文件格式", "description": "fit（从原始 zip 提取）、original（原始 zip）、tcx、gpx、kml 或 csv。" },
-        "file_path": { "name": "文件路径", "description": "目标文件或目录。自定义路径必须在 allowlist_external_dirs 中。默认为 <config>/garmin_activities/。" }
+        "file_path": { "name": "文件路径", "description": "目标文件或目录。自定义路径必须在 allowlist_external_dirs 中。默认为 [config]/garmin_activities/。" }
       }
     },
     "upload_activity": {

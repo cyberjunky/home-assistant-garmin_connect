@@ -321,7 +321,7 @@
         "entity_id": { "name": "Garmin Connect entity", "description": "Optional Garmin Connect entity whose account owns the activity." },
         "activity_id": { "name": "Activity ID", "description": "Garmin activity ID (see last_activity sensor attributes)." },
         "file_format": { "name": "File format", "description": "fit (extracted from original zip), original (raw zip), tcx, gpx, kml or csv." },
-        "file_path": { "name": "File path", "description": "Target file or directory. Custom paths must be in allowlist_external_dirs. Defaults to <config>/garmin_activities/." }
+        "file_path": { "name": "File path", "description": "Target file or directory. Custom paths must be in allowlist_external_dirs. Defaults to [config]/garmin_activities/." }
       }
     },
     "upload_activity": {
