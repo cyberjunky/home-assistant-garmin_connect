@@ -181,6 +181,17 @@
       "muscle_mass": { "name": "Muscle mass" },
       "nap_time": { "name": "Nap time" },
       "next_alarm": { "name": "Next alarm" },
+      "nutrition_calorie_goal": { "name": "Nutrition calorie goal" },
+      "nutrition_carbs_goal": { "name": "Nutrition carbohydrates goal" },
+      "nutrition_consumed_calories": { "name": "Nutrition consumed calories" },
+      "nutrition_consumed_carbs": { "name": "Nutrition consumed carbohydrates" },
+      "nutrition_consumed_fat": { "name": "Nutrition consumed fat" },
+      "nutrition_consumed_protein": { "name": "Nutrition consumed protein" },
+      "nutrition_fat_goal": { "name": "Nutrition fat goal" },
+      "nutrition_last_logged": { "name": "Nutrition last logged" },
+      "nutrition_logged_entries": { "name": "Nutrition logged entries" },
+      "nutrition_protein_goal": { "name": "Nutrition protein goal" },
+      "nutrition_remaining_calories": { "name": "Nutrition remaining calories" },
       "physique_rating": { "name": "Physique rating" },
       "previous_fitness_age": { "name": "Previous fitness age" },
       "rem_sleep": { "name": "REM sleep" },
@@ -246,6 +257,19 @@
       "fields": {
         "value_in_ml": { "name": "Amount (mL)", "description": "Hydration amount in millilitres. Negative values subtract from today's intake." },
         "timestamp": { "name": "Timestamp", "description": "Measurement time (ISO 8601, defaults to now)." }
+      }
+    },
+    "add_nutrition_log": {
+      "name": "Add nutrition log",
+      "description": "Log a Quick Add nutrition entry to Garmin Connect. Requires a Connect+ subscription and initial nutrition setup in the Garmin Connect app.",
+      "fields": {
+        "entity_id": { "name": "Garmin Connect entity", "description": "Optional Garmin Connect entity whose account should receive the entry." },
+        "calories": { "name": "Calories (kcal)", "description": "Calories to log." },
+        "carbs": { "name": "Carbohydrates (g)", "description": "Carbohydrates in grams." },
+        "protein": { "name": "Protein (g)", "description": "Protein in grams." },
+        "fat": { "name": "Fat (g)", "description": "Fat in grams." },
+        "name": { "name": "Label", "description": "Name for the log entry (defaults to \"Quick Add\")." },
+        "timestamp": { "name": "Timestamp", "description": "Log time (ISO 8601). Defaults to now." }
       }
     },
     "add_body_composition": {
@@ -321,6 +345,7 @@
   "exceptions": {
     "add_blood_pressure_failed": { "message": "Failed to add blood pressure: {error}" },
     "add_hydration_failed": { "message": "Failed to log hydration: {error}" },
+    "add_nutrition_failed": { "message": "Failed to log nutrition: {error}" },
     "add_body_composition_failed": { "message": "Failed to add body composition: {error}" },
     "add_gear_to_activity_failed": { "message": "Failed to add gear to activity: {error}" },
     "create_activity_failed": { "message": "Failed to create activity: {error}" },

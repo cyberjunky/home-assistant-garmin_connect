@@ -38,6 +38,7 @@ Each data domain has its own `DataUpdateCoordinator` subclass in [coordinator.py
 | `GearCoordinator` | Gear stats (dynamic sensors per item), alarms |
 | `BloodPressureCoordinator` | Latest BP reading (~3 sensors) |
 | `MenstrualCoordinator` | Menstrual data (~9 sensors, disabled by default) |
+| `NutritionCoordinator` | Consumed macros, goals, per-meal breakdown (~11 sensors, disabled by default, Connect+) |
 
 ### Sensor definitions
 
