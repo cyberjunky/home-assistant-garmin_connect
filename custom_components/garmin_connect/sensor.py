@@ -1825,6 +1825,10 @@ class GarminConnectSensor(CoordinatorEntity[BaseGarminCoordinator], SensorEntity
 
     entity_description: GarminConnectSensorEntityDescription
     _attr_has_entity_name = True
+    # The lastActivityRoute polyline is a full GPS track and blows past the recorder's
+    # hard 16 KiB attribute cap, which makes it drop the entity's attributes wholesale.
+    # Keep it live-only for the map card and templates; the rest still records.
+    _unrecorded_attributes = frozenset({"polyline"})
 
     def __init__(
         self,

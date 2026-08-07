@@ -1,5 +1,6 @@
 """Tests for Garmin Connect sensor platform."""
 
+import json
 from unittest.mock import MagicMock, patch
 
 from custom_components.garmin_connect.sensor import (
@@ -833,3 +834,85 @@ def test_gear_sensor_unique_id_unnamed_gear_no_collision() -> None:
     assert sensor_a._attr_unique_id == "my_entry_gear_abc-123"
     assert sensor_b._attr_unique_id == "my_entry_gear_def-456"
     assert sensor_a._attr_unique_id != sensor_b._attr_unique_id
+
+
+# ── recorder: oversized route attributes (#549) ───────────────────────────────
+
+
+def _route_sensor(points: int) -> GarminConnectSensor:
+    """Build the real lastActivityRoute sensor over a polyline of N points."""
+    description = next(
+        d for d in ACTIVITY_TRACKING_SENSORS if d.key == "lastActivityRoute"
+    )
+    coord = MagicMock()
+    coord.data = {
+        "lastActivity": {
+            "polyline": [
+                {"lat": 19.4326 + i / 100000, "lon": -99.1332 + i / 100000}
+                for i in range(points)
+            ],
+            "hasPolyline": True,
+            "activityName": "Morning Ride",
+        }
+    }
+    return GarminConnectSensor(coord, description, "entry_id")
+
+
+def _recorded_attributes(sensor: GarminConnectSensor) -> bytes:
+    """Serialize the sensor state through the recorder's own encoder."""
+    from homeassistant.components.recorder.db_schema import StateAttributes
+    from homeassistant.const import EVENT_STATE_CHANGED
+    from homeassistant.core import Event, State
+
+    # Mirrors Entity.async_internal_added_to_hass, which publishes the union of the
+    # component-level and entity-level unrecorded attributes onto the state.
+    unrecorded = (
+        sensor._entity_component_unrecorded_attributes | sensor._unrecorded_attributes
+    )
+    state = State(
+        "sensor.garmin_connect_last_activity_route",
+        str(sensor.native_value),
+        sensor.extra_state_attributes,
+        state_info={"unrecorded_attributes": unrecorded},
+    )
+    event = Event(
+        EVENT_STATE_CHANGED,
+        {"entity_id": state.entity_id, "old_state": None, "new_state": state},
+    )
+    return StateAttributes.shared_attrs_bytes_from_event(event, None)
+
+
+def test_route_polyline_never_reaches_the_recorder() -> None:
+    """The polyline must be excluded from what the recorder persists (#549)."""
+    recorded = _recorded_attributes(_route_sensor(points=500))
+
+    # The `!= b"{}"` assert carries the weight: when the row blows the size cap the
+    # recorder drops every attribute, so checking only that the polyline is absent
+    # would pass on the unfixed code too — for the wrong reason.
+    assert recorded != b"{}"
+    # Compare keys, not raw bytes: "has_polyline" contains "polyline".
+    assert "polyline" not in json.loads(recorded)
+
+
+def test_route_recorded_attributes_stay_under_the_16kib_cap() -> None:
+    """Recorded attributes must fit the recorder's hard 16 KiB limit (#549)."""
+    recorded = _recorded_attributes(_route_sensor(points=2000))
+
+    assert recorded != b"{}"
+    assert len(recorded) < 16384
+
+
+def test_route_siblings_are_still_recorded() -> None:
+    """Dropping the polyline must not drop the sensor's other attributes (#549)."""
+    recorded = json.loads(_recorded_attributes(_route_sensor(points=500)))
+
+    assert recorded["has_polyline"] is True
+    assert recorded["activity_name"] == "Morning Ride"
+
+
+def test_route_polyline_remains_available_live() -> None:
+    """The polyline must stay on the live entity for the map card and templates."""
+    sensor = _route_sensor(points=10)
+
+    assert len(sensor.extra_state_attributes["polyline"]) == 10
+    assert sensor.native_value == 10
