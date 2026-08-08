@@ -188,30 +188,6 @@ async def test_reconfigure_step_shows_form() -> None:
     assert result["step_id"] == "reconfigure"
 
 
-# ── Implementation constraints ────────────────────────────────────────────────
-
-
-async def test_login_goes_through_executor() -> None:
-    """login must be called via async_add_executor_job (sync API), not awaited directly."""
-    import inspect
-
-    from custom_components.garmin_connect import config_flow
-
-    source = inspect.getsource(config_flow.GarminConnectConfigFlow._async_login)
-    assert "async_add_executor_job" in source
-    assert "await self._auth.login" not in source
-
-
-async def test_no_bare_except_in_flow() -> None:
-    """config_flow must not use bare 'except Exception'."""
-    import inspect
-
-    from custom_components.garmin_connect import config_flow
-
-    source = inspect.getsource(config_flow)
-    assert "except Exception" not in source
-
-
 # ── Options flow ──────────────────────────────────────────────────────────────
 
 

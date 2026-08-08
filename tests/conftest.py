@@ -5,6 +5,7 @@ from datetime import UTC, datetime, timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.garmin_connect.const import (
     CONF_CLIENT_ID,
@@ -21,16 +22,16 @@ ENTRY_DATA = {
 
 
 @pytest.fixture
-def mock_config_entry() -> MagicMock:
-    """Return a mock config entry."""
-    entry = MagicMock()
-    entry.domain = DOMAIN
-    entry.title = "test@example.com"
-    entry.data = dict(ENTRY_DATA)
-    entry.options = {}
-    entry.unique_id = "123456789"
-    entry.entry_id = "test_entry_id"
-    return entry
+def mock_config_entry() -> MockConfigEntry:
+    """Return a mocked config entry that mirrors the real ConfigEntry API."""
+    return MockConfigEntry(
+        domain=DOMAIN,
+        title="test@example.com",
+        data=dict(ENTRY_DATA),
+        options={},
+        unique_id="123456789",
+        entry_id="test_entry_id",
+    )
 
 
 @pytest.fixture

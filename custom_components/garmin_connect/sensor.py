@@ -89,13 +89,13 @@ ACTIVITY_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
     GarminConnectSensorEntityDescription(
         key="dailyStepGoal",
         translation_key="daily_step_goal",
-        state_class=SensorStateClass.TOTAL,
+        state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement="steps",
     ),
     GarminConnectSensorEntityDescription(
         key="yesterdaySteps",
         translation_key="yesterday_steps",
-        state_class=SensorStateClass.TOTAL,
+        state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement="steps",
     ),
     GarminConnectSensorEntityDescription(
@@ -146,7 +146,7 @@ ACTIVITY_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
     GarminConnectSensorEntityDescription(
         key="userFloorsAscendedGoal",
         translation_key="floors_ascended_goal",
-        state_class=SensorStateClass.TOTAL,
+        state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement="floors",
         suggested_display_precision=0,
     ),
@@ -171,7 +171,7 @@ CALORIES_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
     GarminConnectSensorEntityDescription(
         key="bmrKilocalories",
         translation_key="bmr_calories",
-        state_class=SensorStateClass.TOTAL,
+        state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement=UnitOfEnergy.KILO_CALORIE,
         suggested_display_precision=0,
     ),
@@ -185,14 +185,14 @@ CALORIES_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
     GarminConnectSensorEntityDescription(
         key="consumedKilocalories",
         translation_key="consumed_calories",
-        state_class=SensorStateClass.TOTAL,
+        state_class=SensorStateClass.TOTAL_INCREASING,
         native_unit_of_measurement=UnitOfEnergy.KILO_CALORIE,
         suggested_display_precision=0,
     ),
     GarminConnectSensorEntityDescription(
         key="remainingKilocalories",
         translation_key="remaining_calories",
-        state_class=SensorStateClass.TOTAL,
+        state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement=UnitOfEnergy.KILO_CALORIE,
         suggested_display_precision=0,
     ),
@@ -486,7 +486,7 @@ INTENSITY_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         key="intensityMinutesGoal",
         translation_key="intensity_goal",
         device_class=SensorDeviceClass.DURATION,
-        state_class=SensorStateClass.TOTAL,
+        state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement=UnitOfTime.MINUTES,
     ),
     GarminConnectSensorEntityDescription(
@@ -757,7 +757,7 @@ ACTIVITY_TRACKING_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         key="lastActivities",
         translation_key="last_activities",
         coordinator_type=CoordinatorType.ACTIVITY,
-        state_class=SensorStateClass.TOTAL,
+        state_class=SensorStateClass.MEASUREMENT,
         value_fn=lambda data: _count_recent_activities(data),
         attributes_fn=lambda data: {
             "last_activities": sorted(
@@ -777,7 +777,7 @@ ACTIVITY_TRACKING_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         key="lastWorkouts",
         translation_key="last_workouts",
         coordinator_type=CoordinatorType.ACTIVITY,
-        state_class=SensorStateClass.TOTAL,
+        state_class=SensorStateClass.MEASUREMENT,
         value_fn=lambda data: len(data.get("workouts") or []),
         attributes_fn=lambda data: {
             "last_workouts": (data.get("workouts") or [])[-10:],
@@ -1095,7 +1095,7 @@ GOALS_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         key="badges",
         translation_key="badges",
         coordinator_type=CoordinatorType.GOALS,
-        state_class=SensorStateClass.TOTAL,
+        state_class=SensorStateClass.MEASUREMENT,
         value_fn=lambda data: len(data.get("badges", [])),
         attributes_fn=lambda data: {
             "badges": [
@@ -1124,19 +1124,19 @@ GOALS_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         key="userPoints",
         translation_key="user_points",
         coordinator_type=CoordinatorType.GOALS,
-        state_class=SensorStateClass.TOTAL,
+        state_class=SensorStateClass.TOTAL_INCREASING,
     ),
     GarminConnectSensorEntityDescription(
         key="userLevel",
         translation_key="user_level",
         coordinator_type=CoordinatorType.GOALS,
-        state_class=SensorStateClass.TOTAL,
+        state_class=SensorStateClass.MEASUREMENT,
     ),
     GarminConnectSensorEntityDescription(
         key="activeGoals",
         translation_key="active_goals",
         coordinator_type=CoordinatorType.GOALS,
-        state_class=SensorStateClass.TOTAL,
+        state_class=SensorStateClass.MEASUREMENT,
         value_fn=lambda data: len(data.get("activeGoals", [])),
         attributes_fn=lambda data: {
             "goals": [
@@ -1161,7 +1161,7 @@ GOALS_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         key="futureGoals",
         translation_key="future_goals",
         coordinator_type=CoordinatorType.GOALS,
-        state_class=SensorStateClass.TOTAL,
+        state_class=SensorStateClass.MEASUREMENT,
         value_fn=lambda data: len(data.get("futureGoals", [])),
         attributes_fn=lambda data: {
             "goals": [
@@ -1182,7 +1182,7 @@ GOALS_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         key="goalsHistory",
         translation_key="goals_history",
         coordinator_type=CoordinatorType.GOALS,
-        state_class=SensorStateClass.TOTAL,
+        state_class=SensorStateClass.MEASUREMENT,
         value_fn=lambda data: len(data.get("goalsHistory", [])),
         attributes_fn=lambda data: {
             "goals": [
@@ -1703,6 +1703,43 @@ _COORDINATOR_ATTR: dict[CoordinatorType, str] = {
 }
 
 
+def _async_migrate_sleep_duration_entity_id(registry: er.EntityRegistry) -> None:
+    """Rename the legacy duplicate 'Sleep duration' entity_id if it exists."""
+    old_entity_id = "sensor.garmin_connect_sleep_duration_2"
+    if registry.async_get(old_entity_id) is None:
+        return
+    try:
+        registry.async_update_entity(
+            old_entity_id,
+            new_entity_id="sensor.garmin_connect_sleep_duration",
+        )
+    except (ValueError, KeyError):
+        pass
+
+
+def _async_migrate_gear_unique_ids(
+    registry: er.EntityRegistry, entry_id: str, gear_data: dict[str, Any]
+) -> None:
+    """Migrate gear sensor unique_ids from name-slug format to UUID format.
+
+    Only runs when old name-slug unique_ids still exist in the registry.
+    """
+    for gear_stat in gear_data.get("gearStats", []):
+        gear_name = gear_stat.get("gearName") or gear_stat.get("customMakeModel") or "Unknown"
+        gear_uuid = gear_stat.get("uuid") or gear_stat.get("gearUuid", "")
+        if not gear_uuid:
+            continue
+        old_unique_id = (
+            f"{entry_id}_gear_{gear_name.lower().replace(' ', '_').replace('-', '_')}"
+        )
+        if registry.async_get_entity_id("sensor", DOMAIN, old_unique_id) is None:
+            continue
+        new_unique_id = f"{entry_id}_gear_{gear_uuid}"
+        entity_id = registry.async_get_entity_id("sensor", DOMAIN, old_unique_id)
+        if entity_id:
+            registry.async_update_entity(entity_id, new_unique_id=new_unique_id)
+
+
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: GarminConnectConfigEntry,
@@ -1720,47 +1757,17 @@ async def async_setup_entry(
         for description in descriptions:
             entities.append(GarminConnectSensor(coordinator, description, entry.entry_id))
 
-    # Migrate the legacy entity_id created from duplicate translated names:
-    # sleepTimeMinutes was previously shown as "Sleep duration", which often
-    # resulted in entity_id suffixes like sensor.garmin_connect_sleep_duration_2.
     ent_reg = er.async_get(hass)
 
-    # Find and rename the _2 suffixed sleep duration entity if it exists
-    for entity in ent_reg.entities.values():
-        if (
-            entity.domain == "sensor"
-            and entity.platform == DOMAIN
-            and entity.entity_id == "sensor.garmin_connect_sleep_duration_2"
-        ):
-            try:
-                ent_reg.async_update_entity(
-                    entity.entity_id,
-                    new_entity_id="sensor.garmin_connect_sleep_duration",
-                )
-            except (ValueError, KeyError):
-                pass
-            break
+    # One-time migration: rename the duplicate "Sleep duration" entity_id.
+    _async_migrate_sleep_duration_entity_id(ent_reg)
 
-    # Migrate gear sensor unique_ids from old name-slug format to UUID format.
-    # Previously: f"{entry_id}_gear_{name.lower().replace(' ', '_').replace('-', '_')}"
-    # Now:        f"{entry_id}_gear_{gear_uuid}"
-
-    gear_data = coordinators.gear.data or {}
-    for gear_stat in gear_data.get("gearStats", []):
-        gear_name = gear_stat.get("gearName") or gear_stat.get("customMakeModel") or "Unknown"
-        gear_uuid = gear_stat.get("uuid") or gear_stat.get("gearUuid", "")
-        if not gear_uuid:
-            continue
-        old_unique_id = (
-            f"{entry.entry_id}_gear_{gear_name.lower().replace(' ', '_').replace('-', '_')}"
-        )
-        new_unique_id = f"{entry.entry_id}_gear_{gear_uuid}"
-        if old_unique_id != new_unique_id:
-            entity_id = ent_reg.async_get_entity_id("sensor", DOMAIN, old_unique_id)
-            if entity_id:
-                ent_reg.async_update_entity(entity_id, new_unique_id=new_unique_id)
+    # One-time migration: update gear sensor unique_ids from the old name-slug
+    # format to the UUID-based format.
+    _async_migrate_gear_unique_ids(ent_reg, entry.entry_id, coordinators.gear.data or {})
 
     # Dynamic gear sensors
+    gear_data = coordinators.gear.data or {}
     known_gear_uuids: set[str] = set()
     for gear_stat in gear_data.get("gearStats", []):
         gear_name = gear_stat.get("gearName") or gear_stat.get("customMakeModel") or "Unknown"
@@ -1964,12 +1971,13 @@ class GarminConnectPowerToWeightSensor(CoordinatorEntity[TrainingCoordinator], S
         self._sport = sport
         self._sensor_type = sensor_type
         sport_display = sport.replace("_", " ").title()
+        self._attr_translation_placeholders = {"sport": sport_display}
         if sensor_type == "ptw":
-            self._attr_name = f"Power to Weight {sport_display}"
+            self._attr_translation_key = "power_to_weight"
             self._attr_native_unit_of_measurement = "W/kg"
             self._attr_suggested_display_precision = 2
         else:
-            self._attr_name = f"FTP {sport_display}"
+            self._attr_translation_key = "functional_threshold_power"
             self._attr_native_unit_of_measurement = UnitOfPower.WATT
             self._attr_device_class = SensorDeviceClass.POWER
         self._attr_unique_id = f"{entry_id}_{sensor_type}_{sport.lower()}"

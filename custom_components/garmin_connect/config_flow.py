@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any
 
@@ -36,6 +37,8 @@ from .const import (
     MAX_SCAN_INTERVAL,
     MIN_SCAN_INTERVAL,
 )
+
+_LOGGER = logging.getLogger(__name__)
 
 STEP_USER_DATA_SCHEMA = vol.Schema(
     {
@@ -127,8 +130,12 @@ class GarminConnectConfigFlow(ConfigFlow, domain=DOMAIN):
         try:
             client = GarminClient(self._auth, is_cn=self._is_cn)
             profile = await client.get_user_profile()
-        except (GarminConnectError, ClientError):
-            pass
+        except (GarminConnectError, ClientError) as err:
+            _LOGGER.warning(
+                "Could not fetch Garmin profile for %s, falling back to username as unique_id: %s",
+                username,
+                err,
+            )
         else:
             unique_id = str(profile.profile_id)
         await self.async_set_unique_id(unique_id)

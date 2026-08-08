@@ -11,8 +11,9 @@ from dataclasses import dataclass
 from datetime import timedelta
 from typing import Any
 
+from aiohttp import ClientError
 from ha_garmin import GarminAuth, GarminClient
-from ha_garmin.exceptions import GarminAuthError
+from ha_garmin.exceptions import GarminAuthError, GarminConnectError
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed
@@ -71,6 +72,10 @@ class BaseGarminCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self.auth = auth
         self._refresh_lock = asyncio.Lock()
 
+    def set_update_interval(self, update_interval: timedelta) -> None:
+        """Update the coordinator's polling interval."""
+        self.update_interval = update_interval
+
     async def _update_tokens_if_changed(self) -> None:
         """Update stored tokens if they changed during refresh."""
         async with self._refresh_lock:
@@ -111,7 +116,8 @@ class CoreCoordinator(BaseGarminCoordinator):
             await self._update_tokens_if_changed()
         except GarminAuthError as err:
             raise ConfigEntryAuthFailed("Authentication failed") from err
-        except Exception as err:
+        except (GarminConnectError, ClientError) as err:
+            _LOGGER.debug("Error fetching core data: %s", err)
             raise UpdateFailed(f"Error fetching core data: {err}") from err
         return data
 
@@ -137,7 +143,8 @@ class ActivityCoordinator(BaseGarminCoordinator):
             await self._update_tokens_if_changed()
         except GarminAuthError as err:
             raise ConfigEntryAuthFailed("Authentication failed") from err
-        except Exception as err:
+        except (GarminConnectError, ClientError) as err:
+            _LOGGER.debug("Error fetching activity data: %s", err)
             raise UpdateFailed(f"Error fetching activity data: {err}") from err
         return data
 
@@ -163,7 +170,8 @@ class TrainingCoordinator(BaseGarminCoordinator):
             await self._update_tokens_if_changed()
         except GarminAuthError as err:
             raise ConfigEntryAuthFailed("Authentication failed") from err
-        except Exception as err:
+        except (GarminConnectError, ClientError) as err:
+            _LOGGER.debug("Error fetching training data: %s", err)
             raise UpdateFailed(f"Error fetching training data: {err}") from err
         return data
 
@@ -189,7 +197,8 @@ class BodyCoordinator(BaseGarminCoordinator):
             await self._update_tokens_if_changed()
         except GarminAuthError as err:
             raise ConfigEntryAuthFailed("Authentication failed") from err
-        except Exception as err:
+        except (GarminConnectError, ClientError) as err:
+            _LOGGER.debug("Error fetching body data: %s", err)
             raise UpdateFailed(f"Error fetching body data: {err}") from err
         return data
 
@@ -215,7 +224,8 @@ class GoalsCoordinator(BaseGarminCoordinator):
             await self._update_tokens_if_changed()
         except GarminAuthError as err:
             raise ConfigEntryAuthFailed("Authentication failed") from err
-        except Exception as err:
+        except (GarminConnectError, ClientError) as err:
+            _LOGGER.debug("Error fetching goals data: %s", err)
             raise UpdateFailed(f"Error fetching goals data: {err}") from err
         return data
 
@@ -241,7 +251,8 @@ class GearCoordinator(BaseGarminCoordinator):
             await self._update_tokens_if_changed()
         except GarminAuthError as err:
             raise ConfigEntryAuthFailed("Authentication failed") from err
-        except Exception as err:
+        except (GarminConnectError, ClientError) as err:
+            _LOGGER.debug("Error fetching gear data: %s", err)
             raise UpdateFailed(f"Error fetching gear data: {err}") from err
         return data
 
@@ -274,7 +285,8 @@ class BloodPressureCoordinator(BaseGarminCoordinator):
             await self._update_tokens_if_changed()
         except GarminAuthError as err:
             raise ConfigEntryAuthFailed("Authentication failed") from err
-        except Exception as err:
+        except (GarminConnectError, ClientError) as err:
+            _LOGGER.debug("Error fetching blood pressure data: %s", err)
             raise UpdateFailed(f"Error fetching blood pressure data: {err}") from err
         return data
 
@@ -300,7 +312,8 @@ class MenstrualCoordinator(BaseGarminCoordinator):
             await self._update_tokens_if_changed()
         except GarminAuthError as err:
             raise ConfigEntryAuthFailed("Authentication failed") from err
-        except Exception as err:
+        except (GarminConnectError, ClientError) as err:
+            _LOGGER.debug("Error fetching menstrual data: %s", err)
             raise UpdateFailed(f"Error fetching menstrual data: {err}") from err
         return data
 
@@ -326,7 +339,8 @@ class NutritionCoordinator(BaseGarminCoordinator):
             await self._update_tokens_if_changed()
         except GarminAuthError as err:
             raise ConfigEntryAuthFailed("Authentication failed") from err
-        except Exception as err:
+        except (GarminConnectError, ClientError) as err:
+            _LOGGER.debug("Error fetching nutrition data: %s", err)
             raise UpdateFailed(f"Error fetching nutrition data: {err}") from err
         return data
 

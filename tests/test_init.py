@@ -3,6 +3,9 @@
 from contextlib import ExitStack
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import pytest
+from homeassistant.exceptions import ConfigEntryAuthFailed
+
 from custom_components.garmin_connect import (
     _migrate_entity_unique_ids,
     async_migrate_entry,
@@ -46,6 +49,17 @@ def _stack_coordinators(stack: ExitStack, coord: MagicMock) -> None:
 
 
 # ── Setup tests ───────────────────────────────────────────────────────────────
+
+
+async def test_setup_entry_requires_token() -> None:
+    """Missing token must raise ConfigEntryAuthFailed."""
+    entry = MagicMock()
+    entry.data = {}
+    entry.title = "test@example.com"
+    hass = MagicMock()
+
+    with pytest.raises(ConfigEntryAuthFailed):
+        await async_setup_entry(hass, entry)
 
 
 async def test_setup_entry_success() -> None:

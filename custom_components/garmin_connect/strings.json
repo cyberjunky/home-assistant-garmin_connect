@@ -51,6 +51,7 @@
         "title": "Reconfigure Integration"
       },
       "user": {
+        "title": "Garmin Connect",
         "data": {
           "password": "Password",
           "username": "Email",
@@ -190,6 +191,8 @@
       "nutrition_last_logged": { "name": "Nutrition last logged" },
       "nutrition_logged_entries": { "name": "Nutrition logged entries" },
       "nutrition_protein_goal": { "name": "Nutrition protein goal" },
+      "power_to_weight": { "name": "Power to Weight {sport}" },
+      "functional_threshold_power": { "name": "FTP {sport}" },
       "nutrition_remaining_calories": { "name": "Nutrition remaining calories" },
       "physique_rating": { "name": "Physique rating" },
       "previous_fitness_age": { "name": "Previous fitness age" },
@@ -356,6 +359,7 @@
     "login_failed": { "message": "Failed to log in to Garmin Connect." },
     "no_gear_specified": { "message": "No gear specified. Provide either a gear sensor entity or a gear_uuid." },
     "no_integration_configured": { "message": "Garmin Connect integration is not configured." },
+    "ambiguous_account": { "message": "Multiple Garmin Connect accounts are configured. Provide an entity_id to select which account to use." },
     "set_active_gear_failed": { "message": "Failed to set active gear: {error}" },
     "upload_activity_failed": { "message": "Failed to upload activity: {error}" },
     "add_nutrition_failed": { "message": "Failed to log nutrition: {error}" }

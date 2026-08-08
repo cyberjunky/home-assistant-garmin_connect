@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
-from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING
 
 import voluptuous as vol
+from aiohttp import ClientError
+from ha_garmin import GarminConnectError
 from homeassistant.core import (
     HomeAssistant,
     ServiceCall,
@@ -16,6 +17,7 @@ from homeassistant.core import (
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import entity_registry as er
+from homeassistant.util import dt as dt_util
 
 from .const import DOMAIN
 
@@ -161,6 +163,12 @@ def _get_client(
             translation_key="no_integration_configured",
         )
 
+    if len(entries) > 1 and not entity_id:
+        raise HomeAssistantError(
+            translation_domain=DOMAIN,
+            translation_key="ambiguous_account",
+        )
+
     entry = entries[0]
 
     if entity_id:
@@ -236,7 +244,7 @@ async def async_setup_services(hass: HomeAssistant) -> None:
                 setting=setting,
                 gear_uuid=gear_uuid,
             )
-        except Exception as err:
+        except (GarminConnectError, ClientError) as err:
             raise HomeAssistantError(
                 translation_domain=DOMAIN,
                 translation_key="set_active_gear_failed",
@@ -265,7 +273,7 @@ async def async_setup_services(hass: HomeAssistant) -> None:
                 visceral_fat_rating=call.data.get("visceral_fat_rating"),
                 bmi=call.data.get("bmi"),
             )
-        except Exception as err:
+        except (GarminConnectError, ClientError) as err:
             raise HomeAssistantError(
                 translation_domain=DOMAIN,
                 translation_key="add_body_composition_failed",
@@ -283,7 +291,7 @@ async def async_setup_services(hass: HomeAssistant) -> None:
                 timestamp=call.data.get("timestamp"),
                 notes=call.data.get("notes", ""),
             )
-        except Exception as err:
+        except (GarminConnectError, ClientError) as err:
             raise HomeAssistantError(
                 translation_domain=DOMAIN,
                 translation_key="add_blood_pressure_failed",
@@ -295,7 +303,7 @@ async def async_setup_services(hass: HomeAssistant) -> None:
         client = _get_client(hass, entity_id=call.data.get("entity_id"))
         start_datetime = call.data.get("start_datetime")
         if not start_datetime:
-            start_datetime = datetime.now().strftime("%Y-%m-%dT%H:%M:%S.000")
+            start_datetime = dt_util.now().strftime("%Y-%m-%dT%H:%M:%S.000")
         elif "." not in start_datetime:
             start_datetime = f"{start_datetime}.000"
         time_zone = call.data.get("time_zone") or str(hass.config.time_zone)
@@ -308,7 +316,7 @@ async def async_setup_services(hass: HomeAssistant) -> None:
                 distance_km=call.data.get("distance_km", 0.0),
                 time_zone=time_zone,
             )
-        except Exception as err:
+        except (GarminConnectError, ClientError) as err:
             raise HomeAssistantError(
                 translation_domain=DOMAIN,
                 translation_key="create_activity_failed",
@@ -330,7 +338,7 @@ async def async_setup_services(hass: HomeAssistant) -> None:
             )
         try:
             await client.upload_activity(str(path))
-        except Exception as err:
+        except (GarminConnectError, ClientError) as err:
             raise HomeAssistantError(
                 translation_domain=DOMAIN,
                 translation_key="upload_activity_failed",
@@ -365,7 +373,7 @@ async def async_setup_services(hass: HomeAssistant) -> None:
 
         try:
             content = await client.download_activity(activity_id, file_format)
-        except Exception as err:
+        except (GarminConnectError, ClientError) as err:
             raise HomeAssistantError(
                 translation_domain=DOMAIN,
                 translation_key="download_activity_failed",
@@ -420,7 +428,7 @@ async def async_setup_services(hass: HomeAssistant) -> None:
                 gear_uuid=gear_uuid,
                 activity_id=activity_id,
             )
-        except Exception as err:
+        except (GarminConnectError, ClientError) as err:
             raise HomeAssistantError(
                 translation_domain=DOMAIN,
                 translation_key="add_gear_to_activity_failed",
@@ -435,7 +443,7 @@ async def async_setup_services(hass: HomeAssistant) -> None:
                 value_in_ml=call.data["value_in_ml"],
                 timestamp=call.data.get("timestamp"),
             )
-        except Exception as err:
+        except (GarminConnectError, ClientError) as err:
             raise HomeAssistantError(
                 translation_domain=DOMAIN,
                 translation_key="add_hydration_failed",
@@ -454,7 +462,7 @@ async def async_setup_services(hass: HomeAssistant) -> None:
                 name=call.data.get("name", "Quick Add"),
                 timestamp=call.data.get("timestamp"),
             )
-        except Exception as err:
+        except (GarminConnectError, ClientError) as err:
             raise HomeAssistantError(
                 translation_domain=DOMAIN,
                 translation_key="add_nutrition_failed",

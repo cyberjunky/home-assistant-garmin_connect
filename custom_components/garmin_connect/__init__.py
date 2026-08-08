@@ -4,14 +4,23 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from datetime import timedelta
 
 from ha_garmin import GarminAuth, GarminClient
-from homeassistant.config_entries import ConfigEntryNotReady
+from homeassistant.config_entries import ConfigEntryAuthFailed, ConfigEntryNotReady
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
 
-from .const import CONF_CLIENT_ID, CONF_IS_CN, CONF_REFRESH_TOKEN, CONF_TOKEN, DOMAIN
+from .const import (
+    CONF_CLIENT_ID,
+    CONF_IS_CN,
+    CONF_REFRESH_TOKEN,
+    CONF_SCAN_INTERVAL,
+    CONF_TOKEN,
+    DEFAULT_SCAN_INTERVAL,
+    DOMAIN,
+)
 from .coordinator import (
     ActivityCoordinator,
     BloodPressureCoordinator,
@@ -153,8 +162,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: GarminConnectConfigEntry
     if CONF_TOKEN not in entry.data:
         # Migration from v1 bumps version and starts reauth but setup still runs.
         # Without valid DI tokens there's nothing to set up — reauth will fix it.
-        _LOGGER.debug("Skipping setup for %s — reauth pending", entry.title)
-        return False
+        raise ConfigEntryAuthFailed(
+            f"Garmin Connect credentials for {entry.title} need to be re-authenticated"
+        )
 
     is_cn = entry.options.get(CONF_IS_CN, False)
     auth = GarminAuth(is_cn=is_cn)
@@ -195,6 +205,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: GarminConnectConfigEntry
 
     entry.runtime_data = coordinators
 
+    # Snapshot options so the update listener can tell what changed.
+    hass.data.setdefault(DOMAIN, {})[entry.entry_id] = dict(entry.options)
+
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
     if not hass.services.has_service(DOMAIN, "set_active_gear"):
@@ -208,13 +221,45 @@ async def async_setup_entry(hass: HomeAssistant, entry: GarminConnectConfigEntry
 async def async_options_update_listener(
     hass: HomeAssistant, entry: GarminConnectConfigEntry
 ) -> None:
-    """Handle options update — reload to apply new scan_interval."""
-    hass.async_create_task(hass.config_entries.async_reload(entry.entry_id))
+    """Handle options update.
+
+    Update coordinator scan intervals directly when only the scan_interval
+    changed. Reload the config entry when the China region option changes,
+    since that affects the underlying API endpoints.
+    """
+    coordinators = entry.runtime_data
+    previous_options = hass.data.get(DOMAIN, {}).get(entry.entry_id, {})
+    current_options = entry.options
+
+    if previous_options.get(CONF_IS_CN, False) != current_options.get(CONF_IS_CN, False):
+        await hass.config_entries.async_reload(entry.entry_id)
+        return
+
+    scan_interval = current_options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
+    update_interval = timedelta(seconds=scan_interval)
+    for coord in (
+        coordinators.core,
+        coordinators.activity,
+        coordinators.training,
+        coordinators.body,
+        coordinators.goals,
+        coordinators.gear,
+        coordinators.blood_pressure,
+        coordinators.menstrual,
+        coordinators.nutrition,
+    ):
+        coord.set_update_interval(update_interval)
+
+    # Update the snapshot after applying changes.
+    hass.data.setdefault(DOMAIN, {})[entry.entry_id] = dict(current_options)
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: GarminConnectConfigEntry) -> bool:
     """Unload a config entry."""
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+
+    if DOMAIN in hass.data and entry.entry_id in hass.data[DOMAIN]:
+        hass.data[DOMAIN].pop(entry.entry_id, None)
 
     if unload_ok and len(hass.config_entries.async_entries(DOMAIN)) == 1:
         await async_unload_services(hass)

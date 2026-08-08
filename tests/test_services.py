@@ -4,6 +4,8 @@ from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from aiohttp import ClientError
+from ha_garmin import GarminConnectError
 from homeassistant.exceptions import HomeAssistantError
 
 from custom_components.garmin_connect.const import DOMAIN
@@ -116,6 +118,23 @@ async def test_service_entry_not_loaded_raises(mock_hass: MagicMock) -> None:
     mock_entry = MagicMock()
     mock_entry.runtime_data = None
     mock_hass.config_entries.async_entries.return_value = [mock_entry]
+
+    await async_setup_services(mock_hass)
+    handler = _get_handler(mock_hass, "add_body_composition")
+
+    call = MagicMock()
+    call.data = {"weight": 80.0}
+
+    with pytest.raises(HomeAssistantError):
+        await handler(call)
+
+
+async def test_service_multiple_entries_without_entity_id_raises(
+    mock_hass: MagicMock,
+) -> None:
+    """Services must raise when multiple entries exist and no entity_id is given."""
+    second_entry = _make_entry("entry_2", "profile_2", "user2@example.com")
+    mock_hass.config_entries.async_entries.return_value.append(second_entry)
 
     await async_setup_services(mock_hass)
     handler = _get_handler(mock_hass, "add_body_composition")
@@ -341,7 +360,7 @@ async def test_add_body_composition_api_error_raises(mock_hass: MagicMock) -> No
     await async_setup_services(mock_hass)
     handler = _get_handler(mock_hass, "add_body_composition")
     client = _get_client(mock_hass)
-    client.add_body_composition.side_effect = Exception("API error")
+    client.add_body_composition.side_effect = GarminConnectError("API error")
 
     call = MagicMock()
     call.data = {"weight": 80.0}
@@ -380,7 +399,7 @@ async def test_add_blood_pressure_wraps_exception(mock_hass: MagicMock) -> None:
     await async_setup_services(mock_hass)
     handler = _get_handler(mock_hass, "add_blood_pressure")
     client = _get_client(mock_hass)
-    client.set_blood_pressure.side_effect = RuntimeError("network error")
+    client.set_blood_pressure.side_effect = ClientError("network error")
 
     call = MagicMock()
     call.data = {"systolic": 120, "diastolic": 80, "pulse": 70}
@@ -539,7 +558,7 @@ async def test_download_activity_client_error_raises(mock_hass: MagicMock) -> No
     await async_setup_services(mock_hass)
     handler = _get_handler(mock_hass, "download_activity")
     client = _get_client(mock_hass)
-    client.download_activity.side_effect = Exception("boom")
+    client.download_activity.side_effect = ClientError("boom")
 
     call = MagicMock()
     call.data = {"activity_id": 12345, "file_format": "fit"}
@@ -659,7 +678,7 @@ async def test_add_hydration_wraps_exception(mock_hass: MagicMock) -> None:
     await async_setup_services(mock_hass)
     handler = _get_handler(mock_hass, "add_hydration")
     client = _get_client(mock_hass)
-    client.set_hydration.side_effect = RuntimeError("API error")
+    client.set_hydration.side_effect = GarminConnectError("API error")
 
     call = MagicMock()
     call.data = {"value_in_ml": 250.0}
@@ -722,7 +741,7 @@ async def test_add_nutrition_log_wraps_exception(mock_hass: MagicMock) -> None:
     await async_setup_services(mock_hass)
     handler = _get_handler(mock_hass, "add_nutrition_log")
     client = _get_client(mock_hass)
-    client.add_nutrition_log.side_effect = RuntimeError("API error")
+    client.add_nutrition_log.side_effect = GarminConnectError("API error")
 
     call = MagicMock()
     call.data = {"calories": 300.0, "name": "Quick Add"}

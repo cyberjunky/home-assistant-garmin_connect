@@ -5,6 +5,9 @@
     "add_blood_pressure": { "service": "mdi:heart-pulse" },
     "create_activity": { "service": "mdi:run" },
     "upload_activity": { "service": "mdi:upload" },
+    "download_activity": { "service": "mdi:download" },
+    "add_hydration": { "service": "mdi:cup-water" },
+    "add_nutrition_log": { "service": "mdi:food-apple" },
     "add_gear_to_activity": { "service": "mdi:plus-box" }
   },
   "entity": {
@@ -117,6 +120,8 @@
       "nutrition_protein_goal": { "default": "mdi:bullseye-arrow" },
       "nutrition_remaining_calories": { "default": "mdi:food-off" },
       "physique_rating": { "default": "mdi:numeric" },
+      "power_to_weight": { "default": "mdi:weight-kilogram" },
+      "functional_threshold_power": { "default": "mdi:flash" },
       "previous_fitness_age": { "default": "mdi:calendar-heart" },
       "rem_sleep": { "default": "mdi:sleep" },
       "remaining_calories": { "default": "mdi:food" },

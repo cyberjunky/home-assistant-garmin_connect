@@ -639,7 +639,7 @@ After upgrading, go to **Settings** → **Devices & Services**, find Garmin Conn
 - **Polling delay** — Data updates only when your device syncs to Garmin Connect and the integration polls
 - **MFA sessions** — MFA sessions may expire, requiring re-authentication
 - **Rate limiting** — Excessive polling may trigger Garmin's rate limits; minimum interval is 60 seconds
-- **China region** — Users with `.cn` Garmin accounts need to set their country to China in Home Assistant configuration
+- **China region** — Users with `.cn` Garmin accounts can enable the "Use Garmin Connect China" option during setup or reconfiguration
 
 ## Troubleshooting
 
