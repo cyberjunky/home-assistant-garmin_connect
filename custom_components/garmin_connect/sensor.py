@@ -18,6 +18,7 @@ from homeassistant.components.sensor import (
 )
 from homeassistant.const import (
     PERCENTAGE,
+    EntityCategory,
     UnitOfEnergy,
     UnitOfLength,
     UnitOfMass,
@@ -527,6 +528,7 @@ HEALTH_MONITORING_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         key="latestSpo2ReadingTime",
         translation_key="latest_spo2_time",
         device_class=SensorDeviceClass.TIMESTAMP,
+        entity_category=EntityCategory.DIAGNOSTIC,
     ),
     GarminConnectSensorEntityDescription(
         key="highestRespirationValue",
@@ -553,6 +555,7 @@ HEALTH_MONITORING_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         key="latestRespirationTime",
         translation_key="latest_respiration_time",
         device_class=SensorDeviceClass.TIMESTAMP,
+        entity_category=EntityCategory.DIAGNOSTIC,
     ),
     GarminConnectSensorEntityDescription(
         key="averageMonitoringEnvironmentAltitude",
@@ -705,6 +708,7 @@ SYNC_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         key="lastSyncTimestamp",
         translation_key="last_synced",
         device_class=SensorDeviceClass.TIMESTAMP,
+        entity_category=EntityCategory.DIAGNOSTIC,
     ),
 )
 
@@ -1669,6 +1673,7 @@ NUTRITION_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         translation_key="nutrition_last_logged",
         coordinator_type=CoordinatorType.NUTRITION,
         device_class=SensorDeviceClass.TIMESTAMP,
+        entity_category=EntityCategory.DIAGNOSTIC,
         entity_registry_enabled_default=False,
     ),
 )

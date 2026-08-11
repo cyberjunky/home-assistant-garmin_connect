@@ -8,7 +8,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from dataclasses import dataclass
-from datetime import timedelta
+from datetime import date, timedelta
 from typing import Any
 
 from aiohttp import ClientError
@@ -17,7 +17,9 @@ from ha_garmin.exceptions import GarminAuthError, GarminConnectError
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed
+from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+from homeassistant.util import dt as dt_util
 
 from .const import (
     CONF_CLIENT_ID,
@@ -29,6 +31,15 @@ from .const import (
 )
 
 _LOGGER = logging.getLogger(__name__)
+
+# Consecutive empty *calendar days* (not poll cycles - fetch_nutrition_data() always
+# queries "today", so multiple same-day polls must not each count) before raising a
+# "Connect+ required" repair issue. fetch_nutrition_data() returns {} both when the
+# account lacks Connect+ and on transient API errors, so we require a run of empty days
+# to rule out a one-off blip. The issue is never raised (and never re-raised) once any
+# poll has ever returned real data, since that proves the account IS set up correctly -
+# a later gap just means the user hasn't logged food, not that Connect+ is missing.
+_NUTRITION_EMPTY_DAY_THRESHOLD = 3
 
 
 @dataclass
@@ -331,6 +342,13 @@ class NutritionCoordinator(BaseGarminCoordinator):
         """Initialize."""
         scan_interval = entry.options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
         super().__init__(hass, entry, client, auth, "nutrition", timedelta(seconds=scan_interval))
+        self._ever_had_data = False
+        self._empty_days = 0
+        self._last_empty_date: date | None = None
+
+    @property
+    def _connect_plus_issue_id(self) -> str:
+        return f"nutrition_connect_plus_required_{self.config_entry.entry_id}"
 
     async def _async_update_data(self) -> dict[str, Any]:
         """Fetch nutrition data from Garmin Connect."""
@@ -342,6 +360,29 @@ class NutritionCoordinator(BaseGarminCoordinator):
         except (GarminConnectError, ClientError) as err:
             _LOGGER.debug("Error fetching nutrition data: %s", err)
             raise UpdateFailed(f"Error fetching nutrition data: {err}") from err
+
+        if data:
+            # Any real data proves Connect+/nutrition is set up - never warn again,
+            # even if the user later goes days without logging food.
+            self._ever_had_data = True
+            self._empty_days = 0
+            self._last_empty_date = None
+            ir.async_delete_issue(self.hass, DOMAIN, self._connect_plus_issue_id)
+        elif not self._ever_had_data:
+            today = dt_util.now().date()
+            if today != self._last_empty_date:
+                self._last_empty_date = today
+                self._empty_days += 1
+                if self._empty_days == _NUTRITION_EMPTY_DAY_THRESHOLD:
+                    ir.async_create_issue(
+                        self.hass,
+                        DOMAIN,
+                        self._connect_plus_issue_id,
+                        is_fixable=False,
+                        severity=ir.IssueSeverity.WARNING,
+                        translation_key="connect_plus_required",
+                        translation_placeholders={"title": self.config_entry.title},
+                    )
         return data
 
 
