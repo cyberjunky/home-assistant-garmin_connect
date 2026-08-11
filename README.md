@@ -8,15 +8,6 @@
 
 # Garmin Connect
 
-> **v3.0 — Complete rewrite**
->
-> This release is a ground-up rewrite of the integration to prepare for inclusion in Home Assistant Core. It uses the new [`ha-garmin`](https://pypi.org/project/ha-garmin/) library, replaces the old authentication method, and restructures all sensors to follow HA conventions.
->
-> **What this means for you:**
-> - **Re-authentication required** — The old OAuth tokens are not compatible with the new library. After updating you will be prompted to re-authenticate each configured Garmin account.
-> - **Entity IDs are preserved** — The migration automatically updates internal identifiers so your existing dashboards and automations keep working. Some sensors have been renamed or replaced; any that no longer exist will simply disappear.
-> - **Many new sensors** — 130+ sensors (up from ~100), including HRV details, training metrics, blood pressure, menstrual cycle tracking, and more.
-
 The **Garmin Connect** integration connects your [Garmin Connect](https://connect.garmin.com/) cloud service to Home Assistant, enabling users to monitor their health and fitness data from Garmin wearable devices directly in Home Assistant.
 
 The integration provides **130+ sensors** across the following categories:
