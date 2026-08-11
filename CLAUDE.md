@@ -6,6 +6,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This user prefers caveman mode: terse, no filler, fragments OK, short synonyms. Drop articles/hedging/pleasantries. Technical terms exact. Code unchanged. Pattern: `[thing] [action] [reason]. [next step].`
 
+## Git commits
+
+Never add a `Co-Authored-By: Claude ...` trailer to commit messages.
+
 ## Commands
 
 ```bash
