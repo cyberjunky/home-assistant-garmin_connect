@@ -17,6 +17,7 @@ from ha_garmin.exceptions import GarminAuthError, GarminConnectError
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from homeassistant.util import dt as dt_util
@@ -350,6 +351,21 @@ class NutritionCoordinator(BaseGarminCoordinator):
     def _connect_plus_issue_id(self) -> str:
         return f"nutrition_connect_plus_required_{self.config_entry.entry_id}"
 
+    def _has_enabled_nutrition_entity(self) -> bool:
+        """Return True if the user has enabled at least one nutrition sensor.
+
+        Nutrition sensors are disabled by default and this coordinator polls
+        unconditionally regardless of that, so most installs never touch the
+        feature at all. An empty response is only worth surfacing if the user
+        has actually opted in by enabling a nutrition sensor.
+        """
+        registry = er.async_get(self.hass)
+        prefix = f"{self.config_entry.entry_id}_nutrition"
+        return any(
+            entry.unique_id.startswith(prefix) and entry.disabled_by is None
+            for entry in er.async_entries_for_config_entry(registry, self.config_entry.entry_id)
+        )
+
     async def _async_update_data(self) -> dict[str, Any]:
         """Fetch nutrition data from Garmin Connect."""
         try:
@@ -368,7 +384,15 @@ class NutritionCoordinator(BaseGarminCoordinator):
             self._empty_days = 0
             self._last_empty_date = None
             ir.async_delete_issue(self.hass, DOMAIN, self._connect_plus_issue_id)
-        elif not self._ever_had_data:
+        elif self._ever_had_data:
+            pass  # A later gap just means no food was logged, not a missing subscription.
+        elif not self._has_enabled_nutrition_entity():
+            # Feature not opted into - never nag, and start a fresh debounce window
+            # if the user enables it later.
+            self._empty_days = 0
+            self._last_empty_date = None
+            ir.async_delete_issue(self.hass, DOMAIN, self._connect_plus_issue_id)
+        else:
             today = dt_util.now().date()
             if today != self._last_empty_date:
                 self._last_empty_date = today

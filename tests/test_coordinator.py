@@ -11,8 +11,13 @@ _DAY_3 = date(2026, 1, 3)
 _DAY_4 = date(2026, 1, 4)
 
 
-def _make_coordinator(client: AsyncMock) -> NutritionCoordinator:
-    """Build a NutritionCoordinator with mocked hass/entry/auth."""
+def _make_coordinator(client: AsyncMock, *, nutrition_enabled: bool = True) -> NutritionCoordinator:
+    """Build a NutritionCoordinator with mocked hass/entry/auth.
+
+    `nutrition_enabled` stubs out the entity-registry lookup so tests don't need a
+    real registry - defaults to True (opted in) since most tests exercise the
+    empty-day/threshold logic that only runs once a user has enabled the feature.
+    """
     hass = MagicMock()
     entry = MagicMock()
     entry.entry_id = "test_entry_id"
@@ -22,6 +27,7 @@ def _make_coordinator(client: AsyncMock) -> NutritionCoordinator:
     auth = MagicMock()
     coordinator = NutritionCoordinator(hass, entry, client, auth)
     coordinator._update_tokens_if_changed = AsyncMock()
+    coordinator._has_enabled_nutrition_entity = MagicMock(return_value=nutrition_enabled)
     return coordinator
 
 
@@ -123,3 +129,59 @@ async def test_issue_cleared_once_data_returns() -> None:
         mock_ir.async_delete_issue.assert_called_once()
         assert coordinator._empty_days == 0
         assert coordinator._ever_had_data is True
+
+
+async def test_no_issue_when_nutrition_never_enabled() -> None:
+    """Users who never enable the (disabled-by-default) nutrition sensors are never nagged.
+
+    NutritionCoordinator polls unconditionally regardless of entity enablement, so most
+    installs have no Connect+ and would hit the empty-day threshold - this must not
+    surface a repair issue unless the user actually opted into the feature.
+    """
+    coordinator = _make_coordinator(_make_client(empty=True), nutrition_enabled=False)
+    with patch("custom_components.garmin_connect.coordinator.ir") as mock_ir:
+        for day in (_DAY_1, _DAY_2, _DAY_3, _DAY_4, date(2026, 1, 5)):
+            day_patch = _mock_today(day)
+            try:
+                await coordinator._async_update_data()
+            finally:
+                day_patch.stop()
+
+        mock_ir.async_create_issue.assert_not_called()
+        assert coordinator._empty_days == 0
+
+
+async def test_issue_starts_fresh_debounce_after_enabling() -> None:
+    """Enabling nutrition sensors after a long silent gap starts a clean 3-day window.
+
+    A streak that accumulated while the feature was disabled must not immediately
+    fire on the first poll after the user opts in.
+    """
+    coordinator = _make_coordinator(_make_client(empty=True), nutrition_enabled=False)
+    with patch("custom_components.garmin_connect.coordinator.ir") as mock_ir:
+        for day in (_DAY_1, _DAY_2, _DAY_3, _DAY_4):
+            day_patch = _mock_today(day)
+            try:
+                await coordinator._async_update_data()
+            finally:
+                day_patch.stop()
+        mock_ir.async_create_issue.assert_not_called()
+
+        coordinator._has_enabled_nutrition_entity = MagicMock(return_value=True)
+        day_5 = date(2026, 1, 5)
+        day_patch = _mock_today(day_5)
+        try:
+            await coordinator._async_update_data()
+        finally:
+            day_patch.stop()
+        assert coordinator._empty_days == 1
+        mock_ir.async_create_issue.assert_not_called()
+
+        for day in (date(2026, 1, 6), date(2026, 1, 7)):
+            day_patch = _mock_today(day)
+            try:
+                await coordinator._async_update_data()
+            finally:
+                day_patch.stop()
+
+        mock_ir.async_create_issue.assert_called_once()
