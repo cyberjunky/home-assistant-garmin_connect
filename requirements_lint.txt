@@ -1,6 +1,6 @@
 codespell==2.4.3
 fit-tool==0.9.16
-mypy==2.3.0
+mypy==2.3.1
 pre-commit==4.6.2
 pre-commit-hooks==6.0.0
 pycares>=5.0.1
