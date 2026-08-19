@@ -14,7 +14,7 @@
   ],
   "quality_scale": "gold",
   "requirements": [
-    "ha-garmin==0.1.35"
+    "ha-garmin==0.1.37"
   ],
-  "version": "3.0.15"
+  "version": "3.0.16"
 }
