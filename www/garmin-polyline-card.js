@@ -2,6 +2,19 @@
  * Garmin Activity Polyline Map Card
  * A simple custom Lovelace card to display activity routes from sensor attributes
  */
+
+// Home Assistant proxies OpenStreetMap tiles through its own backend as of
+// core 2026.9 (home-assistant/core#180441) — same origin as the card, so no
+// CORS/Referer question, and OSM tile-usage-policy compliance is core's
+// problem to solve once for every install, not ours to solve per card.
+const MAP_TILES_RASTER_PATH = '/api/map_tiles/raster/{z}/{x}/{y}.png?token={token}';
+// Core rotates the token every 30 min and keeps two live, so refreshing more
+// often than that leaves margin for a slow round trip.
+const MAP_TILES_TOKEN_REFRESH_MS = 20 * 60 * 1000;
+const OSM_ATTRIBUTION = '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
+// Fallback for cores older than 2026.9, which have no /api/map_tiles proxy.
+const OSM_DIRECT_URL = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+
 class GarminPolylineCard extends HTMLElement {
   constructor() {
     super();
@@ -9,6 +22,8 @@ class GarminPolylineCard extends HTMLElement {
     this._hass = null;
     this._config = null;
     this._map = null;
+    this._tileLayer = null;
+    this._tokenRefreshInterval = null;
     this._polyline = null;
     this._initPending = false;
     this._lastPolylineKey = null;
@@ -54,9 +69,16 @@ class GarminPolylineCard extends HTMLElement {
   }
 
   disconnectedCallback() {
+    this._teardownMap();
+  }
+
+  _teardownMap() {
+    clearInterval(this._tokenRefreshInterval);
+    this._tokenRefreshInterval = null;
     if (this._map) {
       this._map.remove();
       this._map = null;
+      this._tileLayer = null;
       this._polyline = null;
     }
   }
@@ -86,11 +108,7 @@ class GarminPolylineCard extends HTMLElement {
   }
 
   _renderNoData() {
-    if (this._map) {
-      this._map.remove();
-      this._map = null;
-      this._polyline = null;
-    }
+    this._teardownMap();
     this.shadowRoot.innerHTML = `
       <ha-card header="${this._config.title}">
         <div style="padding: 16px; text-align: center; color: var(--secondary-text-color);">
@@ -113,9 +131,7 @@ class GarminPolylineCard extends HTMLElement {
         }
       } catch (_e) {
         // Map pane not ready; tear down and rebuild
-        this._map.remove();
-        this._map = null;
-        this._polyline = null;
+        this._teardownMap();
         this._renderMap(coordinates, stateObj);
       }
       return;
@@ -171,36 +187,14 @@ class GarminPolylineCard extends HTMLElement {
     const mapContainer = this.shadowRoot.getElementById('map');
     if (!mapContainer || !window.L) return;
 
-    if (this._map) {
-      this._map.remove();
-      this._map = null;
-    }
+    this._teardownMap();
 
     this._map = L.map(mapContainer, {
       zoomControl: true,
       scrollWheelZoom: false
     });
 
-    // Custom tile layer that sets referrerPolicy BEFORE src so the browser
-    // sends no Referer header — required when HA runs on localhost.
-    const NoRefererTileLayer = L.TileLayer.extend({
-      createTile(coords, done) {
-        const tile = document.createElement('img');
-        tile.referrerPolicy = 'no-referrer';  // must be before src
-        L.DomEvent.on(tile, 'load', L.Util.bind(this._tileOnLoad, this, done, tile));
-        L.DomEvent.on(tile, 'error', L.Util.bind(this._tileOnError, this, done, tile));
-        tile.alt = '';
-        tile.setAttribute('role', 'presentation');
-        tile.src = this.getTileUrl(coords);
-        return tile;
-      }
-    });
-
-    new NoRefererTileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-      attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors © <a href="https://carto.com/attributions">CARTO</a>',
-      subdomains: 'abcd',
-      maxZoom: 19
-    }).addTo(this._map);
+    this._addTileLayer();
 
     this._polyline = L.polyline(coordinates, {
       color: this._config.color,
@@ -235,6 +229,64 @@ class GarminPolylineCard extends HTMLElement {
         fillOpacity: 1
       }).addTo(this._map).bindPopup('End');
     }
+  }
+
+  async _fetchMapTilesToken() {
+    if (!this._hass?.connection) return null;
+    try {
+      const result = await this._hass.connection.sendMessagePromise({ type: 'map_tiles/access_token' });
+      return typeof result?.token === 'string' && result.token ? result.token : null;
+    } catch (_e) {
+      // Core predates the map_tiles proxy (pre-2026.9), or the websocket isn't ready
+      return null;
+    }
+  }
+
+  async _addTileLayer() {
+    const targetMap = this._map;
+    const token = await this._fetchMapTilesToken();
+    if (this._map !== targetMap) return; // map was torn down/rebuilt while awaiting
+
+    if (token) {
+      this._tileLayer = L.tileLayer(MAP_TILES_RASTER_PATH, {
+        attribution: OSM_ATTRIBUTION,
+        maxZoom: 19,
+        token
+      }).addTo(targetMap);
+      this._scheduleTokenRefresh();
+      return;
+    }
+
+    // Fallback: connect to OSM directly. strict-origin-when-cross-origin
+    // sends only the page origin as Referer — satisfies OSM's tile usage
+    // policy without leaking the full local dashboard path.
+    const DirectTileLayer = L.TileLayer.extend({
+      createTile(coords, done) {
+        const tile = document.createElement('img');
+        tile.referrerPolicy = 'strict-origin-when-cross-origin';  // must be before src
+        L.DomEvent.on(tile, 'load', L.Util.bind(this._tileOnLoad, this, done, tile));
+        L.DomEvent.on(tile, 'error', L.Util.bind(this._tileOnError, this, done, tile));
+        tile.alt = '';
+        tile.setAttribute('role', 'presentation');
+        tile.src = this.getTileUrl(coords);
+        return tile;
+      }
+    });
+    this._tileLayer = new DirectTileLayer(OSM_DIRECT_URL, {
+      attribution: OSM_ATTRIBUTION,
+      maxZoom: 19
+    }).addTo(targetMap);
+  }
+
+  _scheduleTokenRefresh() {
+    clearInterval(this._tokenRefreshInterval);
+    this._tokenRefreshInterval = setInterval(async () => {
+      const token = await this._fetchMapTilesToken();
+      if (token && this._tileLayer) {
+        this._tileLayer.options.token = token;
+        this._tileLayer.redraw();
+      }
+    }, MAP_TILES_TOKEN_REFRESH_MS);
   }
 
   getCardSize() {
