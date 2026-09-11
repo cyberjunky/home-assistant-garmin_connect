@@ -310,6 +310,8 @@ def mock_gear_data() -> dict:
                 "solarUtilization": 42.5,
                 "activityTimeGainMs": 60000,
                 "readingTimestampGmt": "2026-01-24T10:00:00.0",
+                "avgSolarUtilization": 31.8,
+                "totalActivityTimeGainMinutes": 15,
             }
         ],
         "devices": [
