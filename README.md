@@ -207,6 +207,7 @@ All sensors are created under a single "Garmin Connect" device. Entity IDs follo
 | Latest SpO2 Time | When SpO2 was last measured |
 | Highest / Lowest / Latest Respiration | Breathing rate (brpm) |
 | Latest Respiration Time | When respiration was last measured |
+| Average Sleep Respiration | Breathing rate averaged over the sleep window (brpm) |
 | Average Altitude | Average monitoring altitude |
 
 ### Fitness & Training
