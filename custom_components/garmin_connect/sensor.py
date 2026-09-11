@@ -1285,6 +1285,15 @@ GEAR_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
             "last_used_device": data.get("lastUsedDevice"),
         },
     ),
+    GarminConnectSensorEntityDescription(
+        key="sensors",
+        translation_key="connected_sensors",
+        coordinator_type=CoordinatorType.GEAR,
+        value_fn=lambda data: (
+            len(data["sensors"]) if isinstance(data.get("sensors"), list) else None
+        ),
+        attributes_fn=lambda data: {"sensors": data.get("sensors")},
+    ),
 )
 
 
