@@ -4,9 +4,26 @@ set -e
 
 cd "$(dirname "$0")/.."
 
+# Home Assistant >=2026.3.0 requires Python >=3.14.2. Pick an interpreter
+# that satisfies it explicitly rather than trusting ambient `python3`, which
+# on PATH ordering alone has pointed at a pre-3.14 system Python before.
+PYTHON=$(command -v python3.14 || command -v python3)
+if ! "$PYTHON" -c 'import sys; sys.exit(sys.version_info < (3, 14))'; then
+  echo "Python >=3.14 required (found: $("$PYTHON" --version)). Install python3.14." >&2
+  exit 1
+fi
+
+# (Re)create .venv if it's missing or was built against a too-old Python —
+# e.g. left over from before this container's base image moved to 3.14.
+if [ ! -x ".venv/bin/python3" ] || ! .venv/bin/python3 -c 'import sys; sys.exit(sys.version_info < (3, 14))'; then
+  echo "(Re)creating .venv with $PYTHON"
+  rm -rf .venv
+  "$PYTHON" -m venv .venv
+fi
+
 scripts/install/pip_packages "pip<23.2,>=21.3.1"
 scripts/install/pip_packages setuptools wheel
 scripts/install/pip_packages --requirement requirements_lint.txt
 scripts/install/core
 
-pre-commit  install --config .github/pre-commit-config.yaml
+.venv/bin/pre-commit install --config .github/pre-commit-config.yaml
