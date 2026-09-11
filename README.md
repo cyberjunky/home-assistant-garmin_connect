@@ -229,6 +229,7 @@ All sensors are created under a single "Garmin Connect" device. Entity IDs follo
 | Next Alarm | Next scheduled alarm time |
 | Solar Intensity | Solar charging utilization (%) for solar-capable devices |
 | Devices | Number of registered Garmin devices, with per-device details and last used device as attributes |
+| Connected Sensors | Number of paired ANT+/BLE sensors (power meters, HR straps, etc.), with per-sensor id and battery status as attributes |
 
 > Power-to-weight and FTP sensors are created dynamically for each available sport in your Garmin training data. Names are formatted like `Power to Weight Running` and `FTP Running`.
 

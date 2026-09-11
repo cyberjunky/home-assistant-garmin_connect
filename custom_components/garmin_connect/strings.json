@@ -114,6 +114,7 @@
       "bp_systolic": { "name": "Blood pressure systolic" },
       "burned_calories": { "name": "Burned calories" },
       "chronological_age": { "name": "Chronological age" },
+      "connected_sensors": { "name": "Connected sensors" },
       "consumed_calories": { "name": "Consumed calories" },
       "daily_step_goal": { "name": "Daily step goal" },
       "deep_sleep": { "name": "Deep sleep" },

@@ -336,6 +336,14 @@ def mock_gear_data() -> dict:
             "lastSyncTime": datetime(2026, 1, 24, 10, 30, tzinfo=UTC),
             "imageUrl": "https://example.com/instinct.png",
         },
+        "sensors": [
+            {
+                "deviceId": 111,
+                "sensorType": "HEART_RATE",
+                "batteryStatus": "good",
+                "batteryLevel": 82,
+            }
+        ],
     }
 
 
