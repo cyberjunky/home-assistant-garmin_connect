@@ -227,7 +227,9 @@ All sensors are created under a single "Garmin Connect" device. Entity IDs follo
 | Power to Weight [Sport] | Dynamic per-sport power-to-weight sensor (W/kg), e.g. Running, Cycling |
 | FTP [Sport] | Dynamic per-sport functional threshold power sensor (W), e.g. Running, Cycling |
 | Next Alarm | Next scheduled alarm time |
-| Solar Intensity | Solar charging utilization (%) for solar-capable devices |
+| Solar Intensity | Solar charging utilization (%) at the moment of the last sync, for solar-capable devices |
+| Average Solar Intensity | Solar charging utilization (%) averaged over today's readings so far |
+| Solar Time Gained | Extra battery time gained from solar today (minutes), resets daily |
 | Devices | Number of registered Garmin devices, with per-device details and last used device as attributes |
 | Connected Sensors | Number of paired ANT+/BLE sensors (power meters, HR straps, etc.), with per-sensor id and battery status as attributes |
 
