@@ -2,7 +2,13 @@
 
 set -e
 
-python3 -m pip \
+# Target .venv explicitly rather than ambient `python3` on PATH, which a
+# non-activated shell (e.g. a VS Code task) would otherwise silently install
+# into instead of the venv scripts/develop actually runs.
+PYTHON=".venv/bin/python3"
+[ -x "$PYTHON" ] || PYTHON="python3"
+
+"$PYTHON" -m pip \
     install \
     --upgrade \
     --disable-pip-version-check \
