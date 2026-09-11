@@ -558,6 +558,13 @@ HEALTH_MONITORING_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         entity_category=EntityCategory.DIAGNOSTIC,
     ),
     GarminConnectSensorEntityDescription(
+        key="avgSleepRespirationValue",
+        translation_key="avg_sleep_respiration",
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement="brpm",
+        preserve_value=True,
+    ),
+    GarminConnectSensorEntityDescription(
         key="averageMonitoringEnvironmentAltitude",
         translation_key="avg_altitude",
         device_class=SensorDeviceClass.DISTANCE,

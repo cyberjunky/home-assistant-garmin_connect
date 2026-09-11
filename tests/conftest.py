@@ -147,6 +147,7 @@ def mock_core_data() -> dict:
         "lowestRespirationValue": 12.0,
         "latestRespirationValue": 15.0,
         "latestRespirationTime": datetime(2026, 1, 24, 11, 0, 0, tzinfo=UTC),
+        "avgSleepRespirationValue": 14.2,
         "averageMonitoringEnvironmentAltitude": 50.0,
         "wellnessStartTime": datetime(2026, 1, 23, 23, 0, 0, tzinfo=UTC),
         "wellnessEndTime": datetime(2026, 1, 24, 16, 0, 0, tzinfo=UTC),

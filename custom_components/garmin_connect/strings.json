@@ -92,6 +92,7 @@
       "activity_stress_duration": { "name": "Activity stress duration" },
       "activity_stress_percentage": { "name": "Activity stress percentage" },
       "avg_altitude": { "name": "Average altitude" },
+      "avg_sleep_respiration": { "name": "Average sleep respiration" },
       "avg_spo2": { "name": "Average SpO2" },
       "avg_stress_level": { "name": "Average stress level" },
       "awake_duration": { "name": "Awake duration" },
