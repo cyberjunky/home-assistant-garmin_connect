@@ -183,6 +183,7 @@
       "muscle_mass": { "name": "Muscle mass" },
       "nap_time": { "name": "Nap time" },
       "next_alarm": { "name": "Next alarm" },
+      "next_scheduled_workout": { "name": "Next scheduled workout" },
       "nutrition_calorie_goal": { "name": "Nutrition calorie goal" },
       "nutrition_carbs_goal": { "name": "Nutrition carbohydrates goal" },
       "nutrition_consumed_calories": { "name": "Nutrition consumed calories" },
@@ -214,6 +215,7 @@
       "solar_time_gained": { "name": "Solar time gained" },
       "stress_percentage": { "name": "Stress percentage" },
       "stress_qualifier": { "name": "Stress qualifier" },
+      "today_scheduled_workout": { "name": "Today's scheduled workout" },
       "total_calories": { "name": "Calories" },
       "total_distance": { "name": "Distance" },
       "total_intensity_minutes": { "name": "Intensity minutes" },
@@ -241,6 +243,9 @@
       "wellness_start_time": { "name": "Wellness start time" },
       "yesterday_distance": { "name": "Yesterday distance" },
       "yesterday_steps": { "name": "Yesterday steps" }
+    },
+    "calendar": {
+      "scheduled_workouts": { "name": "Scheduled workouts" }
     }
   },
   "services": {

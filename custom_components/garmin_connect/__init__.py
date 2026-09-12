@@ -38,7 +38,7 @@ from .services import async_setup_services, async_unload_services
 
 _LOGGER = logging.getLogger(__name__)
 
-PLATFORMS: list[Platform] = [Platform.SENSOR]
+PLATFORMS: list[Platform] = [Platform.SENSOR, Platform.CALENDAR]
 
 # Mapping of old sensor keys (v1) to new sensor keys (v2).
 # Keys present in both versions are migrated by unique_id prefix only.
