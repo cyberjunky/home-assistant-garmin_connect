@@ -246,6 +246,9 @@
       "wellness_start_time": { "name": "Wellness start time" },
       "yesterday_distance": { "name": "Yesterday distance" },
       "yesterday_steps": { "name": "Yesterday steps" }
+    },
+    "calendar": {
+      "scheduled_workouts": { "name": "Scheduled workouts" }
     }
   },
   "services": {
