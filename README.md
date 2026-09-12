@@ -258,6 +258,8 @@ All sensors are created under a single "Garmin Connect" device. Entity IDs follo
 | Next Scheduled Workout | The next upcoming training-calendar session (today or later) |
 | Last Synced | Last device sync timestamp |
 
+Scheduled workouts (including Garmin Coach / adaptive training plan sessions) are also exposed as a `calendar.garmin_connect_scheduled_workouts` calendar entity — usable with HA's built-in Calendar dashboard card, `calendar.get_events`, and `trigger: calendar` automations. Covers the current and next calendar month, from today onward.
+
 ### Blood Pressure
 
 > Requires a Garmin blood pressure device (e.g., Index BPM). Sensors are populated from the most recent measurement.
