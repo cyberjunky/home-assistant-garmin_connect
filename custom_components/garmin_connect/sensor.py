@@ -811,6 +811,15 @@ ACTIVITY_TRACKING_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
             "upcoming": data.get("scheduledWorkouts") or [],
         },
     ),
+    GarminConnectSensorEntityDescription(
+        key="trainingPlanGoalEvent",
+        translation_key="training_plan_goal_event",
+        coordinator_type=CoordinatorType.ACTIVITY,
+        value_fn=lambda data: (data.get("trainingPlanGoalEvent") or {}).get(
+            "eventName"
+        ),
+        attributes_fn=lambda data: data.get("trainingPlanGoalEvent") or {},
+    ),
 )
 
 
