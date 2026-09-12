@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, time, timedelta
 from typing import Any
 
 from homeassistant.components.calendar import CalendarEntity, CalendarEvent
@@ -70,16 +70,25 @@ class GarminScheduledWorkoutsCalendar(CoordinatorEntity[ActivityCoordinator], Ca
     async def async_get_events(
         self, _hass: HomeAssistant, start_date: datetime, end_date: datetime
     ) -> list[CalendarEvent]:
-        """Return scheduled workouts within the given range."""
+        """Return scheduled workouts within the given range.
+
+        Per HA's calendar contract, start_date bounds the event's own end
+        and end_date bounds the event's own start (both exclusive) -- not
+        a plain date-vs-date comparison, which would be wrong for an event
+        spanning more than one day.
+        """
         data = self.coordinator.data or {}
         workouts = data.get("scheduledWorkouts") or []
-        range_start = start_date.date()
-        range_end = end_date.date()
+        tzinfo = start_date.tzinfo
 
         events = []
         for workout in workouts:
             event = _event_from_workout(workout)
-            if event is not None and range_start <= event.start < range_end:
+            if event is None:
+                continue
+            event_start = datetime.combine(event.start, time.min, tzinfo=tzinfo)
+            event_end = datetime.combine(event.end, time.min, tzinfo=tzinfo)
+            if event_end > start_date and event_start < end_date:
                 events.append(event)
         return events
 
