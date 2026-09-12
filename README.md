@@ -256,6 +256,7 @@ All sensors are created under a single "Garmin Connect" device. Entity IDs follo
 | Last Workout / Workouts | Scheduled/planned training sessions |
 | Today's Scheduled Workout | Today's training-calendar session, e.g. from a Garmin Coach plan |
 | Next Scheduled Workout | The next upcoming training-calendar session (today or later) |
+| Training Plan Goal Event | Active plan's goal race: name, target distance, target date, projected/predicted time |
 | Last Synced | Last device sync timestamp |
 
 Scheduled workouts (including Garmin Coach / adaptive training plan sessions) are also exposed as a `calendar.garmin_connect_scheduled_workouts` calendar entity — usable with HA's built-in Calendar dashboard card, `calendar.get_events`, and `trigger: calendar` automations. Covers the current and next calendar month, from today onward.

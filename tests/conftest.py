@@ -213,6 +213,17 @@ def mock_activity_data() -> dict:
                 "protectedWorkoutSchedule": True,
             }
         ],
+        "trainingPlanGoalEvent": {
+            "eventName": "5K Plan",
+            "date": "2026-11-21",
+            "eventType": "running",
+            "targetDistance": 5.0,
+            "targetDistanceUnit": "kilometer",
+            "trainingPlanType": "COACH_ATP",
+            "projectedRaceTimeDurationSeconds": 1829,
+            "predictedRaceTimeDurationSeconds": 2101,
+            "enrollmentTime": "2026-09-11T12:39:16.350",
+        },
     }
 
 
