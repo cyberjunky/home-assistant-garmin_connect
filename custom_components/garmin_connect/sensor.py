@@ -794,6 +794,23 @@ ACTIVITY_TRACKING_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
             "last_workouts": (data.get("workouts") or [])[-10:],
         },
     ),
+    GarminConnectSensorEntityDescription(
+        key="todayScheduledWorkout",
+        translation_key="today_scheduled_workout",
+        coordinator_type=CoordinatorType.ACTIVITY,
+        value_fn=lambda data: (data.get("todayScheduledWorkout") or {}).get("title"),
+        attributes_fn=lambda data: data.get("todayScheduledWorkout") or {},
+    ),
+    GarminConnectSensorEntityDescription(
+        key="nextScheduledWorkout",
+        translation_key="next_scheduled_workout",
+        coordinator_type=CoordinatorType.ACTIVITY,
+        value_fn=lambda data: (data.get("nextScheduledWorkout") or {}).get("title"),
+        attributes_fn=lambda data: {
+            **(data.get("nextScheduledWorkout") or {}),
+            "upcoming": data.get("scheduledWorkouts") or [],
+        },
+    ),
 )
 
 

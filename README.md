@@ -254,6 +254,8 @@ All sensors are created under a single "Garmin Connect" device. Entity IDs follo
 | Last Activity | Most recent activity with details |
 | Last Activities | Recent activities list (attributes) |
 | Last Workout / Workouts | Scheduled/planned training sessions |
+| Today's Scheduled Workout | Today's training-calendar session, e.g. from a Garmin Coach plan |
+| Next Scheduled Workout | The next upcoming training-calendar session (today or later) |
 | Last Synced | Last device sync timestamp |
 
 ### Blood Pressure

@@ -184,6 +184,35 @@ def mock_activity_data() -> dict:
         ],
         "lastWorkout": {"workoutId": 999, "workoutName": "5k Easy"},
         "workouts": [{"workoutId": 999, "workoutName": "5k Easy"}],
+        "todayScheduledWorkout": {
+            "id": 1774018003,
+            "date": "2026-04-26",
+            "title": "Benchmark Run",
+            "sportTypeKey": "running",
+            "workoutId": 1694501256,
+            "atpPlanId": 1789148356,
+            "protectedWorkoutSchedule": True,
+        },
+        "nextScheduledWorkout": {
+            "id": 1774018003,
+            "date": "2026-04-26",
+            "title": "Benchmark Run",
+            "sportTypeKey": "running",
+            "workoutId": 1694501256,
+            "atpPlanId": 1789148356,
+            "protectedWorkoutSchedule": True,
+        },
+        "scheduledWorkouts": [
+            {
+                "id": 1774018003,
+                "date": "2026-04-26",
+                "title": "Benchmark Run",
+                "sportTypeKey": "running",
+                "workoutId": 1694501256,
+                "atpPlanId": 1789148356,
+                "protectedWorkoutSchedule": True,
+            }
+        ],
     }
 
 
