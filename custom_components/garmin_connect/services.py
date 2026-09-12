@@ -75,7 +75,7 @@ ADD_BLOOD_PRESSURE_SCHEMA = vol.Schema(
         vol.Optional("entity_id"): cv.entity_id,
         vol.Required("systolic"): vol.All(vol.Coerce(int), vol.Range(min=60, max=250)),
         vol.Required("diastolic"): vol.All(vol.Coerce(int), vol.Range(min=40, max=150)),
-        vol.Required("pulse"): vol.All(vol.Coerce(int), vol.Range(min=30, max=220)),
+        vol.Optional("pulse"): vol.All(vol.Coerce(int), vol.Range(min=30, max=220)),
         vol.Optional("timestamp"): cv.string,
         vol.Optional("notes"): cv.string,
     }
@@ -287,7 +287,7 @@ async def async_setup_services(hass: HomeAssistant) -> None:
             await client.set_blood_pressure(
                 systolic=call.data["systolic"],
                 diastolic=call.data["diastolic"],
-                pulse=call.data["pulse"],
+                pulse=call.data.get("pulse"),
                 timestamp=call.data.get("timestamp"),
                 notes=call.data.get("notes", ""),
             )

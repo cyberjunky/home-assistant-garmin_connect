@@ -182,7 +182,8 @@ add_blood_pressure:
           unit_of_measurement: mmHg
     pulse:
       name: Pulse (bpm)
-      required: true
+      description: Optional. Garmin Connect's own app accepts a reading without a heart rate.
+      required: false
       selector:
         number:
           min: 30
