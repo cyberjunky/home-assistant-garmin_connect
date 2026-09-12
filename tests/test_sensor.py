@@ -365,6 +365,16 @@ def test_last_activities_count() -> None:
     assert len(sensor.extra_state_attributes["last_activities"]) == 2
 
 
+def test_training_plan_goal_event_returns_name_and_attributes() -> None:
+    """trainingPlanGoalEvent sensor: state = eventName, attributes = the full event."""
+    desc = next(d for d in ACTIVITY_TRACKING_SENSORS if d.key == "trainingPlanGoalEvent")
+    coord = MagicMock()
+    coord.data = mock_activity_data()
+    sensor = GarminConnectSensor(coord, desc, "entry_id")
+    assert sensor.native_value == "5K Plan"
+    assert sensor.extra_state_attributes == mock_activity_data()["trainingPlanGoalEvent"]
+
+
 def test_bp_systolic_value_and_attributes() -> None:
     """bpSystolic: state = 120, attributes include diastolic and pulse."""
     desc = next(d for d in BLOOD_PRESSURE_SENSORS if d.key == "bpSystolic")
