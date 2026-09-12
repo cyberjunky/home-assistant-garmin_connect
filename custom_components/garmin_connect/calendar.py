@@ -44,7 +44,14 @@ class GarminScheduledWorkoutsCalendar(CoordinatorEntity[ActivityCoordinator], Ca
     Backed by ActivityCoordinator's scheduledWorkouts, which only covers
     the current and next calendar month and only dates from today onward
     (ha-garmin fetch_activity_data) -- browsing further out or into the
-    past in the Calendar UI shows nothing, by design.
+    past in the Calendar UI shows nothing.
+
+    This is Garmin's calendar-service endpoint, not whatever the Garmin
+    Connect app itself uses -- for adaptive/Coach plans the app can show
+    upcoming days this endpoint doesn't return at all (that data lives
+    behind a different, session-cookie-authenticated API this client
+    can't reach). Expect fewer events here than in the app, sometimes
+    none, even within the current/next month window.
     """
 
     _attr_has_entity_name = True

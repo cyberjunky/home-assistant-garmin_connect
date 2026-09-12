@@ -259,7 +259,9 @@ All sensors are created under a single "Garmin Connect" device. Entity IDs follo
 | Training Plan Goal Event | Active plan's goal race: name, target distance, target date, projected/predicted time |
 | Last Synced | Last device sync timestamp |
 
-Scheduled workouts (including Garmin Coach / adaptive training plan sessions) are also exposed as a `calendar.garmin_connect_scheduled_workouts` calendar entity — usable with HA's built-in Calendar dashboard card, `calendar.get_events`, and `trigger: calendar` automations. Covers the current and next calendar month, from today onward.
+Scheduled workouts (including Garmin Coach / adaptive training plan sessions) are also exposed as a `calendar.garmin_connect_scheduled_workouts` calendar entity — usable with HA's built-in Calendar dashboard card, `calendar.get_events`, and `trigger: calendar` automations.
+
+> **Known limitation:** this data comes from Garmin's `calendar-service` endpoint, the same one used elsewhere in this integration. For adaptive/Coach plans, the Garmin Connect app can show upcoming days further out than this endpoint returns — that fuller view lives behind a different Garmin API that requires session-cookie authentication this integration doesn't support. Expect these sensors and the calendar entity to sometimes show fewer upcoming sessions than the app does, or none at all, even inside the current/next month window.
 
 ### Blood Pressure
 
