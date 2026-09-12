@@ -394,6 +394,26 @@ async def test_add_blood_pressure(mock_hass: MagicMock) -> None:
     )
 
 
+async def test_add_blood_pressure_without_pulse(mock_hass: MagicMock) -> None:
+    """add_blood_pressure must allow omitting pulse, matching Garmin Connect's own app."""
+    await async_setup_services(mock_hass)
+    handler = _get_handler(mock_hass, "add_blood_pressure")
+    client = _get_client(mock_hass)
+
+    call = MagicMock()
+    call.data = {"systolic": 120, "diastolic": 80}
+
+    await handler(call)
+
+    client.set_blood_pressure.assert_awaited_once_with(
+        systolic=120,
+        diastolic=80,
+        pulse=None,
+        timestamp=None,
+        notes="",
+    )
+
+
 async def test_add_blood_pressure_wraps_exception(mock_hass: MagicMock) -> None:
     """add_blood_pressure must wrap API errors in HomeAssistantError."""
     await async_setup_services(mock_hass)

@@ -310,7 +310,7 @@
       "fields": {
         "systolic": { "name": "Systolic", "description": "Systolic blood pressure value." },
         "diastolic": { "name": "Diastolic", "description": "Diastolic blood pressure value." },
-        "pulse": { "name": "Pulse", "description": "Pulse rate." },
+        "pulse": { "name": "Pulse", "description": "Pulse rate (optional)." },
         "timestamp": { "name": "Timestamp", "description": "When the measurement was recorded (defaults to now)." },
         "notes": { "name": "Notes", "description": "Additional notes for the measurement." }
       }
