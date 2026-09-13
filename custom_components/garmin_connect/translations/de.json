@@ -1,0 +1,382 @@
+{
+  "config": {
+    "abort": {
+      "already_configured": "Konto ist bereits eingerichtet",
+      "reauth_successful": "Erneute Authentifizierung war erfolgreich",
+      "reconfigure_successful": "Neukonfiguration war erfolgreich"
+    },
+    "error": {
+      "invalid_auth": "Ungültige Zugangsdaten",
+      "invalid_mfa": "Ungültiger Bestätigungscode",
+      "rate_limit": "Zu viele Anmeldeversuche — Garmin drosselt die Zugriffe. Bitte versuche es in ein paar Minuten erneut.",
+      "unknown": "Unerwarteter Fehler"
+    },
+    "step": {
+      "mfa": {
+        "data": {
+          "mfa_code": "Bestätigungscode"
+        },
+        "data_description": {
+          "mfa_code": "Der Bestätigungscode, der an dein Gerät oder per E-Mail gesendet wurde"
+        },
+        "description": "Gib den Bestätigungscode von Garmin ein.",
+        "title": "Zwei-Faktor-Authentifizierung"
+      },
+      "reauth_confirm": {
+        "data": {
+          "password": "Passwort",
+          "username": "E-Mail",
+          "is_cn": "Garmin Connect China verwenden (cn.garmin.com)"
+        },
+        "data_description": {
+          "password": "Dein Garmin-Connect-Passwort",
+          "username": "Deine Garmin-Connect-E-Mail-Adresse",
+          "is_cn": "Aktivieren für Konten, die auf der chinesischen Garmin-Connect-Plattform registriert sind"
+        },
+        "description": "Gib deine Garmin-Connect-Zugangsdaten ein, um dich erneut zu authentifizieren.",
+        "title": "Integration erneut authentifizieren"
+      },
+      "reconfigure": {
+        "data": {
+          "password": "Passwort",
+          "username": "E-Mail",
+          "is_cn": "Garmin Connect China verwenden (cn.garmin.com)"
+        },
+        "data_description": {
+          "password": "Dein Garmin-Connect-Passwort",
+          "username": "Deine Garmin-Connect-E-Mail-Adresse",
+          "is_cn": "Aktivieren für Konten, die auf der chinesischen Garmin-Connect-Plattform registriert sind"
+        },
+        "description": "Aktualisiere deine Garmin-Connect-Zugangsdaten.",
+        "title": "Integration neu konfigurieren"
+      },
+      "user": {
+        "data": {
+          "password": "Passwort",
+          "username": "E-Mail",
+          "is_cn": "Garmin Connect China verwenden (cn.garmin.com)"
+        },
+        "data_description": {
+          "password": "Dein Garmin-Connect-Passwort",
+          "username": "Deine Garmin-Connect-E-Mail-Adresse",
+          "is_cn": "Aktivieren für Konten, die auf der chinesischen Garmin-Connect-Plattform registriert sind"
+        },
+        "description": "Gib deine Garmin-Connect-Zugangsdaten ein."
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "data": {
+          "scan_interval": "Aktualisierungsintervall (Sekunden)",
+          "is_cn": "Garmin Connect China verwenden (cn.garmin.com)"
+        },
+        "data_description": {
+          "scan_interval": "Wie oft Daten von Garmin Connect abgerufen werden (60–3600 Sekunden)",
+          "is_cn": "Aktivieren für Konten, die auf der chinesischen Garmin-Connect-Plattform registriert sind"
+        },
+        "description": "Konfiguriere die Einstellungen deiner Garmin-Connect-Integration.",
+        "title": "Garmin-Connect-Optionen"
+      }
+    }
+  },
+  "entity": {
+    "calendar": {
+      "scheduled_workouts": { "name": "Geplante Trainings" }
+    },
+    "sensor": {
+      "abnormal_hr_alerts": { "name": "Warnungen bei auffälliger Herzfrequenz" },
+      "achievable_fitness_age": { "name": "Erreichbares Fitnessalter" },
+      "active_calories": { "name": "Aktive Kalorien" },
+      "active_goals": { "name": "Aktive Ziele" },
+      "active_time": { "name": "Aktive Zeit" },
+      "activity_stress_duration": { "name": "Dauer Aktivitätsstress" },
+      "activity_stress_percentage": { "name": "Anteil Aktivitätsstress" },
+      "avg_altitude": { "name": "Durchschnittliche Höhe" },
+      "avg_sleep_respiration": { "name": "Durchschnittliche Atemfrequenz im Schlaf" },
+      "avg_solar_intensity": { "name": "Durchschnittliche Solarintensität" },
+      "avg_spo2": { "name": "Durchschnittliche SpO2" },
+      "avg_stress_level": { "name": "Durchschnittliches Stresslevel" },
+      "awake_duration": { "name": "Wachdauer" },
+      "awake_sleep": { "name": "Wachzeit" },
+      "badges": { "name": "Abzeichen" },
+      "bmi": { "name": "BMI" },
+      "bmr_calories": { "name": "Grundumsatz-Kalorien" },
+      "body_battery_charged": { "name": "Body Battery geladen" },
+      "body_battery_drained": { "name": "Body Battery verbraucht" },
+      "body_battery_highest": { "name": "Body Battery Höchstwert" },
+      "body_battery_lowest": { "name": "Body Battery Tiefstwert" },
+      "body_battery_most_recent": { "name": "Body Battery" },
+      "body_fat": { "name": "Körperfett" },
+      "body_water": { "name": "Körperwasser" },
+      "bone_mass": { "name": "Knochenmasse" },
+      "bp_category": { "name": "Blutdruckkategorie" },
+      "bp_diastolic": { "name": "Blutdruck diastolisch" },
+      "bp_pulse": { "name": "Blutdruck Puls" },
+      "bp_systolic": { "name": "Blutdruck systolisch" },
+      "burned_calories": { "name": "Verbrannte Kalorien" },
+      "chronological_age": { "name": "Chronologisches Alter" },
+      "connected_sensors": { "name": "Verbundene Sensoren" },
+      "consumed_calories": { "name": "Aufgenommene Kalorien" },
+      "daily_step_goal": { "name": "Tägliches Schrittziel" },
+      "deep_sleep": { "name": "Tiefschlaf" },
+      "devices": { "name": "Geräte" },
+      "endurance_score": { "name": "Endurance Score" },
+      "fitness_age": { "name": "Fitnessalter" },
+      "floors_ascended": { "name": "Etagen aufwärts" },
+      "floors_ascended_distance": { "name": "Aufstiegshöhe" },
+      "floors_ascended_goal": { "name": "Ziel Etagen aufwärts" },
+      "floors_descended": { "name": "Etagen abwärts" },
+      "floors_descended_distance": { "name": "Abstiegshöhe" },
+      "functional_threshold_power": { "name": "FTP {sport}" },
+      "future_goals": { "name": "Zukünftige Ziele" },
+      "goals_history": { "name": "Zielverlauf" },
+      "high_stress_duration": { "name": "Dauer hoher Stress" },
+      "high_stress_percentage": { "name": "Anteil hoher Stress" },
+      "highest_respiration": { "name": "Höchste Atemfrequenz" },
+      "highly_active_time": { "name": "Sehr aktive Zeit" },
+      "hill_score": { "name": "Hill Score" },
+      "hrv_baseline": { "name": "HRV-Basiswert" },
+      "hrv_last_night_5min_high": { "name": "HRV letzte Nacht 5-Min-Höchstwert" },
+      "hrv_last_night_avg": { "name": "HRV letzte Nacht Durchschnitt" },
+      "hrv_status": { "name": "HRV-Status" },
+      "hrv_weekly_avg": { "name": "HRV Wochendurchschnitt" },
+      "hydration": { "name": "Flüssigkeitszufuhr" },
+      "hydration_activity_intake": { "name": "Flüssigkeitszufuhr bei Aktivität" },
+      "hydration_daily_average": { "name": "Flüssigkeitszufuhr Tagesdurchschnitt" },
+      "hydration_goal": { "name": "Ziel Flüssigkeitszufuhr" },
+      "hydration_sweat_loss": { "name": "Schweissverlust" },
+      "intensity_goal": { "name": "Ziel Intensitätsminuten" },
+      "lactate_threshold_hr": { "name": "Laktatschwellen-Herzfrequenz" },
+      "lactate_threshold_speed": { "name": "Laktatschwellen-Geschwindigkeit" },
+      "last_7_days_avg_resting_heart_rate": { "name": "Ruhepuls 7-Tage-Durchschnitt" },
+      "last_activities": { "name": "Letzte Aktivitäten" },
+      "last_activity": { "name": "Letzte Aktivität" },
+      "last_synced": { "name": "Zuletzt synchronisiert" },
+      "last_workout": { "name": "Letztes Training" },
+      "last_workouts": { "name": "Letzte Trainings" },
+      "latest_respiration": { "name": "Aktuelle Atemfrequenz" },
+      "latest_respiration_time": { "name": "Zeitpunkt der aktuellen Atemfrequenz" },
+      "latest_spo2": { "name": "Aktuelle SpO2" },
+      "latest_spo2_time": { "name": "Zeitpunkt der aktuellen SpO2" },
+      "light_sleep": { "name": "Leichtschlaf" },
+      "low_stress_duration": { "name": "Dauer niedriger Stress" },
+      "low_stress_percentage": { "name": "Anteil niedriger Stress" },
+      "lowest_respiration": { "name": "Niedrigste Atemfrequenz" },
+      "lowest_spo2": { "name": "Niedrigste SpO2" },
+      "max_avg_heart_rate": { "name": "Maximale durchschnittliche Herzfrequenz" },
+      "max_heart_rate": { "name": "Maximale Herzfrequenz" },
+      "max_stress_level": { "name": "Maximales Stresslevel" },
+      "medium_stress_duration": { "name": "Dauer mittlerer Stress" },
+      "medium_stress_percentage": { "name": "Anteil mittlerer Stress" },
+      "menstrual_cycle_day": { "name": "Zyklustag" },
+      "menstrual_cycle_phase": { "name": "Zyklusphase" },
+      "menstrual_cycle_start": { "name": "Zyklusbeginn" },
+      "menstrual_cycle_type": { "name": "Zyklustyp" },
+      "menstrual_days_until_next_phase": { "name": "Tage bis zur nächsten Zyklusphase" },
+      "menstrual_fertile_window_end": { "name": "Ende des fruchtbaren Fensters" },
+      "menstrual_fertile_window_start": { "name": "Beginn des fruchtbaren Fensters" },
+      "menstrual_next_predicted_cycle_start": { "name": "Nächster voraussichtlicher Zyklusbeginn" },
+      "menstrual_period_length": { "name": "Dauer der Periode" },
+      "metabolic_age": { "name": "Stoffwechselalter" },
+      "min_avg_heart_rate": { "name": "Minimale durchschnittliche Herzfrequenz" },
+      "min_heart_rate": { "name": "Minimale Herzfrequenz" },
+      "moderate_intensity": { "name": "Intensitätsminuten (moderat)" },
+      "morning_training_readiness": { "name": "Trainingsbereitschaft am Morgen" },
+      "muscle_mass": { "name": "Muskelmasse" },
+      "nap_time": { "name": "Nickerchen-Dauer" },
+      "next_alarm": { "name": "Nächster Wecker" },
+      "next_scheduled_workout": { "name": "Nächstes geplantes Training" },
+      "nutrition_calorie_goal": { "name": "Ernährung Kalorienziel" },
+      "nutrition_carbs_goal": { "name": "Ernährung Kohlenhydratziel" },
+      "nutrition_consumed_calories": { "name": "Ernährung aufgenommene Kalorien" },
+      "nutrition_consumed_carbs": { "name": "Ernährung aufgenommene Kohlenhydrate" },
+      "nutrition_consumed_fat": { "name": "Ernährung aufgenommenes Fett" },
+      "nutrition_consumed_protein": { "name": "Ernährung aufgenommenes Protein" },
+      "nutrition_fat_goal": { "name": "Ernährung Fettziel" },
+      "nutrition_last_logged": { "name": "Ernährung zuletzt erfasst" },
+      "nutrition_logged_entries": { "name": "Ernährung erfasste Einträge" },
+      "nutrition_protein_goal": { "name": "Ernährung Proteinziel" },
+      "nutrition_remaining_calories": { "name": "Ernährung verbleibende Kalorien" },
+      "physique_rating": { "name": "Körperbau-Bewertung" },
+      "power_to_weight": { "name": "Leistungsgewicht {sport}" },
+      "previous_fitness_age": { "name": "Vorheriges Fitnessalter" },
+      "rem_sleep": { "name": "REM-Schlaf" },
+      "remaining_calories": { "name": "Verbleibende Kalorien" },
+      "rest_stress_duration": { "name": "Dauer Ruhestress" },
+      "rest_stress_percentage": { "name": "Anteil Ruhestress" },
+      "resting_heart_rate": { "name": "Ruhepuls" },
+      "sedentary_time": { "name": "Inaktive Zeit" },
+      "sleep_need": { "name": "Schlafbedarf" },
+      "bedtime": { "name": "Schlafenszeit" },
+      "optimal_bedtime": { "name": "Optimale Schlafenszeit" },
+      "wake_time": { "name": "Aufwachzeit" },
+      "optimal_wake_time": { "name": "Optimale Aufwachzeit" },
+      "sleep_duration": { "name": "Schlafdauer" },
+      "sleep_score": { "name": "Schlafwert" },
+      "sleeping_time": { "name": "Schlafzeit" },
+      "solar_intensity": { "name": "Solarintensität" },
+      "solar_time_gained": { "name": "Durch Solar gewonnene Zeit" },
+      "stress_percentage": { "name": "Stressanteil" },
+      "stress_qualifier": { "name": "Stressbewertung" },
+      "today_scheduled_workout": { "name": "Heutiges geplantes Training" },
+      "total_calories": { "name": "Kalorien" },
+      "total_distance": { "name": "Distanz" },
+      "total_intensity_minutes": { "name": "Intensitätsminuten" },
+      "total_sleep_duration": { "name": "Gesamtschlafdauer" },
+      "total_steps": { "name": "Schritte" },
+      "total_stress_duration": { "name": "Stressdauer" },
+      "recovery_time": { "name": "Erholungszeit" },
+      "training_plan_goal_event": { "name": "Zielwettkampf des Trainingsplans" },
+      "training_readiness": { "name": "Trainingsbereitschaft" },
+      "training_status": { "name": "Trainingsstatus" },
+      "uncategorized_stress_duration": { "name": "Dauer nicht kategorisierter Stress" },
+      "uncategorized_stress_percentage": { "name": "Anteil nicht kategorisierter Stress" },
+      "unmeasurable_sleep": { "name": "Nicht messbarer Schlaf" },
+      "user_level": { "name": "Benutzerlevel" },
+      "user_points": { "name": "Benutzerpunkte" },
+      "vigorous_intensity": { "name": "Intensitätsminuten (intensiv)" },
+      "visceral_fat": { "name": "Viszeralfett" },
+      "vo2_max": { "name": "VO2max" },
+      "weekly_distance_avg": { "name": "Distanz Wochendurchschnitt" },
+      "weekly_step_avg": { "name": "Schritte Wochendurchschnitt" },
+      "weight": { "name": "Gewicht" },
+      "wellness_active_calories": { "name": "Wellness aktive Kalorien" },
+      "wellness_calories": { "name": "Wellness Kalorien" },
+      "wellness_distance": { "name": "Wellness Distanz" },
+      "wellness_end_time": { "name": "Wellness Endzeit" },
+      "wellness_start_time": { "name": "Wellness Startzeit" },
+      "yesterday_distance": { "name": "Distanz gestern" },
+      "yesterday_steps": { "name": "Schritte gestern" }
+    }
+  },
+  "services": {
+    "set_active_gear": {
+      "name": "Aktive Ausrüstung festlegen",
+      "description": "Legt eine Ausrüstung als aktiv bzw. Standard für einen Aktivitätstyp fest.",
+      "fields": {
+        "gear_uuid": { "name": "Ausrüstungs-UUID", "description": "Die UUID der Ausrüstung." },
+        "entity_id": { "name": "Ausrüstungs-Sensor", "description": "Alternative zur Ausrüstungs-UUID — wähle eine Ausrüstungs-Sensor-Entität." },
+        "activity_type": { "name": "Aktivitätstyp", "description": "Der Aktivitätstyp, für den die Ausrüstung als Standard gesetzt wird." },
+        "setting": { "name": "Einstellung", "description": "Die anzuwendende Ausrüstungseinstellung." }
+      }
+    },
+    "add_hydration": {
+      "name": "Flüssigkeitszufuhr hinzufügen",
+      "description": "Erfasst eine Flüssigkeitsaufnahme in Garmin Connect.",
+      "fields": {
+        "value_in_ml": { "name": "Menge (ml)", "description": "Flüssigkeitsmenge in Millilitern. Negative Werte werden von der heutigen Aufnahme abgezogen." },
+        "timestamp": { "name": "Zeitstempel", "description": "Zeitpunkt der Messung (ISO 8601, Standard ist jetzt)." }
+      }
+    },
+    "add_nutrition_log": {
+      "name": "Ernährungseintrag hinzufügen",
+      "description": "Erfasst einen Quick-Add-Ernährungseintrag in Garmin Connect. Erfordert ein Connect+-Abonnement und eine erstmalige Ernährungseinrichtung in der Garmin-Connect-App.",
+      "fields": {
+        "entity_id": { "name": "Garmin-Connect-Entität", "description": "Optionale Garmin-Connect-Entität, deren Konto den Eintrag erhalten soll." },
+        "calories": { "name": "Kalorien (kcal)", "description": "Zu erfassende Kalorien." },
+        "carbs": { "name": "Kohlenhydrate (g)", "description": "Kohlenhydrate in Gramm." },
+        "protein": { "name": "Protein (g)", "description": "Protein in Gramm." },
+        "fat": { "name": "Fett (g)", "description": "Fett in Gramm." },
+        "name": { "name": "Bezeichnung", "description": "Name für den Eintrag (Standard ist \"Quick Add\")." },
+        "timestamp": { "name": "Zeitstempel", "description": "Zeitpunkt der Erfassung (ISO 8601). Standard ist jetzt." }
+      }
+    },
+    "add_body_composition": {
+      "name": "Körperzusammensetzung hinzufügen",
+      "description": "Fügt Werte zur Körperzusammensetzung in Garmin Connect hinzu.",
+      "fields": {
+        "entity_id": { "name": "Garmin-Connect-Entität", "description": "Optionale Garmin-Connect-Entität, deren Konto die Messung erhalten soll." },
+        "weight": { "name": "Gewicht", "description": "Gewicht in Kilogramm." },
+        "timestamp": { "name": "Zeitstempel", "description": "Zeitpunkt der Messung (Standard ist jetzt)." },
+        "bmi": { "name": "BMI", "description": "Body-Mass-Index." },
+        "percent_fat": { "name": "Körperfettanteil", "description": "Körperfettanteil in Prozent." },
+        "percent_hydration": { "name": "Wasseranteil", "description": "Wasseranteil des Körpers in Prozent." },
+        "visceral_fat_mass": { "name": "Viszeralfettmasse", "description": "Geschätzte Masse des viszeralen Fetts in Kilogramm." },
+        "bone_mass": { "name": "Knochenmasse", "description": "Geschätzte Knochenmasse in Kilogramm." },
+        "muscle_mass": { "name": "Muskelmasse", "description": "Geschätzte Muskelmasse in Kilogramm." },
+        "basal_met": { "name": "Grundumsatz", "description": "Grundumsatz in kcal." },
+        "active_met": { "name": "Aktivumsatz", "description": "Aktivumsatz in kcal." },
+        "physique_rating": { "name": "Körperbau-Bewertung", "description": "Bewertung des Körperbaus (1–9)." },
+        "metabolic_age": { "name": "Stoffwechselalter", "description": "Geschätztes Stoffwechselalter in Jahren." },
+        "visceral_fat_rating": { "name": "Viszeralfett-Bewertung", "description": "Bewertung des viszeralen Fetts (1–59)." }
+      }
+    },
+    "add_blood_pressure": {
+      "name": "Blutdruck hinzufügen",
+      "description": "Fügt eine Blutdruckmessung in Garmin Connect hinzu.",
+      "fields": {
+        "systolic": { "name": "Systolisch", "description": "Systolischer Blutdruckwert." },
+        "diastolic": { "name": "Diastolisch", "description": "Diastolischer Blutdruckwert." },
+        "pulse": { "name": "Puls", "description": "Pulsfrequenz." },
+        "timestamp": { "name": "Zeitstempel", "description": "Zeitpunkt der Messung (Standard ist jetzt)." },
+        "notes": { "name": "Notizen", "description": "Zusätzliche Notizen zur Messung." }
+      }
+    },
+    "create_activity": {
+      "name": "Aktivität erstellen",
+      "description": "Erstellt eine manuelle Aktivität in Garmin Connect.",
+      "fields": {
+        "activity_name": { "name": "Name der Aktivität", "description": "Name der Aktivität." },
+        "activity_type": { "name": "Aktivitätstyp", "description": "Art der Aktivität (z. B. Laufen, Radfahren)." },
+        "start_datetime": { "name": "Startdatum und -zeit", "description": "Beginn der Aktivität (ISO-Format)." },
+        "duration_min": { "name": "Dauer", "description": "Dauer der Aktivität in Minuten." },
+        "distance_km": { "name": "Distanz", "description": "Zurückgelegte Distanz in Kilometern (optional)." },
+        "time_zone": { "name": "Zeitzone", "description": "Zeitzone der Aktivität." }
+      }
+    },
+    "download_activity": {
+      "name": "Aktivität herunterladen",
+      "description": "Lädt eine Aktivitätsdatei von Garmin Connect herunter und speichert sie auf dem Home-Assistant-System.",
+      "fields": {
+        "entity_id": { "name": "Garmin-Connect-Entität", "description": "Optionale Garmin-Connect-Entität, deren Konto die Aktivität besitzt." },
+        "activity_id": { "name": "Aktivitäts-ID", "description": "Garmin-Aktivitäts-ID (siehe Attribute des Sensors last_activity)." },
+        "file_format": { "name": "Dateiformat", "description": "fit (aus dem Original-ZIP extrahiert), original (rohes ZIP), tcx, gpx, kml oder csv." },
+        "file_path": { "name": "Dateipfad", "description": "Zieldatei oder -verzeichnis. Eigene Pfade müssen in allowlist_external_dirs eingetragen sein. Standard ist [config]/garmin_activities/." }
+      }
+    },
+    "upload_activity": {
+      "name": "Aktivität hochladen",
+      "description": "Lädt eine Aktivitätsdatei (FIT, GPX, TCX) zu Garmin Connect hoch.",
+      "fields": {
+        "file_path": { "name": "Dateipfad", "description": "Pfad zur Aktivitätsdatei auf dem Home-Assistant-System." }
+      }
+    },
+    "add_gear_to_activity": {
+      "name": "Ausrüstung zu Aktivität hinzufügen",
+      "description": "Verknüpft eine Ausrüstung mit einer bestimmten Aktivität.",
+      "fields": {
+        "activity_id": { "name": "Aktivitäts-ID", "description": "Die ID der Aktivität." },
+        "gear_uuid": { "name": "Ausrüstungs-UUID", "description": "Die UUID der hinzuzufügenden Ausrüstung." },
+        "entity_id": { "name": "Ausrüstungs-Sensor", "description": "Alternative zur Ausrüstungs-UUID — wähle eine Ausrüstungs-Sensor-Entität." }
+      }
+    }
+  },
+  "exceptions": {
+    "add_blood_pressure_failed": { "message": "Blutdruck konnte nicht hinzugefügt werden: {error}" },
+    "add_hydration_failed": { "message": "Flüssigkeitszufuhr konnte nicht erfasst werden: {error}" },
+    "add_nutrition_failed": { "message": "Ernährungseintrag konnte nicht erfasst werden: {error}" },
+    "add_body_composition_failed": { "message": "Körperzusammensetzung konnte nicht hinzugefügt werden: {error}" },
+    "add_gear_to_activity_failed": { "message": "Ausrüstung konnte nicht zur Aktivität hinzugefügt werden: {error}" },
+    "create_activity_failed": { "message": "Aktivität konnte nicht erstellt werden: {error}" },
+    "download_activity_failed": { "message": "Aktivität konnte nicht heruntergeladen werden: {error}" },
+    "path_not_allowed": { "message": "Pfad ist nicht zulässig: {file_path}. Füge das Verzeichnis zu allowlist_external_dirs hinzu." },
+    "entity_not_found": { "message": "Entität nicht gefunden: {entity_id}" },
+    "file_not_found": { "message": "Datei nicht gefunden: {file_path}" },
+    "gear_uuid_not_found": { "message": "Entität {entity_id} hat kein Attribut gear_uuid." },
+    "integration_not_loaded": { "message": "Die Garmin-Connect-Integration ist nicht geladen." },
+    "login_failed": { "message": "Anmeldung bei Garmin Connect fehlgeschlagen." },
+    "no_gear_specified": { "message": "Keine Ausrüstung angegeben. Gib entweder eine Ausrüstungs-Sensor-Entität oder eine gear_uuid an." },
+    "no_integration_configured": { "message": "Die Garmin-Connect-Integration ist nicht eingerichtet." },
+    "ambiguous_account": { "message": "Es sind mehrere Garmin-Connect-Konten eingerichtet. Gib eine entity_id an, um das gewünschte Konto auszuwählen." },
+    "set_active_gear_failed": { "message": "Aktive Ausrüstung konnte nicht festgelegt werden: {error}" },
+    "upload_activity_failed": { "message": "Aktivität konnte nicht hochgeladen werden: {error}" }
+  },
+  "issues": {
+    "connect_plus_required": {
+      "title": "Ernährungsdaten erfordern Garmin Connect+",
+      "description": "Die Ernährungssensoren für {title} sind nicht verfügbar, weil dein Garmin-Konto kein aktives Connect+-Abonnement hat. Schliesse in der Garmin-Connect-App ein Connect+-Abonnement ab, um die Ernährungserfassung zu aktivieren, oder deaktiviere die Ernährungssensoren dieser Integration."
+    }
+  }
+}
