@@ -2071,6 +2071,22 @@ class GarminConnectPowerToWeightSensor(CoordinatorEntity[TrainingCoordinator], S
             entry_type=DeviceEntryType.SERVICE,
         )
 
+    @property
+    def suggested_object_id(self) -> str | None:
+        """Object id including the sport.
+
+        HA's default suggested_object_id doesn't resolve
+        translation_placeholders (issue #585) -- it uses a separate,
+        placeholder-unaware translation lookup from the one that renders
+        the display name, so every sport collapses to the same bare
+        "power to weight"/"ftp" string and HA numbers them _2, _3, ...
+        Only affects newly-registered entities; existing ones keep
+        whatever id they already have.
+        """
+        sport_display = self._sport.replace("_", " ").title()
+        prefix = "Power to Weight" if self._sensor_type == "ptw" else "FTP"
+        return f"{prefix} {sport_display}"
+
     def _get_entry(self) -> dict[str, Any] | None:
         """Return the powerToWeight entry for this sport, or None."""
         ptw_list: list[dict[str, Any]] = (self.coordinator.data or {}).get("powerToWeight") or []
