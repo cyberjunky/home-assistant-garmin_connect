@@ -15,6 +15,7 @@ from custom_components.garmin_connect.sensor import (
     TRAINING_SENSORS,
     CoordinatorType,
     GarminConnectGearSensor,
+    GarminConnectPowerToWeightSensor,
     GarminConnectSensor,
     GarminConnectSensorEntityDescription,
 )
@@ -795,6 +796,41 @@ def test_gear_sensor_none_when_no_data() -> None:
         coord, gear_uuid="gear-uuid-1", gear_name="Running Shoes", entry_id="eid"
     )
     assert sensor.native_value is None
+
+
+# ── GarminConnectPowerToWeightSensor ──────────────────────────────────────────
+
+
+def test_power_to_weight_suggested_object_id_includes_sport() -> None:
+    """suggested_object_id must carry the sport (#585) -- translation
+    placeholders aren't resolved by HA's default implementation, so this
+    is the fix, not the built-in behavior."""
+    coord = MagicMock()
+    sensor = GarminConnectPowerToWeightSensor(
+        coord, sport="cross_country_skiing", sensor_type="ptw", entry_id="eid"
+    )
+    assert sensor.suggested_object_id == "Power to Weight Cross Country Skiing"
+
+
+def test_ftp_suggested_object_id_includes_sport() -> None:
+    """Same fix, FTP variant."""
+    coord = MagicMock()
+    sensor = GarminConnectPowerToWeightSensor(
+        coord, sport="cycling", sensor_type="ftp", entry_id="eid"
+    )
+    assert sensor.suggested_object_id == "FTP Cycling"
+
+
+def test_power_sensors_suggested_object_ids_unique_across_sports() -> None:
+    """Different sports of the same sensor_type must not collide."""
+    coord = MagicMock()
+    ids = {
+        GarminConnectPowerToWeightSensor(
+            coord, sport=sport, sensor_type="ftp", entry_id="eid"
+        ).suggested_object_id
+        for sport in ("running", "cycling", "cross_country_skiing")
+    }
+    assert len(ids) == 3
 
 
 def test_gear_sensor_attributes() -> None:
