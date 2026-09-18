@@ -418,28 +418,22 @@ def mock_menstrual_data() -> dict:
                 "fertileWindowStart": 2,
                 "lutealPhaseStart": 12,
                 "cycleType": "REGULAR",
-                "predictedCycle": False
+                "predictedCycle": False,
             },
             "dayLog": {
                 "userProfilePk": 111111,
                 "calendarDate": "2026-06-01",
-                "symptoms": [
-                    "ACNE"
-                ],
-                "moods": [
-                    "FINE"
-                ],
-                "discharge": [
-                    "NO_DISCHARGE"
-                ],
+                "symptoms": ["ACNE"],
+                "moods": ["FINE"],
+                "discharge": ["NO_DISCHARGE"],
                 "flow": "HEAVY",
                 "sexDrive": "LOW",
                 "sexualActivity": "PROTECTED",
                 "notes": "Some note",
                 "reportTimestamp": "2026-06-01T09:03:38.456",
                 "hasBabyMovement": False,
-                "ovulationDay": True
-            }
+                "ovulationDay": True,
+            },
         },
         "menstrualCalendar": {
             "cycleSummaries": [
@@ -449,44 +443,41 @@ def mock_menstrual_data() -> dict:
                     "fertileWindowStart": 9,
                     "lengthOfFertileWindow": 5,
                     "educationContentMod": 9,
-                    "predictedCycle": False
+                    "predictedCycle": False,
                 },
                 {
                     "startDate": "2025-12-26",
                     "periodLength": 4,
                     "educationContentMod": 10,
                     "lutealPhaseStart": 11,
-                    "predictedCycle": False
+                    "predictedCycle": False,
                 },
                 {
                     "startDate": "2026-01-19",
                     "periodLength": 6,
                     "educationContentMod": 11,
                     "lutealPhaseStart": 12,
-                    "predictedCycle": False
+                    "predictedCycle": False,
                 },
                 {
                     "startDate": "2026-03-05",
                     "periodLength": 5,
                     "educationContentMod": 12,
                     "lutealPhaseStart": 12,
-                    "predictedCycle": True
+                    "predictedCycle": True,
                 },
                 {
                     "startDate": "2026-02-14",
                     "periodLength": 5,
                     "educationContentMod": 12,
                     "lutealPhaseStart": 12,
-                    "predictedCycle": True
-                }
+                    "predictedCycle": True,
+                },
             ],
-            "loggedSymptomDays": [
-                "2025-12-19",
-                "2026-01-25"
-            ],
+            "loggedSymptomDays": ["2025-12-19", "2026-01-25"],
             "loggedOvulationDays": [],
-            "loggedNoteDays": []
-        }
+            "loggedNoteDays": [],
+        },
     }
 
 
@@ -505,8 +496,29 @@ def mock_nutrition_data() -> dict:
         "nutritionLoggedEntries": 4,
         "nutritionLastLoggedTime": datetime(2026, 7, 5, 12, 30, tzinfo=UTC),
         "nutritionMeals": [
-            {"meal": "Breakfast", "calories": 520, "protein": 28.0, "fat": 18.0, "carbs": 60.0, "entries": 2},
-            {"meal": "Lunch", "calories": 830, "protein": 54.5, "fat": 30.0, "carbs": 88.4, "entries": 1},
-            {"meal": "Snacks", "calories": 500, "protein": 30.0, "fat": 14.0, "carbs": 50.0, "entries": 1},
+            {
+                "meal": "Breakfast",
+                "calories": 520,
+                "protein": 28.0,
+                "fat": 18.0,
+                "carbs": 60.0,
+                "entries": 2,
+            },
+            {
+                "meal": "Lunch",
+                "calories": 830,
+                "protein": 54.5,
+                "fat": 30.0,
+                "carbs": 88.4,
+                "entries": 1,
+            },
+            {
+                "meal": "Snacks",
+                "calories": 500,
+                "protein": 30.0,
+                "fat": 14.0,
+                "carbs": 50.0,
+                "entries": 1,
+            },
         ],
     }
