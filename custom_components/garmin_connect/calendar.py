@@ -38,20 +38,61 @@ def _event_from_workout(workout: dict[str, Any]) -> CalendarEvent | None:
     )
 
 
+def _event_from_goal(goal: dict[str, Any]) -> CalendarEvent | None:
+    """Build a CalendarEvent from the training plan's goal event (target race).
+
+    Same all-day-event shape as _event_from_workout -- Garmin gives a
+    date, not a time.
+    """
+    goal_date = goal.get("date")
+    event_name = goal.get("eventName")
+    if not goal_date or not event_name:
+        return None
+    try:
+        start = date.fromisoformat(goal_date)
+    except ValueError:
+        return None
+    distance = goal.get("targetDistance")
+    unit = goal.get("targetDistanceUnit")
+    description = f"{distance} {unit}" if distance is not None and unit else goal.get("eventType")
+    return CalendarEvent(
+        start=start,
+        end=start + timedelta(days=1),
+        summary=event_name,
+        description=description,
+        uid=f"goal_{event_name}_{goal_date}",
+    )
+
+
+def _in_range(event: CalendarEvent, start_date: datetime, end_date: datetime, tzinfo: Any) -> bool:
+    """Per HA's calendar contract: start_date bounds the event's own end and
+    end_date bounds the event's own start (both exclusive) -- not a plain
+    date-vs-date comparison, which would be wrong for an event spanning
+    more than one day.
+    """
+    event_start = datetime.combine(event.start, time.min, tzinfo=tzinfo)
+    event_end = datetime.combine(event.end, time.min, tzinfo=tzinfo)
+    return event_end > start_date and event_start < end_date
+
+
 class GarminScheduledWorkoutsCalendar(CoordinatorEntity[ActivityCoordinator], CalendarEntity):
     """Calendar of upcoming Garmin training-calendar sessions.
 
-    Backed by ActivityCoordinator's scheduledWorkouts, which only covers
-    the current and next calendar month and only dates from today onward
-    (ha-garmin fetch_activity_data) -- browsing further out or into the
-    past in the Calendar UI shows nothing.
+    Backed by ActivityCoordinator's scheduledWorkouts and
+    trainingPlanGoalEvent, which only cover the current and next calendar
+    month and only dates from today onward (ha-garmin fetch_activity_data)
+    -- browsing further out or into the past in the Calendar UI shows
+    nothing.
 
-    This is Garmin's calendar-service endpoint, not whatever the Garmin
-    Connect app itself uses -- for adaptive/Coach plans the app can show
-    upcoming days this endpoint doesn't return at all (that data lives
-    behind a different, session-cookie-authenticated API this client
-    can't reach). Expect fewer events here than in the app, sometimes
-    none, even within the current/next month window.
+    For adaptive/Coach plans, don't expect a full plan's worth of
+    sessions here: Garmin only assigns the *next* workout once it sees
+    how the current one goes, so there's usually exactly one scheduled
+    workout at a time plus the plan's goal event (the target race) far
+    out on the calendar, with nothing in between -- confirmed by
+    checking Garmin Connect's own calendar UI directly, not just this
+    client's access to it (cyberjunky/home-assistant-garmin_connect#521).
+    That gap is real on Garmin's side, not something being filtered out
+    here.
     """
 
     _attr_has_entity_name = True
@@ -70,20 +111,19 @@ class GarminScheduledWorkoutsCalendar(CoordinatorEntity[ActivityCoordinator], Ca
 
     @property
     def event(self) -> CalendarEvent | None:
-        """Return the next upcoming scheduled workout."""
+        """Return the next upcoming event -- scheduled workout or goal event, whichever is sooner."""
         data = self.coordinator.data or {}
-        return _event_from_workout(data.get("nextScheduledWorkout") or {})
+        candidates = [
+            _event_from_workout(data.get("nextScheduledWorkout") or {}),
+            _event_from_goal(data.get("trainingPlanGoalEvent") or {}),
+        ]
+        upcoming = [event for event in candidates if event is not None]
+        return min(upcoming, key=lambda event: event.start) if upcoming else None
 
     async def async_get_events(
         self, _hass: HomeAssistant, start_date: datetime, end_date: datetime
     ) -> list[CalendarEvent]:
-        """Return scheduled workouts within the given range.
-
-        Per HA's calendar contract, start_date bounds the event's own end
-        and end_date bounds the event's own start (both exclusive) -- not
-        a plain date-vs-date comparison, which would be wrong for an event
-        spanning more than one day.
-        """
+        """Return scheduled workouts and the goal event within the given range."""
         data = self.coordinator.data or {}
         workouts = data.get("scheduledWorkouts") or []
         tzinfo = start_date.tzinfo
@@ -91,12 +131,13 @@ class GarminScheduledWorkoutsCalendar(CoordinatorEntity[ActivityCoordinator], Ca
         events = []
         for workout in workouts:
             event = _event_from_workout(workout)
-            if event is None:
-                continue
-            event_start = datetime.combine(event.start, time.min, tzinfo=tzinfo)
-            event_end = datetime.combine(event.end, time.min, tzinfo=tzinfo)
-            if event_end > start_date and event_start < end_date:
+            if event is not None and _in_range(event, start_date, end_date, tzinfo):
                 events.append(event)
+
+        goal_event = _event_from_goal(data.get("trainingPlanGoalEvent") or {})
+        if goal_event is not None and _in_range(goal_event, start_date, end_date, tzinfo):
+            events.append(goal_event)
+
         return events
 
 
