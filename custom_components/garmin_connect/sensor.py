@@ -815,9 +815,7 @@ ACTIVITY_TRACKING_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         key="trainingPlanGoalEvent",
         translation_key="training_plan_goal_event",
         coordinator_type=CoordinatorType.ACTIVITY,
-        value_fn=lambda data: (data.get("trainingPlanGoalEvent") or {}).get(
-            "eventName"
-        ),
+        value_fn=lambda data: (data.get("trainingPlanGoalEvent") or {}).get("eventName"),
         attributes_fn=lambda data: data.get("trainingPlanGoalEvent") or {},
     ),
 )
@@ -1241,7 +1239,7 @@ def _parse_iso(value: str) -> datetime.datetime | None:
     """Parse an ISO datetime string, returning None on failure."""
     try:
         return datetime.datetime.fromisoformat(value)
-    except (ValueError, TypeError):
+    except ValueError, TypeError:
         return None
 
 
@@ -1256,8 +1254,7 @@ def _count_recent_activities(data: dict[str, Any]) -> int:
         [
             a
             for a in (data.get("lastActivities") or [])
-            if isinstance(a.get("startTime"), datetime.datetime)
-            and a["startTime"] >= cutoff
+            if isinstance(a.get("startTime"), datetime.datetime) and a["startTime"] >= cutoff
         ]
     )
 
@@ -1545,12 +1542,7 @@ def _menstrual_fertile_window_end(data: dict[str, Any]) -> dt_date | None:
     s = _menstrual_day_summary(data)
     fw_start = s.get("fertileWindowStart")
     fw_len = s.get("lengthOfFertileWindow")
-    if (
-        not isinstance(fw_start, int)
-        or fw_start <= 0
-        or not isinstance(fw_len, int)
-        or fw_len <= 0
-    ):
+    if not isinstance(fw_start, int) or fw_start <= 0 or not isinstance(fw_len, int) or fw_len <= 0:
         return None
     fertile_start = start_date + timedelta(days=fw_start - 1)
     return fertile_start + timedelta(days=fw_len - 1)
@@ -1792,7 +1784,7 @@ def _async_migrate_sleep_duration_entity_id(registry: er.EntityRegistry) -> None
             old_entity_id,
             new_entity_id="sensor.garmin_connect_sleep_duration",
         )
-    except (ValueError, KeyError):
+    except ValueError, KeyError:
         pass
 
 
@@ -1808,9 +1800,7 @@ def _async_migrate_gear_unique_ids(
         gear_uuid = gear_stat.get("uuid") or gear_stat.get("gearUuid", "")
         if not gear_uuid:
             continue
-        old_unique_id = (
-            f"{entry_id}_gear_{gear_name.lower().replace(' ', '_').replace('-', '_')}"
-        )
+        old_unique_id = f"{entry_id}_gear_{gear_name.lower().replace(' ', '_').replace('-', '_')}"
         if registry.async_get_entity_id("sensor", DOMAIN, old_unique_id) is None:
             continue
         new_unique_id = f"{entry_id}_gear_{gear_uuid}"
