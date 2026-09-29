@@ -2,6 +2,7 @@
   "config": {
     "abort": {
       "already_configured": "Konto jest już skonfigurowane",
+      "wrong_account": "Dane logowania należą do innego konta Garmin niż ten wpis",
       "reauth_successful": "Ponowne uwierzytelnienie powiodło się",
       "reconfigure_successful": "Rekonfiguracja powiodła się"
     },
@@ -494,6 +495,19 @@
       "unmeasurable_sleep": {
         "name": "Sen niezmierzony"
       },
+      "last_activity_route": { "name": "Trasa ostatniej aktywności" },
+      "skin_temp_change": { "name": "Zmiana temperatury skóry" },
+      "avg_sleep_respiration": { "name": "Średnie tempo oddechu podczas snu" },
+      "avg_solar_intensity": { "name": "Średnie natężenie słoneczne" },
+      "connected_sensors": { "name": "Podłączone czujniki" },
+      "devices": { "name": "Urządzenia" },
+      "next_scheduled_workout": { "name": "Następny zaplanowany trening" },
+      "today_scheduled_workout": { "name": "Dzisiejszy zaplanowany trening" },
+      "training_plan_goal_event": { "name": "Cel planu treningowego" },
+      "solar_intensity": { "name": "Natężenie słoneczne" },
+      "solar_time_gained": { "name": "Czas zyskany dzięki energii słonecznej" },
+      "power_to_weight": { "name": "Stosunek mocy do masy {sport}" },
+      "functional_threshold_power": { "name": "FTP {sport}" },
       "user_level": {
         "name": "Poziom użytkownika"
       },
@@ -802,6 +816,7 @@
     "set_active_gear_failed": {
       "message": "Nie udało się ustawić aktywnego sprzętu: {error}"
     },
+    "unsupported_file_format": { "message": "Nieobsługiwany plik aktywności {file_path}. Obsługiwane formaty: {formats}" },
     "upload_activity_failed": {
       "message": "Nie udało się przesłać aktywności: {error}"
     }

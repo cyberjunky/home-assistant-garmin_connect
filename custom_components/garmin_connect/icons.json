@@ -74,6 +74,7 @@
       "last_7_days_avg_resting_heart_rate": { "default": "mdi:heart-pulse" },
       "last_activities": { "default": "mdi:numeric" },
       "last_activity": { "default": "mdi:walk" },
+      "last_activity_route": { "default": "mdi:map-marker-path" },
       "last_synced": { "default": "mdi:sync" },
       "last_workout": { "default": "mdi:dumbbell" },
       "last_workouts": { "default": "mdi:dumbbell" },

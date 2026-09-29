@@ -11,6 +11,7 @@ from enum import StrEnum
 from typing import Any, cast
 
 from homeassistant.components.sensor import (
+    RestoreSensor,
     SensorDeviceClass,
     SensorEntity,
     SensorEntityDescription,
@@ -32,6 +33,7 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
+from homeassistant.util import dt as dt_util
 
 from .const import DOMAIN
 from .coordinator import (
@@ -770,7 +772,7 @@ ACTIVITY_TRACKING_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
     ),
     GarminConnectSensorEntityDescription(
         key="lastActivityRoute",
-        name="Last activity route",
+        translation_key="last_activity_route",
         coordinator_type=CoordinatorType.ACTIVITY,
         value_fn=lambda data: len((data.get("lastActivity") or {}).get("polyline") or []),
         attributes_fn=lambda data: {
@@ -831,9 +833,26 @@ ACTIVITY_TRACKING_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         translation_key="training_plan_goal_event",
         coordinator_type=CoordinatorType.ACTIVITY,
         value_fn=lambda data: (data.get("trainingPlanGoalEvent") or {}).get("eventName"),
-        attributes_fn=lambda data: data.get("trainingPlanGoalEvent") or {},
+        attributes_fn=lambda data: _goal_event_attributes(data.get("trainingPlanGoalEvent") or {}),
     ),
 )
+
+
+def _goal_event_attributes(event: dict[str, Any]) -> dict[str, Any]:
+    """Expose the goal event plus a countdown to its date.
+
+    Garmin gives the race date only; the countdown is what dashboards and
+    automations mostly want, so it's computed here (in the HA time zone)
+    instead of in every template.
+    """
+    if not event:
+        return {}
+    days_until = None
+    try:
+        days_until = (dt_date.fromisoformat(event["date"]) - dt_util.now().date()).days
+    except KeyError, TypeError, ValueError:
+        pass
+    return {**event, "days_until_event": days_until}
 
 
 # ── TRAINING coordinator sensors ──────────────────────────────────────────────
@@ -1152,9 +1171,7 @@ GOALS_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
                 {
                     "name": b.get("badgeName"),
                     "points": b.get("badgePoints"),
-                    "earned_date": b.get("badgeEarnedDate", "")[:10]
-                    if b.get("badgeEarnedDate")
-                    else None,
+                    "earned_date": (b.get("badgeEarnedDate") or "")[:10] or None,
                     "times_earned": b.get("badgeEarnedNumber"),
                     "uuid": b.get("badgeUuid"),
                     "key": b.get("badgeKey"),
@@ -1164,7 +1181,7 @@ GOALS_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
                 }
                 for b in sorted(
                     data.get("badges", []),
-                    key=lambda x: x.get("badgeEarnedDate", ""),
+                    key=lambda x: x.get("badgeEarnedDate") or "",
                     reverse=True,
                 )[:10]
             ],
@@ -1522,7 +1539,7 @@ def _menstrual_cycle_start(data: dict[str, Any]) -> dt_date | None:
 
 def _menstrual_next_predicted_cycle_start(data: dict[str, Any]) -> dt_date | None:
     """Return the closest next predicted cycle startDate from calendar."""
-    today = dt_date.today()
+    today = dt_util.now().date()
 
     def valid_future_dates():
         for cycle in _menstrual_calendar_summaries(data):
@@ -1810,18 +1827,22 @@ def _async_migrate_gear_unique_ids(
 
     Only runs when old name-slug unique_ids still exist in the registry.
     """
-    for gear_stat in gear_data.get("gearStats", []):
+    for gear_stat in gear_data.get("gearStats") or []:
         gear_name = gear_stat.get("gearName") or gear_stat.get("customMakeModel") or "Unknown"
         gear_uuid = gear_stat.get("uuid") or gear_stat.get("gearUuid", "")
         if not gear_uuid:
             continue
         old_unique_id = f"{entry_id}_gear_{gear_name.lower().replace(' ', '_').replace('-', '_')}"
-        if registry.async_get_entity_id("sensor", DOMAIN, old_unique_id) is None:
+        entity_id = registry.async_get_entity_id("sensor", DOMAIN, old_unique_id)
+        if entity_id is None:
             continue
         new_unique_id = f"{entry_id}_gear_{gear_uuid}"
-        entity_id = registry.async_get_entity_id("sensor", DOMAIN, old_unique_id)
-        if entity_id:
+        try:
             registry.async_update_entity(entity_id, new_unique_id=new_unique_id)
+        except ValueError:
+            # A UUID-based entity already exists (e.g. an earlier partial
+            # migration); the stale slug entity must not block platform setup.
+            registry.async_remove(entity_id)
 
 
 async def async_setup_entry(
@@ -1850,69 +1871,98 @@ async def async_setup_entry(
     # format to the UUID-based format.
     _async_migrate_gear_unique_ids(ent_reg, entry.entry_id, coordinators.gear.data or {})
 
-    # Dynamic gear sensors
-    gear_data = coordinators.gear.data or {}
+    # Dynamic gear sensors: one per gear item, added as gear appears and
+    # removed from the registry once Garmin no longer lists it.
     known_gear_uuids: set[str] = set()
-    for gear_stat in gear_data.get("gearStats", []):
-        gear_name = gear_stat.get("gearName") or gear_stat.get("customMakeModel") or "Unknown"
-        gear_uuid = gear_stat.get("uuid") or gear_stat.get("gearUuid", "")
-        if gear_uuid:
-            known_gear_uuids.add(gear_uuid)
-            entities.append(
-                GarminConnectGearSensor(
-                    coordinators.gear,
-                    gear_uuid=gear_uuid,
-                    gear_name=gear_name,
-                    entry_id=entry.entry_id,
-                )
-            )
 
     @callback
-    def _async_add_new_gear() -> None:
-        """Dynamically add gear entities when new gear appears in coordinator data."""
-        if not coordinators.gear.data:
-            return
-        new_entities: list[GarminConnectGearSensor] = []
-        for gear_stat in coordinators.gear.data.get("gearStats", []):
+    def _async_sync_gear() -> list[GarminConnectGearSensor]:
+        """Return sensors for gear not seen before; drop entities for gear that is gone."""
+        gear_stats = (coordinators.gear.data or {}).get("gearStats") or []
+        current: dict[str, str] = {}
+        for gear_stat in gear_stats:
             gear_uuid = gear_stat.get("uuid") or gear_stat.get("gearUuid", "")
-            if not gear_uuid or gear_uuid in known_gear_uuids:
-                continue
-            known_gear_uuids.add(gear_uuid)
-            gear_name = gear_stat.get("gearName") or gear_stat.get("customMakeModel") or "Unknown"
-            new_entities.append(
-                GarminConnectGearSensor(
-                    coordinators.gear,
-                    gear_uuid=gear_uuid,
-                    gear_name=gear_name,
-                    entry_id=entry.entry_id,
+            if gear_uuid:
+                current[gear_uuid] = (
+                    gear_stat.get("gearName") or gear_stat.get("customMakeModel") or "Unknown"
                 )
-            )
-        if new_entities:
-            async_add_entities(new_entities)
 
-    entry.async_on_unload(coordinators.gear.async_add_listener(_async_add_new_gear))
+        new_entities = [
+            GarminConnectGearSensor(
+                coordinators.gear,
+                gear_uuid=gear_uuid,
+                gear_name=gear_name,
+                entry_id=entry.entry_id,
+            )
+            for gear_uuid, gear_name in current.items()
+            if gear_uuid not in known_gear_uuids
+        ]
+
+        # Only prune against a non-empty list: an empty one is far more likely a
+        # failed gear call than the user having deleted every item at once.
+        if current:
+            for gear_uuid in known_gear_uuids - current.keys():
+                entity_id = ent_reg.async_get_entity_id(
+                    "sensor", DOMAIN, f"{entry.entry_id}_gear_{gear_uuid}"
+                )
+                if entity_id:
+                    ent_reg.async_remove(entity_id)
+            known_gear_uuids.intersection_update(current)
+
+        known_gear_uuids.update(current)
+        return new_entities
+
+    entities.extend(_async_sync_gear())
 
     # Dynamic power-to-weight sensors (one PTW + one FTP sensor per sport)
-    ptw_list: list[dict[str, Any]] = (coordinators.training.data or {}).get("powerToWeight") or []
-    for ptw_entry in ptw_list:
-        sport = ptw_entry.get("sport")
-        if not sport:
-            continue
-        for sensor_type in ("ptw", "ftp"):
-            entities.append(
+    known_ptw_sports: set[str] = set()
+
+    @callback
+    def _async_new_ptw() -> list[GarminConnectPowerToWeightSensor]:
+        """Return PTW/FTP sensors for sports not seen before."""
+        ptw_list = (coordinators.training.data or {}).get("powerToWeight") or []
+        new_entities: list[GarminConnectPowerToWeightSensor] = []
+        for ptw_entry in ptw_list:
+            sport = ptw_entry.get("sport")
+            if not sport or sport in known_ptw_sports:
+                continue
+            known_ptw_sports.add(sport)
+            new_entities.extend(
                 GarminConnectPowerToWeightSensor(
                     coordinators.training,
                     sport=sport,
                     sensor_type=sensor_type,
                     entry_id=entry.entry_id,
                 )
+                for sensor_type in ("ptw", "ftp")
             )
+        return new_entities
+
+    entities.extend(_async_new_ptw())
+
+    @callback
+    def _async_gear_updated() -> None:
+        if new_entities := _async_sync_gear():
+            async_add_entities(new_entities)
+
+    @callback
+    def _async_training_updated() -> None:
+        if new_entities := _async_new_ptw():
+            async_add_entities(new_entities)
+
+    entry.async_on_unload(coordinators.gear.async_add_listener(_async_gear_updated))
+    entry.async_on_unload(coordinators.training.async_add_listener(_async_training_updated))
 
     async_add_entities(entities)
 
 
-class GarminConnectSensor(CoordinatorEntity[BaseGarminCoordinator], SensorEntity):
-    """Representation of a Garmin Connect sensor."""
+class GarminConnectSensor(CoordinatorEntity[BaseGarminCoordinator], RestoreSensor):
+    """Representation of a Garmin Connect sensor.
+
+    Sensors with ``preserve_value`` restore their last state on startup so a
+    value Garmin only reports once a day (weight, sleep, HRV) does not go
+    unknown after every restart.
+    """
 
     entity_description: GarminConnectSensorEntityDescription
     _attr_has_entity_name = True
@@ -1938,6 +1988,17 @@ class GarminConnectSensor(CoordinatorEntity[BaseGarminCoordinator], SensorEntity
             entry_type=DeviceEntryType.SERVICE,
         )
         self._last_known_value: str | int | float | datetime.datetime | None = None
+
+    async def async_added_to_hass(self) -> None:
+        """Restore the last known value for sensors that preserve it."""
+        await super().async_added_to_hass()
+        if not self.entity_description.preserve_value:
+            return
+        last = await self.async_get_last_sensor_data()
+        if last is not None and last.native_value is not None:
+            self._last_known_value = cast(
+                str | int | float | datetime.datetime | None, last.native_value
+            )
 
     @property
     def native_value(self) -> str | int | float | datetime.datetime | None:

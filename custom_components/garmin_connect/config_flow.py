@@ -100,9 +100,42 @@ class GarminConnectConfigFlow(ConfigFlow, domain=DOMAIN):
             mfa_code,
         )
 
+    async def _async_profile_id(self, username: str) -> str | None:
+        """Return the Garmin profile id of the logged-in account, or None if unavailable."""
+        if TYPE_CHECKING:
+            assert self._auth is not None
+        try:
+            client = GarminClient(self._auth, is_cn=self._is_cn)
+            profile = await client.get_user_profile()
+        except (GarminConnectError, ClientError) as err:
+            _LOGGER.warning("Could not fetch Garmin profile for %s: %s", username, err)
+            return None
+        return str(profile.profile_id)
+
+    async def _async_check_same_account(self, entry: ConfigEntry) -> ConfigFlowResult | None:
+        """Abort if the freshly logged-in account is not the one the entry belongs to.
+
+        Entries made before profile ids were used carry the email as unique_id;
+        those are accepted and upgraded. If the profile cannot be fetched the
+        account cannot be verified, so the flow proceeds.
+        """
+        if TYPE_CHECKING:
+            assert self._username is not None
+        profile_id = await self._async_profile_id(self._username)
+        if profile_id is None:
+            return None
+        current = entry.unique_id
+        if current not in (None, profile_id) and current.lower() != self._username.lower():
+            return self.async_abort(reason="wrong_account")
+        if current != profile_id:
+            self.hass.config_entries.async_update_entry(entry, unique_id=profile_id)
+        return None
+
     async def _async_finish_reauth(self) -> ConfigFlowResult:
         """Update tokens and CN setting on the existing entry and reload it."""
         entry = self._get_reauth_entry()
+        if (abort := await self._async_check_same_account(entry)) is not None:
+            return abort
         self.hass.config_entries.async_update_entry(
             entry,
             data=self._token_data(),
@@ -114,6 +147,8 @@ class GarminConnectConfigFlow(ConfigFlow, domain=DOMAIN):
     async def _async_finish_reconfigure(self) -> ConfigFlowResult:
         """Update tokens and CN setting on the existing entry and reload it."""
         entry = self._get_reconfigure_entry()
+        if (abort := await self._async_check_same_account(entry)) is not None:
+            return abort
         self.hass.config_entries.async_update_entry(
             entry,
             data=self._token_data(),
@@ -124,20 +159,8 @@ class GarminConnectConfigFlow(ConfigFlow, domain=DOMAIN):
 
     async def _async_create_new_entry(self, username: str) -> ConfigFlowResult:
         """Finalize a new config entry after successful authentication."""
-        if TYPE_CHECKING:
-            assert self._auth is not None
-        unique_id = username
-        try:
-            client = GarminClient(self._auth, is_cn=self._is_cn)
-            profile = await client.get_user_profile()
-        except (GarminConnectError, ClientError) as err:
-            _LOGGER.warning(
-                "Could not fetch Garmin profile for %s, falling back to username as unique_id: %s",
-                username,
-                err,
-            )
-        else:
-            unique_id = str(profile.profile_id)
+        # Fall back to the username when the profile is unavailable.
+        unique_id = await self._async_profile_id(username) or username
         await self.async_set_unique_id(unique_id)
         self._abort_if_unique_id_configured()
         return self.async_create_entry(

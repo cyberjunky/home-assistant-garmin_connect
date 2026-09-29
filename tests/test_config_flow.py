@@ -233,3 +233,86 @@ async def test_options_flow_uses_default_when_options_empty() -> None:
     # Just check the form renders without error; schema carries the default
     result = await flow.async_step_init(None)
     assert result["type"] == "form"
+
+
+# ── Reauth account verification ───────────────────────────────────────────────
+
+
+def _reauth_flow(entry_unique_id: str | None, profile_id: str | None = "123456789"):
+    """Flow that has just logged in as test@example.com during reauth."""
+    from homeassistant.config_entries import SOURCE_REAUTH
+
+    from custom_components.garmin_connect.config_flow import GarminConnectConfigFlow
+
+    entry = MagicMock()
+    entry.entry_id = "test_entry_id"
+    entry.unique_id = entry_unique_id
+    entry.options = {}
+    flow = GarminConnectConfigFlow()
+    flow.hass = MagicMock()
+    flow.hass.config_entries.async_reload = AsyncMock()
+    flow.hass.config_entries.async_get_known_entry.return_value = entry
+    flow.context = {"source": SOURCE_REAUTH, "entry_id": "test_entry_id"}
+    flow._auth = _make_auth_mock()
+    flow._username = "test@example.com"
+
+    client = MagicMock()
+    if profile_id is None:
+        client.get_user_profile = AsyncMock(side_effect=GarminConnectError("down"))
+    else:
+        client.get_user_profile = AsyncMock(return_value=MagicMock(profile_id=int(profile_id)))
+    return flow, entry, client
+
+
+async def test_reauth_with_other_account_aborts() -> None:
+    """Logging in with a different Garmin account must not hijack the entry."""
+    flow, entry, client = _reauth_flow("999", profile_id="123456789")
+    with patch("custom_components.garmin_connect.config_flow.GarminClient", return_value=client):
+        result = await flow._async_finish_reauth()
+
+    assert result["type"] == "abort"
+    assert result["reason"] == "wrong_account"
+    flow.hass.config_entries.async_update_entry.assert_not_called()
+    flow.hass.config_entries.async_reload.assert_not_awaited()
+
+
+async def test_reauth_same_account_updates_tokens_and_reloads() -> None:
+    flow, entry, client = _reauth_flow("123456789")
+    with patch("custom_components.garmin_connect.config_flow.GarminClient", return_value=client):
+        result = await flow._async_finish_reauth()
+
+    assert result["type"] == "abort"
+    assert result["reason"] == "reauth_successful"
+    _, kwargs = flow.hass.config_entries.async_update_entry.call_args
+    assert kwargs["data"]["token"] == flow._auth.di_token
+    flow.hass.config_entries.async_reload.assert_awaited_once_with("test_entry_id")
+
+
+async def test_reauth_upgrades_legacy_email_unique_id() -> None:
+    """Entries keyed by email (pre-profile-id) are accepted and re-keyed by profile id."""
+    flow, entry, client = _reauth_flow("Test@Example.com")
+    with patch("custom_components.garmin_connect.config_flow.GarminClient", return_value=client):
+        result = await flow._async_finish_reauth()
+
+    assert result["reason"] == "reauth_successful"
+    flow.hass.config_entries.async_update_entry.assert_any_call(entry, unique_id="123456789")
+
+
+async def test_reauth_proceeds_when_profile_unavailable() -> None:
+    """Without a profile the account cannot be verified; reauth must still work."""
+    flow, entry, client = _reauth_flow("999", profile_id=None)
+    with patch("custom_components.garmin_connect.config_flow.GarminClient", return_value=client):
+        result = await flow._async_finish_reauth()
+
+    assert result["reason"] == "reauth_successful"
+
+
+async def test_reconfigure_with_other_account_aborts() -> None:
+    from homeassistant.config_entries import SOURCE_RECONFIGURE
+
+    flow, entry, client = _reauth_flow("999")
+    flow.context = {"source": SOURCE_RECONFIGURE, "entry_id": "test_entry_id"}
+    with patch("custom_components.garmin_connect.config_flow.GarminClient", return_value=client):
+        result = await flow._async_finish_reconfigure()
+
+    assert result["reason"] == "wrong_account"

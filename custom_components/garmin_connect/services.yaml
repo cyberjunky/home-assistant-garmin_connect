@@ -273,7 +273,7 @@ upload_activity:
           domain: sensor
     file_path:
       name: File path
-      description: Absolute path to the activity file on the HA host.
+      description: FIT, GPX or TCX file on the HA host, absolute or relative to the config directory. Paths outside the config directory must be in allowlist_external_dirs.
       required: true
       example: "/config/activities/run.fit"
       selector:

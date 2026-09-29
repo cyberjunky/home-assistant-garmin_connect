@@ -82,7 +82,7 @@ async def test_diagnostics_coordinator_info() -> None:
     assert core_info["last_update_success"] is True
     assert core_info["update_interval_seconds"] == 300
     assert core_info["data_keys_count"] == 2
-    assert core_info["data_keys_sample"] == ["key1", "key2"]
+    assert core_info["data"] == {"key1": "val", "key2": "val"}
 
 
 async def test_diagnostics_handles_none_update_interval() -> None:
@@ -126,5 +126,37 @@ def test_to_redact_contains_expected_keys() -> None:
         "profileImageUrlMedium",
         "profileImageUrlSmall",
         "profileImageUrlLarge",
+        "polyline",
     }
     assert TO_REDACT == expected
+
+
+async def test_diagnostics_redacts_route_and_profile_inside_coordinator_data() -> None:
+    """Coordinator payloads are included, minus the GPS track and profile identity."""
+    mock_coordinator = MagicMock()
+    mock_coordinator.data = {
+        "lastActivity": {"activityName": "Ride", "polyline": [{"lat": 1, "lon": 2}]},
+        "displayName": "ron",
+    }
+    mock_coordinator.last_update_success = True
+    mock_coordinator.update_interval.total_seconds.return_value = 300
+
+    mock_field = MagicMock()
+    mock_field.name = "activity"
+    mock_entry = MagicMock()
+    mock_entry.data = {}
+    mock_entry.runtime_data = MagicMock()
+    mock_entry.runtime_data.activity = mock_coordinator
+
+    from unittest.mock import patch
+
+    with patch(
+        "custom_components.garmin_connect.diagnostics.fields",
+        return_value=[mock_field],
+    ):
+        result = await async_get_config_entry_diagnostics(MagicMock(), mock_entry)
+
+    data = result["coordinators"]["activity"]["data"]
+    assert data["lastActivity"]["activityName"] == "Ride"
+    assert data["lastActivity"]["polyline"] == "**REDACTED**"
+    assert data["displayName"] == "**REDACTED**"

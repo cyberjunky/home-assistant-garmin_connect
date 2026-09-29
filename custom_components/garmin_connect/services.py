@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING
+from zoneinfo import ZoneInfo
 
 import voluptuous as vol
 from aiohttp import ClientError
@@ -13,6 +15,7 @@ from homeassistant.core import (
     ServiceCall,
     ServiceResponse,
     SupportsResponse,
+    callback,
 )
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import config_validation as cv
@@ -37,7 +40,20 @@ SERVICE_ADD_GEAR_TO_ACTIVITY = "add_gear_to_activity"
 SERVICE_ADD_HYDRATION = "add_hydration"
 SERVICE_ADD_NUTRITION = "add_nutrition_log"
 
-# Service schemas
+# Errors the library raises for bad input (unparsable timestamp, value out of
+# its own limits, unsupported file) on top of its API/network errors.
+_SERVICE_ERRORS = (GarminConnectError, ClientError, ValueError)
+
+UPLOAD_ACTIVITY_FORMATS = {".fit", ".gpx", ".tcx"}
+
+
+def _iso_timestamp(value: datetime | None) -> str | None:
+    """Serialize a validated timestamp for the library, which parses ISO 8601."""
+    return value.isoformat() if value is not None else None
+
+
+# Service schemas. Ranges mirror the selectors in services.yaml so YAML and
+# API callers, which bypass the UI selectors, get the same limits.
 SET_ACTIVE_GEAR_SCHEMA = vol.Schema(
     {
         vol.Optional("gear_uuid"): cv.string,
@@ -54,19 +70,19 @@ SET_ACTIVE_GEAR_SCHEMA = vol.Schema(
 ADD_BODY_COMPOSITION_SCHEMA = vol.Schema(
     {
         vol.Optional("entity_id"): cv.entity_id,
-        vol.Required("weight"): vol.Coerce(float),
-        vol.Optional("timestamp"): cv.string,
-        vol.Optional("bmi"): vol.Coerce(float),
-        vol.Optional("percent_fat"): vol.Coerce(float),
-        vol.Optional("percent_hydration"): vol.Coerce(float),
-        vol.Optional("visceral_fat_mass"): vol.Coerce(float),
-        vol.Optional("bone_mass"): vol.Coerce(float),
-        vol.Optional("muscle_mass"): vol.Coerce(float),
-        vol.Optional("basal_met"): vol.Coerce(float),
-        vol.Optional("active_met"): vol.Coerce(float),
-        vol.Optional("physique_rating"): vol.Coerce(float),
-        vol.Optional("metabolic_age"): vol.Coerce(float),
-        vol.Optional("visceral_fat_rating"): vol.Coerce(float),
+        vol.Required("weight"): vol.All(vol.Coerce(float), vol.Range(min=20, max=300)),
+        vol.Optional("timestamp"): cv.datetime,
+        vol.Optional("bmi"): vol.All(vol.Coerce(float), vol.Range(min=10, max=60)),
+        vol.Optional("percent_fat"): vol.All(vol.Coerce(float), vol.Range(min=1, max=70)),
+        vol.Optional("percent_hydration"): vol.All(vol.Coerce(float), vol.Range(min=1, max=80)),
+        vol.Optional("visceral_fat_mass"): vol.All(vol.Coerce(float), vol.Range(min=0, max=50)),
+        vol.Optional("bone_mass"): vol.All(vol.Coerce(float), vol.Range(min=0, max=10)),
+        vol.Optional("muscle_mass"): vol.All(vol.Coerce(float), vol.Range(min=0, max=150)),
+        vol.Optional("basal_met"): vol.All(vol.Coerce(float), vol.Range(min=500, max=5000)),
+        vol.Optional("active_met"): vol.All(vol.Coerce(float), vol.Range(min=500, max=10000)),
+        vol.Optional("physique_rating"): vol.All(vol.Coerce(float), vol.Range(min=1, max=9)),
+        vol.Optional("metabolic_age"): vol.All(vol.Coerce(float), vol.Range(min=10, max=100)),
+        vol.Optional("visceral_fat_rating"): vol.All(vol.Coerce(float), vol.Range(min=1, max=59)),
     }
 )
 
@@ -76,7 +92,7 @@ ADD_BLOOD_PRESSURE_SCHEMA = vol.Schema(
         vol.Required("systolic"): vol.All(vol.Coerce(int), vol.Range(min=60, max=250)),
         vol.Required("diastolic"): vol.All(vol.Coerce(int), vol.Range(min=40, max=150)),
         vol.Optional("pulse"): vol.All(vol.Coerce(int), vol.Range(min=30, max=220)),
-        vol.Optional("timestamp"): cv.string,
+        vol.Optional("timestamp"): cv.datetime,
         vol.Optional("notes"): cv.string,
     }
 )
@@ -96,10 +112,12 @@ CREATE_ACTIVITY_SCHEMA = vol.Schema(
                 "other",
             ]
         ),
-        vol.Optional("start_datetime"): cv.string,
+        vol.Optional("start_datetime"): cv.datetime,
         vol.Required("duration_min"): vol.All(vol.Coerce(int), vol.Range(min=1, max=1440)),
-        vol.Optional("distance_km", default=0.0): vol.Coerce(float),
-        vol.Optional("time_zone"): cv.string,
+        vol.Optional("distance_km", default=0.0): vol.All(
+            vol.Coerce(float), vol.Range(min=0, max=1000)
+        ),
+        vol.Optional("time_zone"): cv.time_zone,
     }
 )
 
@@ -132,8 +150,9 @@ ADD_GEAR_TO_ACTIVITY_SCHEMA = vol.Schema(
 ADD_HYDRATION_SCHEMA = vol.Schema(
     {
         vol.Optional("entity_id"): cv.entity_id,
-        vol.Required("value_in_ml"): vol.Coerce(float),
-        vol.Optional("timestamp"): cv.string,
+        # Negative values subtract; the library rejects anything beyond 10 L.
+        vol.Required("value_in_ml"): vol.All(vol.Coerce(float), vol.Range(min=-10000, max=10000)),
+        vol.Optional("timestamp"): cv.datetime,
     }
 )
 
@@ -145,7 +164,7 @@ ADD_NUTRITION_SCHEMA = vol.Schema(
         vol.Optional("protein"): vol.All(vol.Coerce(float), vol.Range(min=0, max=2000)),
         vol.Optional("fat"): vol.All(vol.Coerce(float), vol.Range(min=0, max=2000)),
         vol.Optional("name", default="Quick Add"): cv.string,
-        vol.Optional("timestamp"): cv.string,
+        vol.Optional("timestamp"): cv.datetime,
     }
 )
 
@@ -206,8 +225,9 @@ def _get_client(
     return coordinators.core.client
 
 
-async def async_setup_services(hass: HomeAssistant) -> None:
-    """Set up Garmin Connect services."""
+@callback
+def async_setup_services(hass: HomeAssistant) -> None:
+    """Register Garmin Connect services; the account is resolved per call."""
 
     async def handle_set_active_gear(call: ServiceCall) -> None:
         """Handle set_active_gear service call."""
@@ -244,7 +264,7 @@ async def async_setup_services(hass: HomeAssistant) -> None:
                 setting=setting,
                 gear_uuid=gear_uuid,
             )
-        except (GarminConnectError, ClientError) as err:
+        except _SERVICE_ERRORS as err:
             raise HomeAssistantError(
                 translation_domain=DOMAIN,
                 translation_key="set_active_gear_failed",
@@ -259,7 +279,7 @@ async def async_setup_services(hass: HomeAssistant) -> None:
         )
         try:
             await client.add_body_composition(
-                timestamp=call.data.get("timestamp"),
+                timestamp=_iso_timestamp(call.data.get("timestamp")),
                 weight=call.data["weight"],
                 percent_fat=call.data.get("percent_fat"),
                 percent_hydration=call.data.get("percent_hydration"),
@@ -273,7 +293,7 @@ async def async_setup_services(hass: HomeAssistant) -> None:
                 visceral_fat_rating=call.data.get("visceral_fat_rating"),
                 bmi=call.data.get("bmi"),
             )
-        except (GarminConnectError, ClientError) as err:
+        except _SERVICE_ERRORS as err:
             raise HomeAssistantError(
                 translation_domain=DOMAIN,
                 translation_key="add_body_composition_failed",
@@ -288,10 +308,10 @@ async def async_setup_services(hass: HomeAssistant) -> None:
                 systolic=call.data["systolic"],
                 diastolic=call.data["diastolic"],
                 pulse=call.data.get("pulse"),
-                timestamp=call.data.get("timestamp"),
+                timestamp=_iso_timestamp(call.data.get("timestamp")),
                 notes=call.data.get("notes", ""),
             )
-        except (GarminConnectError, ClientError) as err:
+        except _SERVICE_ERRORS as err:
             raise HomeAssistantError(
                 translation_domain=DOMAIN,
                 translation_key="add_blood_pressure_failed",
@@ -301,12 +321,12 @@ async def async_setup_services(hass: HomeAssistant) -> None:
     async def handle_create_activity(call: ServiceCall) -> None:
         """Handle create_activity service call."""
         client = _get_client(hass, entity_id=call.data.get("entity_id"))
-        start_datetime = call.data.get("start_datetime")
-        if not start_datetime:
-            start_datetime = dt_util.now().strftime("%Y-%m-%dT%H:%M:%S.000")
-        elif "." not in start_datetime:
-            start_datetime = f"{start_datetime}.000"
         time_zone = call.data.get("time_zone") or str(hass.config.time_zone)
+        # Garmin wants wall-clock time in `time_zone` with millisecond precision.
+        start: datetime = call.data.get("start_datetime") or dt_util.now()
+        if start.tzinfo is not None:
+            start = start.astimezone(ZoneInfo(time_zone))
+        start_datetime = start.strftime("%Y-%m-%dT%H:%M:%S.000")
         try:
             await client.create_activity(
                 activity_name=call.data["activity_name"],
@@ -316,7 +336,7 @@ async def async_setup_services(hass: HomeAssistant) -> None:
                 distance_km=call.data.get("distance_km", 0.0),
                 time_zone=time_zone,
             )
-        except (GarminConnectError, ClientError) as err:
+        except _SERVICE_ERRORS as err:
             raise HomeAssistantError(
                 translation_domain=DOMAIN,
                 translation_key="create_activity_failed",
@@ -330,7 +350,24 @@ async def async_setup_services(hass: HomeAssistant) -> None:
         path = Path(file_path)
         if not path.is_absolute():
             path = Path(hass.config.path(file_path))
-        if not path.is_file():
+        # Same rule as download: anything outside the config dir must be in
+        # allowlist_external_dirs, or any readable file could be sent to Garmin.
+        if not hass.config.is_allowed_path(str(path)):
+            raise HomeAssistantError(
+                translation_domain=DOMAIN,
+                translation_key="path_not_allowed",
+                translation_placeholders={"file_path": str(path)},
+            )
+        if path.suffix.lower() not in UPLOAD_ACTIVITY_FORMATS:
+            raise HomeAssistantError(
+                translation_domain=DOMAIN,
+                translation_key="unsupported_file_format",
+                translation_placeholders={
+                    "file_path": str(path),
+                    "formats": ", ".join(sorted(UPLOAD_ACTIVITY_FORMATS)),
+                },
+            )
+        if not await hass.async_add_executor_job(path.is_file):
             raise HomeAssistantError(
                 translation_domain=DOMAIN,
                 translation_key="file_not_found",
@@ -338,7 +375,7 @@ async def async_setup_services(hass: HomeAssistant) -> None:
             )
         try:
             await client.upload_activity(str(path))
-        except (GarminConnectError, ClientError) as err:
+        except _SERVICE_ERRORS as err:
             raise HomeAssistantError(
                 translation_domain=DOMAIN,
                 translation_key="upload_activity_failed",
@@ -373,7 +410,7 @@ async def async_setup_services(hass: HomeAssistant) -> None:
 
         try:
             content = await client.download_activity(activity_id, file_format)
-        except (GarminConnectError, ClientError) as err:
+        except _SERVICE_ERRORS as err:
             raise HomeAssistantError(
                 translation_domain=DOMAIN,
                 translation_key="download_activity_failed",
@@ -428,7 +465,7 @@ async def async_setup_services(hass: HomeAssistant) -> None:
                 gear_uuid=gear_uuid,
                 activity_id=activity_id,
             )
-        except (GarminConnectError, ClientError) as err:
+        except _SERVICE_ERRORS as err:
             raise HomeAssistantError(
                 translation_domain=DOMAIN,
                 translation_key="add_gear_to_activity_failed",
@@ -441,9 +478,9 @@ async def async_setup_services(hass: HomeAssistant) -> None:
         try:
             await client.set_hydration(
                 value_in_ml=call.data["value_in_ml"],
-                timestamp=call.data.get("timestamp"),
+                timestamp=_iso_timestamp(call.data.get("timestamp")),
             )
-        except (GarminConnectError, ClientError) as err:
+        except _SERVICE_ERRORS as err:
             raise HomeAssistantError(
                 translation_domain=DOMAIN,
                 translation_key="add_hydration_failed",
@@ -460,9 +497,9 @@ async def async_setup_services(hass: HomeAssistant) -> None:
                 protein=call.data.get("protein"),
                 fat=call.data.get("fat"),
                 name=call.data.get("name", "Quick Add"),
-                timestamp=call.data.get("timestamp"),
+                timestamp=_iso_timestamp(call.data.get("timestamp")),
             )
-        except (GarminConnectError, ClientError) as err:
+        except _SERVICE_ERRORS as err:
             raise HomeAssistantError(
                 translation_domain=DOMAIN,
                 translation_key="add_nutrition_failed",
@@ -524,16 +561,3 @@ async def async_setup_services(hass: HomeAssistant) -> None:
         handle_add_nutrition,
         schema=ADD_NUTRITION_SCHEMA,
     )
-
-
-async def async_unload_services(hass: HomeAssistant) -> None:
-    """Unload Garmin Connect services."""
-    hass.services.async_remove(DOMAIN, SERVICE_SET_ACTIVE_GEAR)
-    hass.services.async_remove(DOMAIN, SERVICE_ADD_BODY_COMPOSITION)
-    hass.services.async_remove(DOMAIN, SERVICE_ADD_BLOOD_PRESSURE)
-    hass.services.async_remove(DOMAIN, SERVICE_CREATE_ACTIVITY)
-    hass.services.async_remove(DOMAIN, SERVICE_UPLOAD_ACTIVITY)
-    hass.services.async_remove(DOMAIN, SERVICE_DOWNLOAD_ACTIVITY)
-    hass.services.async_remove(DOMAIN, SERVICE_ADD_GEAR_TO_ACTIVITY)
-    hass.services.async_remove(DOMAIN, SERVICE_ADD_HYDRATION)
-    hass.services.async_remove(DOMAIN, SERVICE_ADD_NUTRITION)

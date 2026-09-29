@@ -1,7 +1,8 @@
 """Tests for Garmin Connect sensor platform."""
 
+import datetime
 import json
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 from homeassistant.components.sensor import SensorDeviceClass
 
@@ -387,7 +388,30 @@ def test_training_plan_goal_event_returns_name_and_attributes() -> None:
     coord.data = mock_activity_data()
     sensor = GarminConnectSensor(coord, desc, "entry_id")
     assert sensor.native_value == "5K Plan"
-    assert sensor.extra_state_attributes == mock_activity_data()["trainingPlanGoalEvent"]
+    with patch("custom_components.garmin_connect.sensor.dt_util.now") as mock_now:
+        mock_now.return_value.date.return_value = datetime.date(2026, 11, 1)
+        attrs = sensor.extra_state_attributes
+    assert attrs == {**mock_activity_data()["trainingPlanGoalEvent"], "days_until_event": 20}
+
+
+def test_training_plan_goal_event_countdown_is_negative_after_the_race() -> None:
+    desc = next(d for d in ACTIVITY_TRACKING_SENSORS if d.key == "trainingPlanGoalEvent")
+    coord = MagicMock()
+    coord.data = mock_activity_data()
+    sensor = GarminConnectSensor(coord, desc, "entry_id")
+    with patch("custom_components.garmin_connect.sensor.dt_util.now") as mock_now:
+        mock_now.return_value.date.return_value = datetime.date(2026, 11, 23)
+        assert sensor.extra_state_attributes["days_until_event"] == -2
+
+
+def test_training_plan_goal_event_countdown_tolerates_bad_date() -> None:
+    desc = next(d for d in ACTIVITY_TRACKING_SENSORS if d.key == "trainingPlanGoalEvent")
+    coord = MagicMock()
+    coord.data = {"trainingPlanGoalEvent": {"eventName": "Race", "date": None}}
+    sensor = GarminConnectSensor(coord, desc, "entry_id")
+    assert sensor.extra_state_attributes["days_until_event"] is None
+    coord.data = {"trainingPlanGoalEvent": {}}
+    assert sensor.extra_state_attributes == {}
 
 
 def test_bp_systolic_value_and_attributes() -> None:
@@ -664,12 +688,12 @@ def test_menstrual_fertile_window_end_returns_date_object_when_present() -> None
     assert sensor.native_value == datetime.date.fromisoformat("2026-01-27")
 
 
-@patch("custom_components.garmin_connect.sensor.dt_date")
-def test_menstrual_next_predicted_cycle_start_returns_none_when_missing(mock_date) -> None:
+@patch("custom_components.garmin_connect.sensor.dt_util.now")
+def test_menstrual_next_predicted_cycle_start_returns_none_when_missing(mock_now) -> None:
     """Menstrual next predicted cycle start sensor must return None when predictedCycle entity is absent."""
     import datetime
 
-    mock_date.today.return_value = datetime.date(2026, 1, 1)
+    mock_now.return_value.date.return_value = datetime.date(2026, 1, 1)
 
     desc = next(d for d in MENSTRUAL_CYCLE_SENSORS if d.key == "menstrualNextPredictedCycleStart")
     coord = MagicMock()
@@ -715,14 +739,14 @@ def test_menstrual_next_predicted_cycle_start_returns_none_when_present_and_in_t
     assert sensor.native_value is None
 
 
-@patch("custom_components.garmin_connect.sensor.dt_date")
+@patch("custom_components.garmin_connect.sensor.dt_util.now")
 def test_menstrual_next_predicted_cycle_start_returns_date_object_when_present_and_in_future(
-    mock_date,
+    mock_now,
 ) -> None:
     """Menstrual next predicted cycle start sensor must return first predicted cycle >= today as date object."""
     import datetime
 
-    mock_date.today.return_value = datetime.date(2026, 1, 1)
+    mock_now.return_value.date.return_value = datetime.date(2026, 1, 1)
 
     desc = next(d for d in MENSTRUAL_CYCLE_SENSORS if d.key == "menstrualNextPredictedCycleStart")
     coord = MagicMock()
@@ -979,3 +1003,221 @@ def test_route_polyline_remains_available_live() -> None:
 
     assert len(sensor.extra_state_attributes["polyline"]) == 10
     assert sensor.native_value == 10
+
+
+# ── Robustness against partial API data ───────────────────────────────────────
+
+
+def test_badges_sort_tolerates_missing_earned_date() -> None:
+    """A badge with a null badgeEarnedDate must not break attribute rendering."""
+    desc = next(d for d in GOALS_SENSORS if d.key == "badges")
+    coord = MagicMock()
+    coord.data = {
+        "badges": [
+            {"badgeName": "Old", "badgeEarnedDate": "2024-01-01T00:00:00"},
+            {"badgeName": "Unknown", "badgeEarnedDate": None},
+            {"badgeName": "New", "badgeEarnedDate": "2025-06-01T00:00:00"},
+        ]
+    }
+    sensor = GarminConnectSensor(coord, desc, "entry_id")
+    assert sensor.native_value == 3
+    badges = sensor.extra_state_attributes["badges"]
+    assert [b["name"] for b in badges] == ["New", "Old", "Unknown"]
+    assert badges[2]["earned_date"] is None
+
+
+def test_route_sensor_is_translated() -> None:
+    desc = next(d for d in ACTIVITY_TRACKING_SENSORS if d.key == "lastActivityRoute")
+    assert desc.translation_key == "last_activity_route"
+    assert not isinstance(desc.name, str)
+
+
+# ── Value restore ─────────────────────────────────────────────────────────────
+
+
+async def test_preserve_value_restored_from_last_state() -> None:
+    """After a restart a preserved sensor reports its stored value until data arrives."""
+    from homeassistant.components.sensor import SensorExtraStoredData
+
+    desc = GarminConnectSensorEntityDescription(
+        key="weightKg", translation_key="weight", preserve_value=True
+    )
+    coord = MagicMock()
+    coord.data = None
+    sensor = GarminConnectSensor(coord, desc, "entry_id")
+    sensor.hass = MagicMock()
+
+    with (
+        patch(
+            "homeassistant.helpers.update_coordinator.CoordinatorEntity.async_added_to_hass",
+            AsyncMock(),
+        ),
+        patch.object(
+            GarminConnectSensor,
+            "async_get_last_sensor_data",
+            AsyncMock(return_value=SensorExtraStoredData(81.5, "kg")),
+        ),
+    ):
+        await sensor.async_added_to_hass()
+
+    assert sensor.native_value == 81.5
+
+
+async def test_non_preserved_sensor_does_not_restore() -> None:
+    desc = GarminConnectSensorEntityDescription(key="totalSteps", translation_key="total_steps")
+    coord = MagicMock()
+    coord.data = None
+    sensor = GarminConnectSensor(coord, desc, "entry_id")
+
+    with (
+        patch(
+            "homeassistant.helpers.update_coordinator.CoordinatorEntity.async_added_to_hass",
+            AsyncMock(),
+        ),
+        patch.object(GarminConnectSensor, "async_get_last_sensor_data", AsyncMock()) as restore,
+    ):
+        await sensor.async_added_to_hass()
+
+    restore.assert_not_awaited()
+    assert sensor.native_value is None
+
+
+# ── Gear unique_id migration ──────────────────────────────────────────────────
+
+
+def test_gear_migration_renames_slug_unique_id() -> None:
+    from custom_components.garmin_connect.sensor import _async_migrate_gear_unique_ids
+
+    registry = MagicMock()
+    registry.async_get_entity_id.return_value = "sensor.garmin_connect_trail_shoes"
+    gear_data = {"gearStats": [{"gearName": "Trail Shoes", "uuid": "abc-123"}]}
+
+    _async_migrate_gear_unique_ids(registry, "entry", gear_data)
+
+    registry.async_update_entity.assert_called_once_with(
+        "sensor.garmin_connect_trail_shoes", new_unique_id="entry_gear_abc-123"
+    )
+
+
+def test_gear_migration_collision_removes_stale_entity_instead_of_failing() -> None:
+    """If a UUID-keyed entity already exists, the old slug entity is dropped, not fatal."""
+    from custom_components.garmin_connect.sensor import _async_migrate_gear_unique_ids
+
+    registry = MagicMock()
+    registry.async_get_entity_id.return_value = "sensor.garmin_connect_trail_shoes"
+    registry.async_update_entity.side_effect = ValueError("unique_id already in use")
+    gear_data = {"gearStats": [{"gearName": "Trail Shoes", "uuid": "abc-123"}]}
+
+    _async_migrate_gear_unique_ids(registry, "entry", gear_data)
+
+    registry.async_remove.assert_called_once_with("sensor.garmin_connect_trail_shoes")
+
+
+def test_gear_migration_skips_when_no_slug_entity() -> None:
+    from custom_components.garmin_connect.sensor import _async_migrate_gear_unique_ids
+
+    registry = MagicMock()
+    registry.async_get_entity_id.return_value = None
+    _async_migrate_gear_unique_ids(
+        registry, "entry", {"gearStats": [{"gearName": "Shoes", "uuid": "x"}]}
+    )
+    registry.async_update_entity.assert_not_called()
+
+
+# ── Dynamic entities ──────────────────────────────────────────────────────────
+
+
+def _setup_platform(gear_stats: list[dict], ptw: list[dict]):
+    """Run sensor.async_setup_entry with mocked coordinators; return (entry, added, registry)."""
+    import asyncio
+
+    from custom_components.garmin_connect.sensor import async_setup_entry
+
+    coordinators = MagicMock()
+    for name in (
+        "core",
+        "activity",
+        "training",
+        "body",
+        "goals",
+        "gear",
+        "blood_pressure",
+        "menstrual",
+        "nutrition",
+    ):
+        getattr(coordinators, name).data = {}
+    coordinators.gear.data = {"gearStats": gear_stats}
+    coordinators.training.data = {"powerToWeight": ptw}
+    entry = MagicMock()
+    entry.entry_id = "entry"
+    entry.runtime_data = coordinators
+    added: list = []
+    registry = MagicMock()
+    registry.async_get.return_value = None
+    with patch("custom_components.garmin_connect.sensor.er.async_get", return_value=registry):
+        asyncio.run(async_setup_entry(MagicMock(), entry, lambda ents: added.extend(ents)))
+    return entry, coordinators, added, registry
+
+
+def _listener(coordinator: MagicMock):
+    (cb,) = coordinator.async_add_listener.call_args.args
+    return cb
+
+
+def test_new_gear_and_sports_are_added_after_setup() -> None:
+    entry, coordinators, added, _ = _setup_platform(
+        [{"gearName": "Shoes", "uuid": "g1"}], [{"sport": "cycling"}]
+    )
+    gear_before = [e for e in added if isinstance(e, GarminConnectGearSensor)]
+    ptw_before = [e for e in added if isinstance(e, GarminConnectPowerToWeightSensor)]
+    assert [g._gear_uuid for g in gear_before] == ["g1"]
+    assert len(ptw_before) == 2
+
+    coordinators.gear.data = {
+        "gearStats": [{"gearName": "Shoes", "uuid": "g1"}, {"gearName": "Bike", "uuid": "g2"}]
+    }
+    _listener(coordinators.gear)()
+    coordinators.training.data = {"powerToWeight": [{"sport": "cycling"}, {"sport": "running"}]}
+    _listener(coordinators.training)()
+
+    gear_after = [e for e in added if isinstance(e, GarminConnectGearSensor)]
+    ptw_after = [e for e in added if isinstance(e, GarminConnectPowerToWeightSensor)]
+    assert [g._gear_uuid for g in gear_after] == ["g1", "g2"]
+    assert {p._sport for p in ptw_after} == {"cycling", "running"}
+    assert len(ptw_after) == 4
+
+
+def test_removed_gear_is_dropped_from_registry() -> None:
+    entry, coordinators, added, registry = _setup_platform(
+        [{"gearName": "Shoes", "uuid": "g1"}, {"gearName": "Bike", "uuid": "g2"}], []
+    )
+    registry.async_get_entity_id.return_value = "sensor.garmin_connect_bike"
+
+    coordinators.gear.data = {"gearStats": [{"gearName": "Shoes", "uuid": "g1"}]}
+    _listener(coordinators.gear)()
+
+    registry.async_get_entity_id.assert_called_with("sensor", "garmin_connect", "entry_gear_g2")
+    registry.async_remove.assert_called_once_with("sensor.garmin_connect_bike")
+
+    # Gear reappearing after removal is re-added rather than considered known.
+    coordinators.gear.data = {
+        "gearStats": [{"gearName": "Shoes", "uuid": "g1"}, {"gearName": "Bike", "uuid": "g2"}]
+    }
+    _listener(coordinators.gear)()
+    assert [g._gear_uuid for g in added if isinstance(g, GarminConnectGearSensor)] == [
+        "g1",
+        "g2",
+        "g2",
+    ]
+
+
+def test_empty_gear_list_does_not_prune() -> None:
+    """A transient empty gearStats (failed gear call) must not delete every gear entity."""
+    entry, coordinators, added, registry = _setup_platform(
+        [{"gearName": "Shoes", "uuid": "g1"}], []
+    )
+    coordinators.gear.data = {"gearStats": []}
+    _listener(coordinators.gear)()
+    coordinators.gear.data = None
+    _listener(coordinators.gear)()
+    registry.async_remove.assert_not_called()
