@@ -60,7 +60,7 @@ All sensors are declared as `GarminConnectSensorEntityDescription` tuples in [se
 
 ### Custom Lovelace card
 
-`www/garmin-polyline-card.js` renders activity routes using Leaflet. Users must copy **all three files** from `www/` to `<config>/www/`: the card JS plus `leaflet.js` and `leaflet.css`.
+`custom_components/garmin_connect/www/garmin-polyline-card.js` renders activity routes using Leaflet (bundled alongside as `leaflet.js` / `leaflet.css`). `async_setup` in [\_\_init\_\_.py](custom_components/garmin_connect/__init__.py) serves that folder at `/garmin_connect` and registers the card with `add_extra_js_url`, so users install nothing by hand.
 
 ### Entity unique IDs
 

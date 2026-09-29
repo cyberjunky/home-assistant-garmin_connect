@@ -31,4 +31,4 @@ exclude_lines = [
 ]
 
 [tool.codespell]
-skip = "www/*"
+skip = "custom_components/garmin_connect/www/*"

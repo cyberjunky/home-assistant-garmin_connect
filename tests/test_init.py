@@ -9,6 +9,7 @@ from homeassistant.exceptions import ConfigEntryAuthFailed
 from custom_components.garmin_connect import (
     _migrate_entity_unique_ids,
     async_migrate_entry,
+    async_setup,
     async_setup_entry,
     async_unload_entry,
 )
@@ -410,3 +411,26 @@ async def test_migrate_entity_non_matching_prefix_skipped() -> None:
         _migrate_entity_unique_ids(mock_hass, mock_entry, "user@example.com")
 
     mock_registry.async_update_entity.assert_not_called()
+
+
+async def test_async_setup_serves_and_registers_route_card() -> None:
+    """The card folder is served once and the card auto-loaded, version-busted."""
+    hass = MagicMock()
+    hass.http.async_register_static_paths = AsyncMock()
+    integration = MagicMock()
+    integration.version = "9.9.9"
+
+    with (
+        patch(
+            "custom_components.garmin_connect.async_get_integration",
+            AsyncMock(return_value=integration),
+        ),
+        patch("custom_components.garmin_connect.add_extra_js_url") as add_js,
+    ):
+        assert await async_setup(hass, {}) is True
+
+    (configs,) = hass.http.async_register_static_paths.await_args.args
+    assert len(configs) == 1
+    assert configs[0].url_path == "/garmin_connect"
+    assert configs[0].path.endswith("custom_components/garmin_connect/www")
+    add_js.assert_called_once_with(hass, "/garmin_connect/garmin-polyline-card.js?v=9.9.9")

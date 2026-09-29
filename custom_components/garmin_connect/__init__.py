@@ -5,12 +5,18 @@ from __future__ import annotations
 import asyncio
 import logging
 from datetime import timedelta
+from pathlib import Path
 
 from ha_garmin import GarminAuth, GarminClient
+from homeassistant.components.frontend import add_extra_js_url
+from homeassistant.components.http import StaticPathConfig
 from homeassistant.config_entries import ConfigEntryAuthFailed, ConfigEntryNotReady
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers.typing import ConfigType
+from homeassistant.loader import async_get_integration
 
 from .const import (
     CONF_CLIENT_ID,
@@ -20,6 +26,8 @@ from .const import (
     CONF_TOKEN,
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
+    FRONTEND_CARD_FILE,
+    FRONTEND_URL_BASE,
 )
 from .coordinator import (
     ActivityCoordinator,
@@ -39,6 +47,24 @@ from .services import async_setup_services, async_unload_services
 _LOGGER = logging.getLogger(__name__)
 
 PLATFORMS: list[Platform] = [Platform.SENSOR, Platform.CALENDAR]
+
+CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
+
+
+async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
+    """Serve the route map card and have the frontend load it.
+
+    Runs once per Home Assistant start, not per config entry, so the static
+    path is never registered twice. The version query busts browser caches
+    when the integration is updated.
+    """
+    integration = await async_get_integration(hass, DOMAIN)
+    await hass.http.async_register_static_paths(
+        [StaticPathConfig(FRONTEND_URL_BASE, str(Path(__file__).parent / "www"))]
+    )
+    add_extra_js_url(hass, f"{FRONTEND_URL_BASE}/{FRONTEND_CARD_FILE}?v={integration.version}")
+    return True
+
 
 # Mapping of old sensor keys (v1) to new sensor keys (v2).
 # Keys present in both versions are migrated by unique_id prefix only.
