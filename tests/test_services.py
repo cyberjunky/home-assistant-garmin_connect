@@ -26,6 +26,7 @@ def mock_hass() -> MagicMock:
     """Return a mock Home Assistant instance with a loaded config entry."""
     hass = MagicMock()
     hass.config.time_zone = "Europe/Amsterdam"
+    hass.config.config_dir = "/nonexistent/config"
     hass.config.is_allowed_path.return_value = True
     hass.async_add_executor_job = AsyncMock(side_effect=lambda func, *args: func(*args))
 
@@ -855,6 +856,50 @@ async def test_upload_activity_path_not_allowed_raises(
     fit_file.write_bytes(b"fake fit data")
     call = MagicMock()
     call.data = {"file_path": str(fit_file)}
+
+    with pytest.raises(HomeAssistantError):
+        await handler(call)
+    client.upload_activity.assert_not_awaited()
+
+
+async def test_upload_activity_inside_config_dir_needs_no_allowlist(
+    mock_hass: MagicMock, tmp_path: Path
+) -> None:
+    """The config dir is not in allowlist_external_dirs by default, yet must stay uploadable."""
+    async_setup_services(mock_hass)
+    handler = _get_handler(mock_hass, "upload_activity")
+    client = _get_client(mock_hass)
+    mock_hass.config.config_dir = str(tmp_path)
+    mock_hass.config.path.side_effect = lambda *parts: str(tmp_path.joinpath(*parts))
+    mock_hass.config.is_allowed_path.return_value = False
+
+    (tmp_path / "activity.fit").write_bytes(b"fake fit data")
+    call = MagicMock()
+    call.data = {"file_path": "activity.fit"}
+
+    await handler(call)
+
+    client.upload_activity.assert_awaited_once_with(str(tmp_path / "activity.fit"))
+    mock_hass.config.is_allowed_path.assert_not_called()
+
+
+async def test_upload_activity_symlink_out_of_config_dir_needs_allowlist(
+    mock_hass: MagicMock, tmp_path: Path
+) -> None:
+    """A symlink inside the config dir must not bypass the allowlist for its target."""
+    async_setup_services(mock_hass)
+    handler = _get_handler(mock_hass, "upload_activity")
+    client = _get_client(mock_hass)
+    config_dir = tmp_path / "config"
+    config_dir.mkdir()
+    mock_hass.config.config_dir = str(config_dir)
+    mock_hass.config.is_allowed_path.return_value = False
+
+    outside = tmp_path / "secret.fit"
+    outside.write_bytes(b"fake fit data")
+    (config_dir / "link.fit").symlink_to(outside)
+    call = MagicMock()
+    call.data = {"file_path": str(config_dir / "link.fit")}
 
     with pytest.raises(HomeAssistantError):
         await handler(call)

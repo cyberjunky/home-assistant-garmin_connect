@@ -298,13 +298,43 @@ async def test_reauth_upgrades_legacy_email_unique_id() -> None:
     flow.hass.config_entries.async_update_entry.assert_any_call(entry, unique_id="123456789")
 
 
-async def test_reauth_proceeds_when_profile_unavailable() -> None:
-    """Without a profile the account cannot be verified; reauth must still work."""
+async def test_reauth_retries_when_profile_unavailable() -> None:
+    """Without a profile the account cannot be verified; the entry must stay untouched."""
     flow, entry, client = _reauth_flow("999", profile_id=None)
     with patch("custom_components.garmin_connect.config_flow.GarminClient", return_value=client):
         result = await flow._async_finish_reauth()
 
+    assert result["type"] == "form"
+    assert result["step_id"] == "reauth_confirm"
+    assert result["errors"] == {"base": "profile_unavailable"}
+    flow.hass.config_entries.async_update_entry.assert_not_called()
+    flow.hass.config_entries.async_reload.assert_not_awaited()
+
+
+async def test_reauth_legacy_email_entry_proceeds_when_profile_unavailable() -> None:
+    """A matching legacy email unique_id verifies the account without a profile."""
+    flow, entry, client = _reauth_flow("Test@Example.com", profile_id=None)
+    with patch("custom_components.garmin_connect.config_flow.GarminClient", return_value=client):
+        result = await flow._async_finish_reauth()
+
     assert result["reason"] == "reauth_successful"
+    _, kwargs = flow.hass.config_entries.async_update_entry.call_args
+    assert kwargs["data"]["token"] == flow._auth.di_token
+    flow.hass.config_entries.async_reload.assert_awaited_once_with("test_entry_id")
+
+
+async def test_reconfigure_retries_when_profile_unavailable() -> None:
+    from homeassistant.config_entries import SOURCE_RECONFIGURE
+
+    flow, entry, client = _reauth_flow("999", profile_id=None)
+    flow.context = {"source": SOURCE_RECONFIGURE, "entry_id": "test_entry_id"}
+    with patch("custom_components.garmin_connect.config_flow.GarminClient", return_value=client):
+        result = await flow._async_finish_reconfigure()
+
+    assert result["type"] == "form"
+    assert result["step_id"] == "reconfigure"
+    assert result["errors"] == {"base": "profile_unavailable"}
+    flow.hass.config_entries.async_update_entry.assert_not_called()
 
 
 async def test_reconfigure_with_other_account_aborts() -> None:

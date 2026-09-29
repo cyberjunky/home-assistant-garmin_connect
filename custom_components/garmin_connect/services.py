@@ -47,6 +47,24 @@ _SERVICE_ERRORS = (GarminConnectError, ClientError, ValueError)
 UPLOAD_ACTIVITY_FORMATS = {".fit", ".gpx", ".tcx"}
 
 
+def _upload_path_allowed(hass: HomeAssistant, path: Path) -> bool:
+    """Return whether a file may be uploaded from ``path``.
+
+    Anything inside the config directory is fine; the rest must be in
+    allowlist_external_dirs (which does not include the config directory by
+    default). Symlinks are resolved first so a link in the config directory
+    cannot point outside it. Blocking: run in the executor.
+    """
+    try:
+        resolved = path.resolve()
+        config_dir = Path(hass.config.config_dir).resolve()
+    except OSError, RuntimeError:
+        return False
+    if resolved.is_relative_to(config_dir):
+        return True
+    return hass.config.is_allowed_path(str(path))
+
+
 def _iso_timestamp(value: datetime | None) -> str | None:
     """Serialize a validated timestamp for the library, which parses ISO 8601."""
     return value.isoformat() if value is not None else None
@@ -350,9 +368,9 @@ def async_setup_services(hass: HomeAssistant) -> None:
         path = Path(file_path)
         if not path.is_absolute():
             path = Path(hass.config.path(file_path))
-        # Same rule as download: anything outside the config dir must be in
-        # allowlist_external_dirs, or any readable file could be sent to Garmin.
-        if not hass.config.is_allowed_path(str(path)):
+        # Anything outside the config dir must be in allowlist_external_dirs,
+        # or any readable file could be sent to Garmin.
+        if not await hass.async_add_executor_job(_upload_path_allowed, hass, path):
             raise HomeAssistantError(
                 translation_domain=DOMAIN,
                 translation_key="path_not_allowed",
@@ -399,7 +417,7 @@ def async_setup_services(hass: HomeAssistant) -> None:
                 path = path / default_name
             # User-supplied paths must be in allowlist_external_dirs;
             # the default location below is integration-controlled.
-            if not hass.config.is_allowed_path(str(path)):
+            if not await hass.async_add_executor_job(hass.config.is_allowed_path, str(path)):
                 raise HomeAssistantError(
                     translation_domain=DOMAIN,
                     translation_key="path_not_allowed",

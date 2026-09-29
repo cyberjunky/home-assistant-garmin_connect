@@ -9,6 +9,7 @@
     "error": {
       "invalid_auth": "Invalid credentials",
       "invalid_mfa": "Invalid verification code",
+      "profile_unavailable": "Could not verify which Garmin account these credentials belong to. Please try again.",
       "rate_limit": "Too many login attempts — Garmin is rate limiting. Please try again in a few minutes.",
       "unknown": "Unexpected error"
     },
