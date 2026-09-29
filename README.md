@@ -337,14 +337,9 @@ The `Last Activity Route` sensor (`sensor.garmin_connect_last_activity_route`) c
 
 **Installation:**
 
-1. Copy all three files from the `www/` folder to your `<config>/www/` folder:
-   - `garmin-polyline-card.js`
-   - `leaflet.js`
-   - `leaflet.css`
-2. Add the card as a resource: **Settings → Dashboards → ⋮ → Resources → Add Resource**
-   - URL: `/local/garmin-polyline-card.js`
-   - Type: JavaScript Module
-3. Hard refresh your browser (Ctrl+Shift+R)
+Nothing to install. The integration serves the card (and Leaflet, which it uses to draw the map) itself and loads it in the frontend automatically. After installing or updating, hard refresh your browser (Ctrl+Shift+R).
+
+> **Upgrading from a manual install?** Earlier versions required copying the card to `<config>/www/` and adding it as a dashboard resource. You can remove that resource (**Settings → Dashboards → ⋮ → Resources**, URL `/local/garmin-polyline-card.js`) and delete `garmin-polyline-card.js`, `leaflet.js` and `leaflet.css` from `<config>/www/`. Leaving them in place does no harm.
 
 **Usage:**
 

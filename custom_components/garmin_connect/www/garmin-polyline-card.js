@@ -144,21 +144,21 @@ class GarminPolylineCard extends HTMLElement {
           ${activityName} • ${coordinates.length} points
         </div>
       </ha-card>
-      <link rel="stylesheet" href="/local/leaflet.css" />
+      <link rel="stylesheet" href="/garmin_connect/leaflet.css" />
     `;
 
     if (!window.L) {
       if (this._initPending) return;
       this._initPending = true;
       const script = document.createElement('script');
-      script.src = '/local/leaflet.js';
+      script.src = '/garmin_connect/leaflet.js';
       script.onload = () => {
         this._initPending = false;
         this._initMapWhenReady(coordinates);
       };
       script.onerror = () => {
         this._initPending = false;
-        console.error('garmin-polyline-card: failed to load Leaflet from CDN');
+        console.error('garmin-polyline-card: failed to load Leaflet');
       };
       document.head.appendChild(script);
     } else {
@@ -302,13 +302,17 @@ class GarminPolylineCard extends HTMLElement {
   }
 }
 
-customElements.define('garmin-polyline-card', GarminPolylineCard);
+// The integration loads this card automatically; an older manual copy
+// registered as a dashboard resource may have defined it already.
+if (!customElements.get('garmin-polyline-card')) {
+  customElements.define('garmin-polyline-card', GarminPolylineCard);
 
-window.customCards = window.customCards || [];
-window.customCards.push({
-  type: 'garmin-polyline-card',
-  name: 'Garmin Polyline Card',
-  description: 'Display Garmin activity routes on a map'
-});
+  window.customCards = window.customCards || [];
+  window.customCards.push({
+    type: 'garmin-polyline-card',
+    name: 'Garmin Polyline Card',
+    description: 'Display Garmin activity routes on a map'
+  });
 
-console.info('%c GARMIN-POLYLINE-CARD %c loaded ', 'background: #FF5722; color: white;', '');
+  console.info('%c GARMIN-POLYLINE-CARD %c loaded ', 'background: #FF5722; color: white;', '');
+}

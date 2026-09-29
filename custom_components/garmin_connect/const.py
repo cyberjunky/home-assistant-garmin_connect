@@ -4,6 +4,10 @@ from typing import Final
 
 DOMAIN: Final = "garmin_connect"
 
+# Frontend: the bundled route map card and Leaflet, served by the integration
+FRONTEND_URL_BASE: Final = "/garmin_connect"
+FRONTEND_CARD_FILE: Final = "garmin-polyline-card.js"
+
 # Config entry keys
 CONF_TOKEN: Final = "token"
 CONF_REFRESH_TOKEN: Final = "refresh_token"
