@@ -95,6 +95,7 @@
       "activity_stress_percentage": { "name": "Anteil Aktivitätsstress" },
       "avg_altitude": { "name": "Durchschnittliche Höhe" },
       "avg_sleep_respiration": { "name": "Durchschnittliche Atemfrequenz im Schlaf" },
+      "skin_temp_change": { "name": "Hauttemperaturänderung" },
       "avg_solar_intensity": { "name": "Durchschnittliche Solarintensität" },
       "avg_spo2": { "name": "Durchschnittliche SpO2" },
       "avg_stress_level": { "name": "Durchschnittliches Stresslevel" },

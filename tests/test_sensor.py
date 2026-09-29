@@ -3,6 +3,8 @@
 import json
 from unittest.mock import MagicMock, patch
 
+from homeassistant.components.sensor import SensorDeviceClass
+
 from custom_components.garmin_connect.sensor import (
     _COORDINATOR_SENSOR_MAP,
     ACTIVITY_TRACKING_SENSORS,
@@ -10,6 +12,7 @@ from custom_components.garmin_connect.sensor import (
     BODY_COMPOSITION_SENSORS,
     GEAR_SENSORS,
     GOALS_SENSORS,
+    HEALTH_MONITORING_SENSORS,
     MENSTRUAL_CYCLE_SENSORS,
     NUTRITION_SENSORS,
     TRAINING_SENSORS,
@@ -113,6 +116,17 @@ def test_nutrition_consumed_calories_meals_attribute() -> None:
     description = next(d for d in NUTRITION_SENSORS if d.key == "nutritionConsumedCalories")
     sensor = GarminConnectSensor(coordinator, description, "test_entry_id")
     assert len(sensor.extra_state_attributes["meals"]) == 3
+
+
+def test_skin_temp_change_sensor() -> None:
+    """Skin temperature change is a delta, with calibration days attached."""
+    coordinator = MagicMock()
+    coordinator.data = {"avgSkinTempDeviationC": 0.2, "skinTempCalibrationDays": 19}
+    description = next(d for d in HEALTH_MONITORING_SENSORS if d.key == "avgSkinTempDeviationC")
+    sensor = GarminConnectSensor(coordinator, description, "test_entry_id")
+    assert description.device_class is SensorDeviceClass.TEMPERATURE_DELTA
+    assert sensor.native_value == 0.2
+    assert sensor.extra_state_attributes == {"calibration_days": 19}
 
 
 def test_nutrition_sensors_unknown_when_feature_unavailable() -> None:

@@ -23,6 +23,7 @@ from homeassistant.const import (
     UnitOfLength,
     UnitOfMass,
     UnitOfPower,
+    UnitOfTemperature,
     UnitOfTime,
     UnitOfVolume,
 )
@@ -563,6 +564,20 @@ HEALTH_MONITORING_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement="brpm",
         preserve_value=True,
+    ),
+    GarminConnectSensorEntityDescription(
+        # Change from the wearer's baseline, not an absolute temperature,
+        # hence TEMPERATURE_DELTA (converts 0.2 °C to 0.36 °F, not 32.36 °F).
+        key="avgSkinTempDeviationC",
+        translation_key="skin_temp_change",
+        device_class=SensorDeviceClass.TEMPERATURE_DELTA,
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
+        suggested_display_precision=1,
+        preserve_value=True,
+        attributes_fn=lambda data: {
+            "calibration_days": data.get("skinTempCalibrationDays"),
+        },
     ),
     GarminConnectSensorEntityDescription(
         key="averageMonitoringEnvironmentAltitude",
