@@ -21,6 +21,8 @@ TO_REDACT = {
     "profileImageUrlMedium",
     "profileImageUrlSmall",
     "profileImageUrlLarge",
+    # A full GPS track is both huge and a location trace.
+    "polyline",
 }
 
 
@@ -34,14 +36,13 @@ async def async_get_config_entry_diagnostics(
     for field in fields(coordinators):
         coordinator = getattr(coordinators, field.name)
         data = coordinator.data or {}
-        data_keys = list(data.keys())
         coordinator_info[field.name] = {
             "last_update_success": coordinator.last_update_success,
             "update_interval_seconds": (
                 coordinator.update_interval.total_seconds() if coordinator.update_interval else None
             ),
-            "data_keys_count": len(data_keys),
-            "data_keys_sample": data_keys[:50] if len(data_keys) > 50 else data_keys,
+            "data_keys_count": len(data),
+            "data": async_redact_data(data, TO_REDACT),
         }
 
     return {

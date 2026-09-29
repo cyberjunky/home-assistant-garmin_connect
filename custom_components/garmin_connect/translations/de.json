@@ -2,6 +2,7 @@
   "config": {
     "abort": {
       "already_configured": "Konto ist bereits eingerichtet",
+      "wrong_account": "Die Zugangsdaten gehören zu einem anderen Garmin-Konto als diesem Eintrag",
       "reauth_successful": "Erneute Authentifizierung war erfolgreich",
       "reconfigure_successful": "Neukonfiguration war erfolgreich"
     },
@@ -154,6 +155,7 @@
       "last_7_days_avg_resting_heart_rate": { "name": "Ruhepuls 7-Tage-Durchschnitt" },
       "last_activities": { "name": "Letzte Aktivitäten" },
       "last_activity": { "name": "Letzte Aktivität" },
+      "last_activity_route": { "name": "Route der letzten Aktivität" },
       "last_synced": { "name": "Zuletzt synchronisiert" },
       "last_workout": { "name": "Letztes Training" },
       "last_workouts": { "name": "Letzte Trainings" },
@@ -372,6 +374,7 @@
     "no_integration_configured": { "message": "Die Garmin-Connect-Integration ist nicht eingerichtet." },
     "ambiguous_account": { "message": "Es sind mehrere Garmin-Connect-Konten eingerichtet. Gib eine entity_id an, um das gewünschte Konto auszuwählen." },
     "set_active_gear_failed": { "message": "Aktive Ausrüstung konnte nicht festgelegt werden: {error}" },
+    "unsupported_file_format": { "message": "Nicht unterstützte Aktivitätsdatei {file_path}. Unterstützte Formate: {formats}" },
     "upload_activity_failed": { "message": "Aktivität konnte nicht hochgeladen werden: {error}" }
   },
   "issues": {

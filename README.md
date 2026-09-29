@@ -257,7 +257,7 @@ All sensors are created under a single "Garmin Connect" device. Entity IDs follo
 | Last Workout / Workouts | Scheduled/planned training sessions |
 | Today's Scheduled Workout | Today's training-calendar session, e.g. from a Garmin Coach plan |
 | Next Scheduled Workout | The next upcoming training-calendar session (today or later) |
-| Training Plan Goal Event | Active plan's goal race: name, target distance, target date, projected/predicted time |
+| Training Plan Goal Event | Goal race from the active plan, or the primary/next race on your calendar: name, target distance, date, `days_until_event` countdown, projected/predicted time |
 | Last Synced | Last device sync timestamp |
 
 Scheduled workouts and the training plan's goal event (target race) are also exposed as a `calendar.garmin_connect_scheduled_workouts` calendar entity — usable with HA's built-in Calendar dashboard card, `calendar.get_events`, and `trigger: calendar` automations.
@@ -490,7 +490,7 @@ Upload an activity file (FIT, GPX, TCX) to Garmin Connect.
 | Parameter | Required | Description |
 |-----------|----------|-------------|
 | `entity_id` | No | Garmin Connect entity whose account should receive the upload |
-| `file_path` | Yes | Absolute path or relative to HA config directory |
+| `file_path` | Yes | `.fit`, `.gpx` or `.tcx` file, absolute or relative to the HA config directory. Paths outside the config directory must be in `allowlist_external_dirs` |
 
 ```yaml
 action: garmin_connect.upload_activity

@@ -100,9 +100,66 @@ class GarminConnectConfigFlow(ConfigFlow, domain=DOMAIN):
             mfa_code,
         )
 
+    async def _async_profile_id(self, username: str) -> str | None:
+        """Return the Garmin profile id of the logged-in account, or None if unavailable."""
+        if TYPE_CHECKING:
+            assert self._auth is not None
+        try:
+            client = GarminClient(self._auth, is_cn=self._is_cn)
+            profile = await client.get_user_profile()
+        except (GarminConnectError, ClientError) as err:
+            _LOGGER.warning("Could not fetch Garmin profile for %s: %s", username, err)
+            return None
+        return str(profile.profile_id)
+
+    async def _async_check_same_account(
+        self, entry: ConfigEntry, step_id: str
+    ) -> ConfigFlowResult | None:
+        """Stop the flow if the freshly logged-in account is not the entry's account.
+
+        Entries made before profile ids were used carry the email as unique_id;
+        those are accepted and upgraded. Without a profile the account is only
+        verified when a legacy email unique_id matches the login; otherwise the
+        entry is left untouched and the login form is shown again, so a
+        transient Garmin error can never switch an entry to another account.
+        """
+        if TYPE_CHECKING:
+            assert self._username is not None
+        current = entry.unique_id
+        email_matches = current is not None and current.lower() == self._username.lower()
+        profile_id = await self._async_profile_id(self._username)
+        if profile_id is None:
+            if current is None or email_matches:
+                return None
+            return self._async_show_login_form(step_id, entry, {"base": "profile_unavailable"})
+        if current not in (None, profile_id) and not email_matches:
+            return self.async_abort(reason="wrong_account")
+        if current != profile_id:
+            self.hass.config_entries.async_update_entry(entry, unique_id=profile_id)
+        return None
+
+    def _async_show_login_form(
+        self, step_id: str, entry: ConfigEntry, errors: dict[str, str]
+    ) -> ConfigFlowResult:
+        """Show the reauth/reconfigure login form, defaulting CN to the entry's setting."""
+        current_is_cn = entry.options.get(CONF_IS_CN, False)
+        return self.async_show_form(
+            step_id=step_id,
+            data_schema=vol.Schema(
+                {
+                    vol.Required(CONF_USERNAME): str,
+                    vol.Required(CONF_PASSWORD): str,
+                    vol.Optional(CONF_IS_CN, default=current_is_cn): bool,
+                }
+            ),
+            errors=errors,
+        )
+
     async def _async_finish_reauth(self) -> ConfigFlowResult:
         """Update tokens and CN setting on the existing entry and reload it."""
         entry = self._get_reauth_entry()
+        if (result := await self._async_check_same_account(entry, "reauth_confirm")) is not None:
+            return result
         self.hass.config_entries.async_update_entry(
             entry,
             data=self._token_data(),
@@ -114,6 +171,8 @@ class GarminConnectConfigFlow(ConfigFlow, domain=DOMAIN):
     async def _async_finish_reconfigure(self) -> ConfigFlowResult:
         """Update tokens and CN setting on the existing entry and reload it."""
         entry = self._get_reconfigure_entry()
+        if (result := await self._async_check_same_account(entry, "reconfigure")) is not None:
+            return result
         self.hass.config_entries.async_update_entry(
             entry,
             data=self._token_data(),
@@ -124,20 +183,8 @@ class GarminConnectConfigFlow(ConfigFlow, domain=DOMAIN):
 
     async def _async_create_new_entry(self, username: str) -> ConfigFlowResult:
         """Finalize a new config entry after successful authentication."""
-        if TYPE_CHECKING:
-            assert self._auth is not None
-        unique_id = username
-        try:
-            client = GarminClient(self._auth, is_cn=self._is_cn)
-            profile = await client.get_user_profile()
-        except (GarminConnectError, ClientError) as err:
-            _LOGGER.warning(
-                "Could not fetch Garmin profile for %s, falling back to username as unique_id: %s",
-                username,
-                err,
-            )
-        else:
-            unique_id = str(profile.profile_id)
+        # Fall back to the (case-insensitive) email when the profile is unavailable.
+        unique_id = await self._async_profile_id(username) or username.lower()
         await self.async_set_unique_id(unique_id)
         self._abort_if_unique_id_configured()
         return self.async_create_entry(
@@ -240,20 +287,7 @@ class GarminConnectConfigFlow(ConfigFlow, domain=DOMAIN):
             else:
                 return await self._async_finish_reauth()
 
-        entry = self._get_reauth_entry()
-        current_is_cn = entry.options.get(CONF_IS_CN, False)
-
-        return self.async_show_form(
-            step_id="reauth_confirm",
-            data_schema=vol.Schema(
-                {
-                    vol.Required(CONF_USERNAME): str,
-                    vol.Required(CONF_PASSWORD): str,
-                    vol.Optional(CONF_IS_CN, default=current_is_cn): bool,
-                }
-            ),
-            errors=errors,
-        )
+        return self._async_show_login_form("reauth_confirm", self._get_reauth_entry(), errors)
 
     async def async_step_reconfigure(
         self, user_input: dict[str, Any] | None = None
@@ -282,20 +316,7 @@ class GarminConnectConfigFlow(ConfigFlow, domain=DOMAIN):
             else:
                 return await self._async_finish_reconfigure()
 
-        entry = self._get_reconfigure_entry()
-        current_is_cn = entry.options.get(CONF_IS_CN, False)
-
-        return self.async_show_form(
-            step_id="reconfigure",
-            data_schema=vol.Schema(
-                {
-                    vol.Required(CONF_USERNAME): str,
-                    vol.Required(CONF_PASSWORD): str,
-                    vol.Optional(CONF_IS_CN, default=current_is_cn): bool,
-                }
-            ),
-            errors=errors,
-        )
+        return self._async_show_login_form("reconfigure", self._get_reconfigure_entry(), errors)
 
 
 class GarminConnectOptionsFlow(OptionsFlow):

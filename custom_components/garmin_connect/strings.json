@@ -2,12 +2,14 @@
   "config": {
     "abort": {
       "already_configured": "Account is already configured",
+      "wrong_account": "The credentials belong to a different Garmin account than this entry",
       "reauth_successful": "Re-authentication was successful",
       "reconfigure_successful": "Reconfiguration was successful"
     },
     "error": {
       "invalid_auth": "Invalid credentials",
       "invalid_mfa": "Invalid verification code",
+      "profile_unavailable": "Could not verify which Garmin account these credentials belong to. Please try again.",
       "rate_limit": "Too many login attempts — Garmin is rate limiting. Please try again in a few minutes.",
       "unknown": "Unexpected error"
     },
@@ -151,6 +153,7 @@
       "last_7_days_avg_resting_heart_rate": { "name": "7-day average resting heart rate" },
       "last_activities": { "name": "Last activities" },
       "last_activity": { "name": "Last activity" },
+      "last_activity_route": { "name": "Last activity route" },
       "last_synced": { "name": "Last synced" },
       "last_workout": { "name": "Last workout" },
       "last_workouts": { "name": "Last workouts" },
@@ -342,7 +345,7 @@
       "name": "Upload activity",
       "description": "Upload an activity file (FIT, GPX, TCX) to Garmin Connect.",
       "fields": {
-        "file_path": { "name": "File path", "description": "Path to the activity file on the Home Assistant system." }
+        "file_path": { "name": "File path", "description": "FIT, GPX or TCX file on the Home Assistant system, absolute or relative to the config directory. Paths outside the config directory must be in allowlist_external_dirs." }
       }
     },
     "add_gear_to_activity": {
@@ -372,6 +375,7 @@
     "no_integration_configured": { "message": "Garmin Connect integration is not configured." },
     "ambiguous_account": { "message": "Multiple Garmin Connect accounts are configured. Provide an entity_id to select which account to use." },
     "set_active_gear_failed": { "message": "Failed to set active gear: {error}" },
+    "unsupported_file_format": { "message": "Unsupported activity file {file_path}. Supported formats: {formats}" },
     "upload_activity_failed": { "message": "Failed to upload activity: {error}" },
     "add_nutrition_failed": { "message": "Failed to log nutrition: {error}" }
   },

@@ -10,7 +10,7 @@ from pathlib import Path
 from ha_garmin import GarminAuth, GarminClient
 from homeassistant.components.frontend import add_extra_js_url
 from homeassistant.components.http import StaticPathConfig
-from homeassistant.config_entries import ConfigEntryAuthFailed, ConfigEntryNotReady
+from homeassistant.config_entries import ConfigEntryAuthFailed
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import config_validation as cv
@@ -42,7 +42,7 @@ from .coordinator import (
     NutritionCoordinator,
     TrainingCoordinator,
 )
-from .services import async_setup_services, async_unload_services
+from .services import async_setup_services
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -52,12 +52,13 @@ CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
-    """Serve the route map card and have the frontend load it.
+    """Register services and serve the route map card.
 
-    Runs once per Home Assistant start, not per config entry, so the static
-    path is never registered twice. The version query busts browser caches
-    when the integration is updated.
+    Runs once per Home Assistant start, not per config entry, so services
+    and the static path are never registered twice. The version query busts
+    browser caches when the integration is updated.
     """
+    async_setup_services(hass)
     integration = await async_get_integration(hass, DOMAIN)
     await hass.http.async_register_static_paths(
         [StaticPathConfig(FRONTEND_URL_BASE, str(Path(__file__).parent / "www"))]
@@ -210,34 +211,20 @@ async def async_setup_entry(hass: HomeAssistant, entry: GarminConnectConfigEntry
         blood_pressure=BloodPressureCoordinator(hass, entry, client, auth),
         menstrual=MenstrualCoordinator(hass, entry, client, auth),
         nutrition=NutritionCoordinator(hass, entry, client, auth),
+        is_cn=is_cn,
     )
 
-    try:
-        await coordinators.core.async_config_entry_first_refresh()
-    except asyncio.CancelledError as err:
-        raise ConfigEntryNotReady("Garmin API timed out during setup; will retry") from err
-
+    # Core must succeed (raises ConfigEntryNotReady/AuthFailed otherwise); the
+    # other domains may fail individually without blocking setup.
+    await coordinators.core.async_config_entry_first_refresh()
     await asyncio.gather(
-        coordinators.activity.async_refresh(),
-        coordinators.training.async_refresh(),
-        coordinators.body.async_refresh(),
-        coordinators.goals.async_refresh(),
-        coordinators.gear.async_refresh(),
-        coordinators.blood_pressure.async_refresh(),
-        coordinators.menstrual.async_refresh(),
-        coordinators.nutrition.async_refresh(),
+        *(coord.async_refresh() for coord in coordinators if coord is not coordinators.core),
         return_exceptions=True,
     )
 
     entry.runtime_data = coordinators
 
-    # Snapshot options so the update listener can tell what changed.
-    hass.data.setdefault(DOMAIN, {})[entry.entry_id] = dict(entry.options)
-
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
-
-    if not hass.services.has_service(DOMAIN, "set_active_gear"):
-        await async_setup_services(hass)
 
     entry.async_on_unload(entry.add_update_listener(async_options_update_listener))
 
@@ -254,40 +241,17 @@ async def async_options_update_listener(
     since that affects the underlying API endpoints.
     """
     coordinators = entry.runtime_data
-    previous_options = hass.data.get(DOMAIN, {}).get(entry.entry_id, {})
-    current_options = entry.options
 
-    if previous_options.get(CONF_IS_CN, False) != current_options.get(CONF_IS_CN, False):
+    if entry.options.get(CONF_IS_CN, False) != coordinators.is_cn:
         await hass.config_entries.async_reload(entry.entry_id)
         return
 
-    scan_interval = current_options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
+    scan_interval = entry.options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
     update_interval = timedelta(seconds=scan_interval)
-    for coord in (
-        coordinators.core,
-        coordinators.activity,
-        coordinators.training,
-        coordinators.body,
-        coordinators.goals,
-        coordinators.gear,
-        coordinators.blood_pressure,
-        coordinators.menstrual,
-        coordinators.nutrition,
-    ):
+    for coord in coordinators:
         coord.set_update_interval(update_interval)
-
-    # Update the snapshot after applying changes.
-    hass.data.setdefault(DOMAIN, {})[entry.entry_id] = dict(current_options)
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: GarminConnectConfigEntry) -> bool:
     """Unload a config entry."""
-    unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
-
-    if DOMAIN in hass.data and entry.entry_id in hass.data[DOMAIN]:
-        hass.data[DOMAIN].pop(entry.entry_id, None)
-
-    if unload_ok and len(hass.config_entries.async_entries(DOMAIN)) == 1:
-        await async_unload_services(hass)
-
-    return unload_ok
+    return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
