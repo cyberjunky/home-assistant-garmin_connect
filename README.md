@@ -208,6 +208,7 @@ All sensors are created under a single "Garmin Connect" device. Entity IDs follo
 | Highest / Lowest / Latest Respiration | Breathing rate (brpm) |
 | Latest Respiration Time | When respiration was last measured |
 | Average Sleep Respiration | Breathing rate averaged over the sleep window (brpm) |
+| Skin Temperature Change | Nightly skin temperature change from your baseline (devices with a skin temperature sensor); attribute `calibration_days` |
 | Average Altitude | Average monitoring altitude |
 
 ### Fitness & Training
