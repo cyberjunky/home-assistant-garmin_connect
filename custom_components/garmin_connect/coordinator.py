@@ -5,6 +5,7 @@ Multiple coordinators allow users to disable entity groups and stop unnecessary 
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from dataclasses import dataclass
 from datetime import date, timedelta
@@ -73,6 +74,9 @@ class GarminConnectCoordinators:
         )
 
 
+UPDATE_TIMEOUT = 60
+
+
 class BaseGarminCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     """Base class for Garmin Connect coordinators.
 
@@ -139,7 +143,12 @@ class BaseGarminCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     async def _async_update_data(self) -> dict[str, Any]:
         """Fetch data, mapping library errors to coordinator errors."""
         try:
-            return await self._fetch()
+            async with asyncio.timeout(UPDATE_TIMEOUT):
+                return await self._fetch()
+        except TimeoutError as err:
+            raise UpdateFailed(
+                f"Garmin {self.data_name} refresh exceeded {UPDATE_TIMEOUT} seconds"
+            ) from err
         except GarminAuthError as err:
             raise ConfigEntryAuthFailed("Authentication failed") from err
         except (GarminConnectError, ClientError) as err:
