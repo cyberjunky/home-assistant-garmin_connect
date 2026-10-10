@@ -1127,7 +1127,7 @@ def test_gear_migration_skips_when_no_slug_entity() -> None:
 # ── Dynamic entities ──────────────────────────────────────────────────────────
 
 
-def _setup_platform(gear_stats: list[dict], ptw: list[dict]):
+def _setup_platform(gear_stats: list[dict] | None, ptw: list[dict]):
     """Run sensor.async_setup_entry with mocked coordinators; return (entry, added, registry)."""
     import asyncio
 
@@ -1146,7 +1146,7 @@ def _setup_platform(gear_stats: list[dict], ptw: list[dict]):
         "nutrition",
     ):
         getattr(coordinators, name).data = {}
-    coordinators.gear.data = {"gearStats": gear_stats}
+    coordinators.gear.data = {"gearStats": gear_stats} if gear_stats is not None else None
     coordinators.training.data = {"powerToWeight": ptw}
     entry = MagicMock()
     entry.entry_id = "entry"
@@ -1162,6 +1162,20 @@ def _setup_platform(gear_stats: list[dict], ptw: list[dict]):
 def _listener(coordinator: MagicMock):
     (cb,) = coordinator.async_add_listener.call_args.args
     return cb
+
+
+def test_deferred_gear_data_migrates_before_creating_dynamic_entities() -> None:
+    """A startup without gear data still migrates legacy IDs when data arrives."""
+    with patch("custom_components.garmin_connect.sensor._async_migrate_gear_unique_ids") as migrate:
+        _, coordinators, added, registry = _setup_platform(None, [])
+        migrate.assert_not_called()
+
+        coordinators.gear.data = {"gearStats": [{"uuid": "g1", "gearName": "Shoes"}]}
+        _listener(coordinators.gear)()
+        migrate.assert_called_once_with(registry, "entry", coordinators.gear.data)
+        assert [e._gear_uuid for e in added if isinstance(e, GarminConnectGearSensor)] == ["g1"]
+        _listener(coordinators.gear)()
+        migrate.assert_called_once()
 
 
 def test_new_gear_and_sports_are_added_after_setup() -> None:

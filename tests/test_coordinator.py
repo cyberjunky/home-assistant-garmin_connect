@@ -1,5 +1,6 @@
 """Tests for Garmin Connect coordinators."""
 
+import asyncio
 from datetime import date
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -26,6 +27,43 @@ _DAY_1 = date(2026, 1, 1)
 _DAY_2 = date(2026, 1, 2)
 _DAY_3 = date(2026, 1, 3)
 _DAY_4 = date(2026, 1, 4)
+
+
+async def test_refresh_timeout_preserves_data_and_recovers(hass, mock_config_entry, mock_auth):
+    """A stalled fetch expires without discarding prior data; a later poll recovers."""
+    client = MagicMock()
+    cancelled = asyncio.Event()
+
+    async def stalled_fetch():
+        try:
+            await asyncio.Event().wait()
+        finally:
+            cancelled.set()
+
+    client.fetch_body_data = AsyncMock(side_effect=stalled_fetch)
+    coordinator = BodyCoordinator(hass, mock_config_entry, client, mock_auth)
+    coordinator.async_set_updated_data({"weight": 75})
+    with patch("custom_components.garmin_connect.coordinator.UPDATE_TIMEOUT", 0.01):
+        await asyncio.wait_for(coordinator.async_refresh(), timeout=1)
+    assert cancelled.is_set()
+    assert coordinator.last_update_success is False
+    assert "body refresh exceeded" in str(coordinator.last_exception)
+    assert coordinator.data == {"weight": 75}
+
+    client.fetch_body_data.side_effect = None
+    client.fetch_body_data.return_value = {"weight": 76}
+    await coordinator.async_refresh()
+    assert coordinator.last_update_success is True
+    assert coordinator.data == {"weight": 76}
+
+
+async def test_refresh_external_cancellation_propagates(hass, mock_config_entry, mock_auth):
+    """Shutdown/unload cancellation must not become a timeout or update failure."""
+    client = MagicMock()
+    client.fetch_body_data = AsyncMock(side_effect=asyncio.CancelledError)
+    coordinator = BodyCoordinator(hass, mock_config_entry, client, mock_auth)
+    with pytest.raises(asyncio.CancelledError):
+        await coordinator._async_update_data()
 
 
 def _make_coordinator(client: AsyncMock, *, nutrition_enabled: bool = True) -> NutritionCoordinator:

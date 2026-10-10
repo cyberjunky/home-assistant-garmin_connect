@@ -10,7 +10,7 @@ from pathlib import Path
 from ha_garmin import GarminAuth, GarminClient
 from homeassistant.components.frontend import add_extra_js_url
 from homeassistant.components.http import StaticPathConfig
-from homeassistant.config_entries import ConfigEntryAuthFailed
+from homeassistant.config_entries import ConfigEntryAuthFailed, ConfigEntryNotReady
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import config_validation as cv
@@ -45,6 +45,8 @@ from .coordinator import (
 from .services import async_setup_services
 
 _LOGGER = logging.getLogger(__name__)
+
+CORE_SETUP_TIMEOUT = 30
 
 PLATFORMS: list[Platform] = [Platform.SENSOR, Platform.CALENDAR]
 
@@ -214,19 +216,34 @@ async def async_setup_entry(hass: HomeAssistant, entry: GarminConnectConfigEntry
         is_cn=is_cn,
     )
 
-    # Core must succeed (raises ConfigEntryNotReady/AuthFailed otherwise); the
-    # other domains may fail individually without blocking setup.
-    await coordinators.core.async_config_entry_first_refresh()
-    await asyncio.gather(
-        *(coord.async_refresh() for coord in coordinators if coord is not coordinators.core),
-        return_exceptions=True,
-    )
+    # Bound the complete first refresh, including requests, retries and token
+    # refresh. A per-request socket timeout does not bound this operation.
+    try:
+        async with asyncio.timeout(CORE_SETUP_TIMEOUT):
+            await coordinators.core.async_config_entry_first_refresh()
+    except TimeoutError as err:
+        raise ConfigEntryNotReady(
+            f"Garmin core initialization exceeded {CORE_SETUP_TIMEOUT} seconds; "
+            "Home Assistant will retry setup"
+        ) from err
+
+    for coord in coordinators:
+        if coord is not coordinators.core:
+            coord.last_update_success = False
 
     entry.runtime_data = coordinators
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
     entry.async_on_unload(entry.add_update_listener(async_options_update_listener))
+
+    # Register entities and their listeners before data arrives. Entry-owned
+    # background tasks do not hold HA startup open and are cancelled on unload.
+    for coord in coordinators:
+        if coord is not coordinators.core:
+            entry.async_create_background_task(
+                hass, coord.async_refresh(), f"Garmin initial {coord.data_name} refresh"
+            )
 
     return True
 
