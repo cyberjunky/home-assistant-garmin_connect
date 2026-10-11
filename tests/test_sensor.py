@@ -1166,16 +1166,34 @@ def _listener(coordinator: MagicMock):
 
 def test_deferred_gear_data_migrates_before_creating_dynamic_entities():
     """A startup without gear data still migrates legacy IDs when data arrives."""
-    with patch("custom_components.garmin_connect.sensor._async_migrate_gear_unique_ids") as migrate:
+    events = []
+
+    def create_gear_sensor(*args, **kwargs):
+        """Record construction while preserving real gear sensor behavior."""
+        events.append("create")
+        return GarminConnectGearSensor(*args, **kwargs)
+
+    with (
+        patch(
+            "custom_components.garmin_connect.sensor._async_migrate_gear_unique_ids",
+            side_effect=lambda *args: events.append("migrate"),
+        ) as migrate,
+        patch(
+            "custom_components.garmin_connect.sensor.GarminConnectGearSensor",
+            side_effect=create_gear_sensor,
+        ),
+    ):
         _, coordinators, added, registry = _setup_platform(None, [])
         migrate.assert_not_called()
 
         coordinators.gear.data = {"gearStats": [{"uuid": "g1", "gearName": "Shoes"}]}
         _listener(coordinators.gear)()
+        assert events == ["migrate", "create"]
         migrate.assert_called_once_with(registry, "entry", coordinators.gear.data)
         assert [e._gear_uuid for e in added if isinstance(e, GarminConnectGearSensor)] == ["g1"]
         _listener(coordinators.gear)()
         migrate.assert_called_once()
+        assert events == ["migrate", "create"]
 
 
 def test_new_gear_and_sports_are_added_after_setup() -> None:
