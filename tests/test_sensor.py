@@ -1164,7 +1164,7 @@ def _listener(coordinator: MagicMock):
     return cb
 
 
-def test_deferred_gear_data_migrates_before_creating_dynamic_entities() -> None:
+def test_deferred_gear_data_migrates_before_creating_dynamic_entities():
     """A startup without gear data still migrates legacy IDs when data arrives."""
     with patch("custom_components.garmin_connect.sensor._async_migrate_gear_unique_ids") as migrate:
         _, coordinators, added, registry = _setup_platform(None, [])

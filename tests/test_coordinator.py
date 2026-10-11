@@ -35,6 +35,7 @@ async def test_refresh_timeout_preserves_data_and_recovers(hass, mock_config_ent
     cancelled = asyncio.Event()
 
     async def stalled_fetch():
+        """Simulate a hung cloud fetch and record timeout cancellation."""
         try:
             await asyncio.Event().wait()
         finally:

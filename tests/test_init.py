@@ -194,13 +194,14 @@ async def test_setup_entry_core_failure_propagates() -> None:
 
 async def test_stalled_core_setup_retries_without_starting_optional_tasks(
     hass, mock_config_entry, mock_auth, mock_client
-) -> None:
+):
     """A stalled first refresh must fail promptly and cancel the awaited work."""
     from homeassistant.exceptions import ConfigEntryNotReady
 
     cancelled = asyncio.Event()
 
     async def stalled_refresh():
+        """Keep core setup pending and record cancellation by its deadline."""
         try:
             await asyncio.Event().wait()
         finally:
@@ -224,7 +225,7 @@ async def test_stalled_core_setup_retries_without_starting_optional_tasks(
 
 async def test_optional_refresh_does_not_block_startup_and_is_cancelled_on_unload(
     hass, mock_config_entry, mock_auth, mock_client
-) -> None:
+):
     """HA startup completes while optional work is pending; unload cancels it."""
     started = asyncio.Event()
     cancelled = asyncio.Event()
@@ -232,6 +233,7 @@ async def test_optional_refresh_does_not_block_startup_and_is_cancelled_on_unloa
     optional.data_name = "training"
 
     async def stalled_refresh():
+        """Keep optional work pending until the config entry unloads."""
         started.set()
         try:
             await asyncio.Event().wait()
@@ -247,6 +249,7 @@ async def test_optional_refresh_does_not_block_startup_and_is_cancelled_on_unloa
         )
 
         async def forward_platforms(*args):
+            """Verify optional refreshes start only after platform setup."""
             # Optional data must be unavailable and its refresh must not race
             # the entity listeners installed by platform setup.
             assert optional.last_update_success is False
