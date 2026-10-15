@@ -308,6 +308,49 @@
         "timestamp": { "name": "Timestamp", "description": "Log time (ISO 8601). Defaults to now." }
       }
     },
+    "create_workout": {
+      "name": "Create workout",
+      "description": "Create a workout in the Garmin Connect library, optionally scheduling it on a date. Returns workout_id (and schedule_id).",
+      "fields": {
+        "entity_id": { "name": "Garmin Connect entity", "description": "Optional Garmin Connect entity whose account owns the workout." },
+        "workout": { "name": "Workout", "description": "Garmin workout JSON (workoutName, sportType, workoutSegments), as an object or JSON string." },
+        "date": { "name": "Date", "description": "Optional date to put the workout on the training calendar." }
+      }
+    },
+    "update_workout": {
+      "name": "Update workout",
+      "description": "Replace an existing workout in place. Its ID and calendar schedules are kept.",
+      "fields": {
+        "entity_id": { "name": "Garmin Connect entity", "description": "Optional Garmin Connect entity whose account owns the workout." },
+        "workout_id": { "name": "Workout ID", "description": "Garmin workout ID." },
+        "workout": { "name": "Workout", "description": "Complete Garmin workout JSON, as an object or JSON string." }
+      }
+    },
+    "delete_workout": {
+      "name": "Delete workout",
+      "description": "Delete a workout from the Garmin Connect library, including its calendar entries.",
+      "fields": {
+        "entity_id": { "name": "Garmin Connect entity", "description": "Optional Garmin Connect entity whose account owns the workout." },
+        "workout_id": { "name": "Workout ID", "description": "Garmin workout ID." }
+      }
+    },
+    "schedule_workout": {
+      "name": "Schedule workout",
+      "description": "Put a library workout on the Garmin training calendar. Returns schedule_id.",
+      "fields": {
+        "entity_id": { "name": "Garmin Connect entity", "description": "Optional Garmin Connect entity whose account owns the workout." },
+        "workout_id": { "name": "Workout ID", "description": "Garmin workout ID." },
+        "date": { "name": "Date", "description": "Calendar date for the workout." }
+      }
+    },
+    "unschedule_workout": {
+      "name": "Unschedule workout",
+      "description": "Remove a workout from the Garmin training calendar without deleting it.",
+      "fields": {
+        "entity_id": { "name": "Garmin Connect entity", "description": "Optional Garmin Connect entity whose account owns the workout." },
+        "schedule_id": { "name": "Schedule ID", "description": "Calendar entry ID (schedule_id from schedule_workout, or the id of a scheduled workout)." }
+      }
+    },
     "add_blood_pressure": {
       "name": "Add blood pressure",
       "description": "Add a blood pressure measurement to Garmin Connect.",
@@ -377,7 +420,13 @@
     "set_active_gear_failed": { "message": "Failed to set active gear: {error}" },
     "unsupported_file_format": { "message": "Unsupported activity file {file_path}. Supported formats: {formats}" },
     "upload_activity_failed": { "message": "Failed to upload activity: {error}" },
-    "add_nutrition_failed": { "message": "Failed to log nutrition: {error}" }
+    "add_nutrition_failed": { "message": "Failed to log nutrition: {error}" },
+    "create_workout_failed": { "message": "Failed to create workout: {error}" },
+    "create_workout_schedule_failed": { "message": "Workout {workout_id} was created but could not be scheduled: {error}" },
+    "update_workout_failed": { "message": "Failed to update workout: {error}" },
+    "delete_workout_failed": { "message": "Failed to delete workout: {error}" },
+    "schedule_workout_failed": { "message": "Failed to schedule workout: {error}" },
+    "unschedule_workout_failed": { "message": "Failed to unschedule workout: {error}" }
   },
   "issues": {
     "connect_plus_required": {

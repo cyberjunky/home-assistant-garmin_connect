@@ -626,6 +626,49 @@
         }
       }
     },
+    "create_workout": {
+      "name": "Utwórz trening",
+      "description": "Utwórz trening w bibliotece Garmin Connect i opcjonalnie zaplanuj go na wybrany dzień. Zwraca workout_id (oraz schedule_id).",
+      "fields": {
+        "entity_id": { "name": "Encja Garmin Connect", "description": "Opcjonalna encja Garmin Connect, do której konta należy trening." },
+        "workout": { "name": "Trening", "description": "JSON treningu Garmin (workoutName, sportType, workoutSegments) jako obiekt lub ciąg JSON." },
+        "date": { "name": "Data", "description": "Opcjonalna data dodania treningu do kalendarza treningowego." }
+      }
+    },
+    "update_workout": {
+      "name": "Zaktualizuj trening",
+      "description": "Zastąp istniejący trening. Jego ID i wpisy w kalendarzu zostają zachowane.",
+      "fields": {
+        "entity_id": { "name": "Encja Garmin Connect", "description": "Opcjonalna encja Garmin Connect, do której konta należy trening." },
+        "workout_id": { "name": "ID treningu", "description": "ID treningu Garmin." },
+        "workout": { "name": "Trening", "description": "Pełny JSON treningu Garmin jako obiekt lub ciąg JSON." }
+      }
+    },
+    "delete_workout": {
+      "name": "Usuń trening",
+      "description": "Usuń trening z biblioteki Garmin Connect wraz z jego wpisami w kalendarzu.",
+      "fields": {
+        "entity_id": { "name": "Encja Garmin Connect", "description": "Opcjonalna encja Garmin Connect, do której konta należy trening." },
+        "workout_id": { "name": "ID treningu", "description": "ID treningu Garmin." }
+      }
+    },
+    "schedule_workout": {
+      "name": "Zaplanuj trening",
+      "description": "Dodaj trening z biblioteki do kalendarza treningowego Garmin. Zwraca schedule_id.",
+      "fields": {
+        "entity_id": { "name": "Encja Garmin Connect", "description": "Opcjonalna encja Garmin Connect, do której konta należy trening." },
+        "workout_id": { "name": "ID treningu", "description": "ID treningu Garmin." },
+        "date": { "name": "Data", "description": "Data treningu w kalendarzu." }
+      }
+    },
+    "unschedule_workout": {
+      "name": "Usuń trening z kalendarza",
+      "description": "Usuń trening z kalendarza treningowego Garmin bez usuwania samego treningu.",
+      "fields": {
+        "entity_id": { "name": "Encja Garmin Connect", "description": "Opcjonalna encja Garmin Connect, do której konta należy trening." },
+        "schedule_id": { "name": "ID wpisu w kalendarzu", "description": "ID wpisu w kalendarzu (schedule_id z schedule_workout lub id zaplanowanego treningu)." }
+      }
+    },
     "add_body_composition": {
       "name": "Dodaj skład ciała",
       "description": "Dodaj pomiary składu ciała do Garmin Connect.",
@@ -783,6 +826,12 @@
     "add_nutrition_failed": {
       "message": "Nie udało się zapisać wpisu żywieniowego: {error}"
     },
+    "create_workout_failed": { "message": "Nie udało się utworzyć treningu: {error}" },
+    "create_workout_schedule_failed": { "message": "Trening {workout_id} został utworzony, ale nie udało się go zaplanować: {error}" },
+    "update_workout_failed": { "message": "Nie udało się zaktualizować treningu: {error}" },
+    "delete_workout_failed": { "message": "Nie udało się usunąć treningu: {error}" },
+    "schedule_workout_failed": { "message": "Nie udało się zaplanować treningu: {error}" },
+    "unschedule_workout_failed": { "message": "Nie udało się usunąć treningu z kalendarza: {error}" },
     "add_body_composition_failed": {
       "message": "Nie udało się dodać składu ciała: {error}"
     },

@@ -431,3 +431,135 @@ add_nutrition_log:
       example: "2024-01-15T12:30:00"
       selector:
         text:
+
+create_workout:
+  name: Create workout
+  description: Create a workout in the Garmin Connect library, optionally scheduling it on a date. Returns workout_id (and schedule_id).
+  fields:
+    entity_id:
+      name: Garmin Connect entity
+      description: Optional Garmin Connect entity whose account gets the workout.
+      selector:
+        entity:
+          integration: garmin_connect
+          domain: sensor
+    workout:
+      name: Workout
+      description: Garmin workout JSON (workoutName, sportType, workoutSegments), as an object or JSON string.
+      required: true
+      example: >-
+        {"workoutName": "Easy 30 min", "sportType": {"sportTypeId": 1, "sportTypeKey": "running"},
+        "workoutSegments": [{"segmentOrder": 1, "sportType": {"sportTypeId": 1, "sportTypeKey": "running"},
+        "workoutSteps": [{"type": "ExecutableStepDTO", "stepOrder": 1,
+        "stepType": {"stepTypeId": 3, "stepTypeKey": "interval"},
+        "endCondition": {"conditionTypeId": 2, "conditionTypeKey": "time"}, "endConditionValue": 1800,
+        "targetType": {"workoutTargetTypeId": 1, "workoutTargetTypeKey": "no.target"}}]}]}
+      selector:
+        object:
+    date:
+      name: Date
+      description: Optional date to put the workout on the training calendar.
+      example: "2026-10-16"
+      selector:
+        date:
+
+update_workout:
+  name: Update workout
+  description: Replace an existing workout in place. Its ID and calendar schedules are kept.
+  fields:
+    entity_id:
+      name: Garmin Connect entity
+      description: Optional Garmin Connect entity whose account owns the workout.
+      selector:
+        entity:
+          integration: garmin_connect
+          domain: sensor
+    workout_id:
+      name: Workout ID
+      description: ID of the workout to replace.
+      required: true
+      example: 1234567890
+      selector:
+        number:
+          mode: box
+          min: 1
+          max: 999999999999
+    workout:
+      name: Workout
+      description: Complete Garmin workout JSON, as an object or JSON string.
+      required: true
+      selector:
+        object:
+
+delete_workout:
+  name: Delete workout
+  description: Delete a workout from the Garmin Connect library, including its calendar entries.
+  fields:
+    entity_id:
+      name: Garmin Connect entity
+      description: Optional Garmin Connect entity whose account owns the workout.
+      selector:
+        entity:
+          integration: garmin_connect
+          domain: sensor
+    workout_id:
+      name: Workout ID
+      description: ID of the workout to delete.
+      required: true
+      example: 1234567890
+      selector:
+        number:
+          mode: box
+          min: 1
+          max: 999999999999
+
+schedule_workout:
+  name: Schedule workout
+  description: Put a library workout on the Garmin training calendar. Returns schedule_id.
+  fields:
+    entity_id:
+      name: Garmin Connect entity
+      description: Optional Garmin Connect entity whose account owns the workout.
+      selector:
+        entity:
+          integration: garmin_connect
+          domain: sensor
+    workout_id:
+      name: Workout ID
+      description: ID of the workout to schedule.
+      required: true
+      example: 1234567890
+      selector:
+        number:
+          mode: box
+          min: 1
+          max: 999999999999
+    date:
+      name: Date
+      description: Calendar date for the workout.
+      required: true
+      example: "2026-10-16"
+      selector:
+        date:
+
+unschedule_workout:
+  name: Unschedule workout
+  description: Remove a workout from the Garmin training calendar without deleting it.
+  fields:
+    entity_id:
+      name: Garmin Connect entity
+      description: Optional Garmin Connect entity whose account owns the schedule.
+      selector:
+        entity:
+          integration: garmin_connect
+          domain: sensor
+    schedule_id:
+      name: Schedule ID
+      description: Calendar entry ID (schedule_id from schedule_workout, or the id of a scheduled workout).
+      required: true
+      example: 987654321
+      selector:
+        number:
+          mode: box
+          min: 1
+          max: 999999999999

@@ -1,6 +1,6 @@
 """Tests for Garmin Connect services."""
 
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 from zoneinfo import ZoneInfo
@@ -18,6 +18,8 @@ from custom_components.garmin_connect.services import (
     ADD_HYDRATION_SCHEMA,
     ADD_NUTRITION_SCHEMA,
     CREATE_ACTIVITY_SCHEMA,
+    CREATE_WORKOUT_SCHEMA,
+    DELETE_WORKOUT_SCHEMA,
     async_setup_services,
 )
 
@@ -42,6 +44,7 @@ def _make_entry(entry_id: str, unique_id: str, title: str) -> MagicMock:
     mock_client = AsyncMock()
     mock_coordinators = MagicMock()
     mock_coordinators.core.client = mock_client
+    mock_coordinators.activity.async_request_refresh = AsyncMock()
 
     mock_entry = MagicMock()
     mock_entry.entry_id = entry_id
@@ -74,7 +77,7 @@ def _get_client_for_entry(mock_hass: MagicMock, entry_id: str) -> AsyncMock:
 
 
 async def test_setup_registers_all_services(mock_hass: MagicMock) -> None:
-    """async_setup_services must register all 9 service handlers."""
+    """async_setup_services must register all 14 service handlers."""
     async_setup_services(mock_hass)
 
     registered = {call[0][1] for call in mock_hass.services.async_register.call_args_list}
@@ -88,6 +91,11 @@ async def test_setup_registers_all_services(mock_hass: MagicMock) -> None:
         "add_gear_to_activity",
         "add_hydration",
         "add_nutrition_log",
+        "create_workout",
+        "update_workout",
+        "delete_workout",
+        "schedule_workout",
+        "unschedule_workout",
     }
 
 
@@ -948,3 +956,184 @@ async def test_upload_activity_unsupported_format_raises(
     with pytest.raises(HomeAssistantError):
         await handler(call)
     client.upload_activity.assert_not_awaited()
+
+
+# ── Workouts ──────────────────────────────────────────────────────────────────
+
+_WORKOUT = {"workoutName": "Easy", "sportType": {"sportTypeKey": "running"}}
+
+
+def _activity_refresh(mock_hass: MagicMock) -> AsyncMock:
+    entry = mock_hass.config_entries.async_entries.return_value[0]
+    return entry.runtime_data.activity.async_request_refresh
+
+
+async def test_create_workout_returns_id_and_refreshes(mock_hass: MagicMock):
+    async_setup_services(mock_hass)
+    handler = _get_handler(mock_hass, "create_workout")
+    client = _get_client(mock_hass)
+    client.create_workout.return_value = {"workoutId": 42}
+
+    call = MagicMock()
+    call.data = {"workout": _WORKOUT}
+    call.return_response = True
+    assert await handler(call) == {"workout_id": 42}
+
+    client.create_workout.assert_awaited_once_with(_WORKOUT)
+    client.schedule_workout.assert_not_awaited()
+    _activity_refresh(mock_hass).assert_awaited_once()
+
+
+async def test_create_workout_with_date_schedules_it(mock_hass: MagicMock):
+    async_setup_services(mock_hass)
+    handler = _get_handler(mock_hass, "create_workout")
+    client = _get_client(mock_hass)
+    client.create_workout.return_value = {"workoutId": 42}
+    client.schedule_workout.return_value = {"workoutScheduleId": 7}
+
+    call = MagicMock()
+    call.data = {"workout": _WORKOUT, "date": date(2026, 10, 16)}
+    call.return_response = True
+    assert await handler(call) == {"workout_id": 42, "schedule_id": 7, "date": "2026-10-16"}
+    client.schedule_workout.assert_awaited_once_with(42, date(2026, 10, 16))
+
+
+async def test_create_workout_without_id_cannot_schedule(mock_hass: MagicMock):
+    async_setup_services(mock_hass)
+    handler = _get_handler(mock_hass, "create_workout")
+    client = _get_client(mock_hass)
+    client.create_workout.return_value = {}
+
+    call = MagicMock()
+    call.data = {"workout": _WORKOUT, "date": date(2026, 10, 16)}
+    with pytest.raises(HomeAssistantError) as exc:
+        await handler(call)
+    assert exc.value.translation_key == "create_workout_failed"
+    client.schedule_workout.assert_not_awaited()
+
+
+async def test_schedule_workout_response(mock_hass: MagicMock):
+    async_setup_services(mock_hass)
+    handler = _get_handler(mock_hass, "schedule_workout")
+    client = _get_client(mock_hass)
+    client.schedule_workout.return_value = {"workoutScheduleId": 7, "workout": {}}
+
+    call = MagicMock()
+    call.data = {"workout_id": 42, "date": date(2026, 10, 16)}
+    call.return_response = True
+    assert await handler(call) == {"schedule_id": 7, "workout_id": 42, "date": "2026-10-16"}
+    client.schedule_workout.assert_awaited_once_with(
+        workout_id=42, schedule_date=date(2026, 10, 16)
+    )
+    _activity_refresh(mock_hass).assert_awaited_once()
+
+
+@pytest.mark.parametrize(
+    ("service", "data", "method", "kwargs"),
+    [
+        (
+            "update_workout",
+            {"workout_id": 42, "workout": _WORKOUT},
+            "update_workout",
+            {"workout_id": 42, "workout": _WORKOUT},
+        ),
+        ("delete_workout", {"workout_id": 42}, "delete_workout", {"workout_id": 42}),
+        (
+            "unschedule_workout",
+            {"schedule_id": 7},
+            "unschedule_workout",
+            {"scheduled_workout_id": 7},
+        ),
+    ],
+)
+async def test_workout_writes_call_client_and_refresh(mock_hass, service, data, method, kwargs):
+    async_setup_services(mock_hass)
+    handler = _get_handler(mock_hass, service)
+    client = _get_client(mock_hass)
+
+    call = MagicMock()
+    call.data = data
+    await handler(call)
+
+    getattr(client, method).assert_awaited_once_with(**kwargs)
+    _activity_refresh(mock_hass).assert_awaited_once()
+
+
+async def test_workout_error_wrapped_without_refresh(mock_hass: MagicMock):
+    async_setup_services(mock_hass)
+    handler = _get_handler(mock_hass, "delete_workout")
+    client = _get_client(mock_hass)
+    client.delete_workout.side_effect = GarminConnectError("boom")
+
+    call = MagicMock()
+    call.data = {"workout_id": 42}
+    with pytest.raises(HomeAssistantError) as exc:
+        await handler(call)
+    assert exc.value.translation_key == "delete_workout_failed"
+    _activity_refresh(mock_hass).assert_not_awaited()
+
+
+def test_workout_schema_accepts_json_string():
+    data = CREATE_WORKOUT_SCHEMA({"workout": '{"workoutName": "Easy"}', "date": "2026-10-16"})
+    assert data["workout"] == {"workoutName": "Easy"}
+    assert data["date"] == date(2026, 10, 16)
+
+
+@pytest.mark.parametrize("workout", ["not json", "[1, 2]", [1, 2], 5])
+def test_workout_schema_rejects_non_objects(workout):
+    with pytest.raises(vol.Invalid):
+        CREATE_WORKOUT_SCHEMA({"workout": workout})
+
+
+@pytest.mark.parametrize("workout_id", [0, -1, "abc", 1.9, "1.9", True, None, "²", "٤٢"])
+def test_workout_ids_reject_values_int_would_change(workout_id):
+    """1.9 or True must not silently become workout 1."""
+    with pytest.raises(vol.Invalid):
+        DELETE_WORKOUT_SCHEMA({"workout_id": workout_id})
+
+
+@pytest.mark.parametrize("workout_id", [42, 42.0, "42", " 42 "])
+def test_workout_ids_accept_whole_numbers(workout_id):
+    assert DELETE_WORKOUT_SCHEMA({"workout_id": workout_id})["workout_id"] == 42
+
+
+async def test_create_workout_schedule_failure_names_created_workout(mock_hass: MagicMock):
+    """The workout exists after a failed schedule; say so and refresh anyway."""
+    async_setup_services(mock_hass)
+    handler = _get_handler(mock_hass, "create_workout")
+    client = _get_client(mock_hass)
+    client.create_workout.return_value = {"workoutId": 42}
+    client.schedule_workout.side_effect = GarminConnectError("boom")
+
+    call = MagicMock()
+    call.data = {"workout": _WORKOUT, "date": date(2026, 10, 16)}
+    with pytest.raises(HomeAssistantError) as exc:
+        await handler(call)
+    assert exc.value.translation_key == "create_workout_schedule_failed"
+    assert exc.value.translation_placeholders["workout_id"] == "42"
+    _activity_refresh(mock_hass).assert_awaited_once()
+
+
+async def test_create_workout_without_id_fails(mock_hass: MagicMock):
+    async_setup_services(mock_hass)
+    handler = _get_handler(mock_hass, "create_workout")
+    _get_client(mock_hass).create_workout.return_value = {}
+
+    call = MagicMock()
+    call.data = {"workout": _WORKOUT}
+    with pytest.raises(HomeAssistantError) as exc:
+        await handler(call)
+    assert exc.value.translation_key == "create_workout_failed"
+
+
+async def test_schedule_workout_without_id_fails(mock_hass: MagicMock):
+    """A 204/empty answer must not report success with schedule_id None."""
+    async_setup_services(mock_hass)
+    handler = _get_handler(mock_hass, "schedule_workout")
+    _get_client(mock_hass).schedule_workout.return_value = {}
+
+    call = MagicMock()
+    call.data = {"workout_id": 42, "date": date(2026, 10, 16)}
+    with pytest.raises(HomeAssistantError) as exc:
+        await handler(call)
+    assert exc.value.translation_key == "schedule_workout_failed"
