@@ -11,6 +11,6 @@ pytest-cov
 pytest-homeassistant-custom-component
 pyupgrade==3.22.0
 ruff==0.17.0
-types-pytz==2026.4.0.20260926
+types-pytz==2026.5.0.20261006
 types-requests
 vulture==2.16
