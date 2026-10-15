@@ -6,7 +6,7 @@ import logging
 from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any
 
-import voluptuous as vol
+import probatio as vol
 from aiohttp import ClientError
 from ha_garmin import (
     GarminAuth,
