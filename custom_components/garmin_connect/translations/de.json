@@ -286,6 +286,49 @@
         "timestamp": { "name": "Zeitstempel", "description": "Zeitpunkt der Erfassung (ISO 8601). Standard ist jetzt." }
       }
     },
+    "create_workout": {
+      "name": "Training erstellen",
+      "description": "Ein Training in der Garmin Connect-Bibliothek erstellen und optional an einem Datum einplanen. Gibt workout_id (und schedule_id) zurück.",
+      "fields": {
+        "entity_id": { "name": "Garmin Connect-Entität", "description": "Optionale Garmin Connect-Entität, deren Konto das Training gehört." },
+        "workout": { "name": "Training", "description": "Garmin-Trainings-JSON (workoutName, sportType, workoutSegments) als Objekt oder JSON-String." },
+        "date": { "name": "Datum", "description": "Optionales Datum, an dem das Training in den Trainingskalender eingetragen wird." }
+      }
+    },
+    "update_workout": {
+      "name": "Training aktualisieren",
+      "description": "Ein bestehendes Training ersetzen. ID und Kalendereinträge bleiben erhalten.",
+      "fields": {
+        "entity_id": { "name": "Garmin Connect-Entität", "description": "Optionale Garmin Connect-Entität, deren Konto das Training gehört." },
+        "workout_id": { "name": "Trainings-ID", "description": "Garmin-Trainings-ID." },
+        "workout": { "name": "Training", "description": "Vollständiges Garmin-Trainings-JSON als Objekt oder JSON-String." }
+      }
+    },
+    "delete_workout": {
+      "name": "Training löschen",
+      "description": "Ein Training aus der Garmin Connect-Bibliothek löschen, einschließlich seiner Kalendereinträge.",
+      "fields": {
+        "entity_id": { "name": "Garmin Connect-Entität", "description": "Optionale Garmin Connect-Entität, deren Konto das Training gehört." },
+        "workout_id": { "name": "Trainings-ID", "description": "Garmin-Trainings-ID." }
+      }
+    },
+    "schedule_workout": {
+      "name": "Training einplanen",
+      "description": "Ein Bibliothekstraining in den Garmin-Trainingskalender eintragen. Gibt schedule_id zurück.",
+      "fields": {
+        "entity_id": { "name": "Garmin Connect-Entität", "description": "Optionale Garmin Connect-Entität, deren Konto das Training gehört." },
+        "workout_id": { "name": "Trainings-ID", "description": "Garmin-Trainings-ID." },
+        "date": { "name": "Datum", "description": "Kalenderdatum für das Training." }
+      }
+    },
+    "unschedule_workout": {
+      "name": "Training ausplanen",
+      "description": "Ein Training aus dem Garmin-Trainingskalender entfernen, ohne es zu löschen.",
+      "fields": {
+        "entity_id": { "name": "Garmin Connect-Entität", "description": "Optionale Garmin Connect-Entität, deren Konto das Training gehört." },
+        "schedule_id": { "name": "Kalendereintrags-ID", "description": "ID des Kalendereintrags (schedule_id aus schedule_workout oder die id eines geplanten Trainings)." }
+      }
+    },
     "add_body_composition": {
       "name": "Körperzusammensetzung hinzufügen",
       "description": "Fügt Werte zur Körperzusammensetzung in Garmin Connect hinzu.",
@@ -360,6 +403,11 @@
     "add_blood_pressure_failed": { "message": "Blutdruck konnte nicht hinzugefügt werden: {error}" },
     "add_hydration_failed": { "message": "Flüssigkeitszufuhr konnte nicht erfasst werden: {error}" },
     "add_nutrition_failed": { "message": "Ernährungseintrag konnte nicht erfasst werden: {error}" },
+    "create_workout_failed": { "message": "Training konnte nicht erstellt werden: {error}" },
+    "update_workout_failed": { "message": "Training konnte nicht aktualisiert werden: {error}" },
+    "delete_workout_failed": { "message": "Training konnte nicht gelöscht werden: {error}" },
+    "schedule_workout_failed": { "message": "Training konnte nicht eingeplant werden: {error}" },
+    "unschedule_workout_failed": { "message": "Training konnte nicht ausgeplant werden: {error}" },
     "add_body_composition_failed": { "message": "Körperzusammensetzung konnte nicht hinzugefügt werden: {error}" },
     "add_gear_to_activity_failed": { "message": "Ausrüstung konnte nicht zur Aktivität hinzugefügt werden: {error}" },
     "create_activity_failed": { "message": "Aktivität konnte nicht erstellt werden: {error}" },

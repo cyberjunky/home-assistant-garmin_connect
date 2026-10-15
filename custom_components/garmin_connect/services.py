@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+import json
+from datetime import date, datetime
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from zoneinfo import ZoneInfo
 
 import probatio as vol
@@ -39,6 +40,11 @@ SERVICE_DOWNLOAD_ACTIVITY = "download_activity"
 SERVICE_ADD_GEAR_TO_ACTIVITY = "add_gear_to_activity"
 SERVICE_ADD_HYDRATION = "add_hydration"
 SERVICE_ADD_NUTRITION = "add_nutrition_log"
+SERVICE_CREATE_WORKOUT = "create_workout"
+SERVICE_UPDATE_WORKOUT = "update_workout"
+SERVICE_DELETE_WORKOUT = "delete_workout"
+SERVICE_SCHEDULE_WORKOUT = "schedule_workout"
+SERVICE_UNSCHEDULE_WORKOUT = "unschedule_workout"
 
 # Errors the library raises for bad input (unparsable timestamp, value out of
 # its own limits, unsupported file) on top of its API/network errors.
@@ -195,12 +201,80 @@ ADD_NUTRITION_SCHEMA = vol.Schema(
 )
 
 
+def _workout_json(value: Any) -> dict[str, Any]:
+    """Accept a workout as an object, or as a JSON string (e.g. from a template)."""
+    if isinstance(value, str):
+        try:
+            value = json.loads(value)
+        except ValueError as err:
+            raise vol.Invalid(f"invalid workout JSON: {err}") from err
+    if not isinstance(value, dict):
+        raise vol.Invalid("workout must be a JSON object")
+    return value
+
+
+_POSITIVE_ID = vol.All(vol.Coerce(int), vol.Range(min=1))
+
+CREATE_WORKOUT_SCHEMA = vol.Schema(
+    {
+        vol.Optional("entity_id"): cv.entity_id,
+        vol.Required("workout"): _workout_json,
+        vol.Optional("date"): cv.date,
+    }
+)
+
+UPDATE_WORKOUT_SCHEMA = vol.Schema(
+    {
+        vol.Optional("entity_id"): cv.entity_id,
+        vol.Required("workout_id"): _POSITIVE_ID,
+        vol.Required("workout"): _workout_json,
+    }
+)
+
+DELETE_WORKOUT_SCHEMA = vol.Schema(
+    {
+        vol.Optional("entity_id"): cv.entity_id,
+        vol.Required("workout_id"): _POSITIVE_ID,
+    }
+)
+
+SCHEDULE_WORKOUT_SCHEMA = vol.Schema(
+    {
+        vol.Optional("entity_id"): cv.entity_id,
+        vol.Required("workout_id"): _POSITIVE_ID,
+        vol.Required("date"): cv.date,
+    }
+)
+
+UNSCHEDULE_WORKOUT_SCHEMA = vol.Schema(
+    {
+        vol.Optional("entity_id"): cv.entity_id,
+        vol.Required("schedule_id"): _POSITIVE_ID,
+    }
+)
+
+
+def _schedule_id(result: dict[str, Any]) -> int | None:
+    """Return the calendar entry ID from a schedule_workout response."""
+    value = result.get("workoutScheduleId") or result.get("id")
+    return int(value) if isinstance(value, int | str) and str(value).isdigit() else None
+
+
 def _get_client(
     hass: HomeAssistant,
     *,
     entity_id: str | None = None,
 ) -> GarminClient:
     """Get the Garmin client for a targeted or fallback config entry."""
+    return _get_coordinators(hass, entity_id=entity_id).core.client
+
+
+def _get_coordinators(
+    hass: HomeAssistant,
+    *,
+    entity_id: str | None = None,
+) -> GarminConnectCoordinators:
+    """Get the coordinators of a targeted or fallback config entry."""
     entries = hass.config_entries.async_entries(DOMAIN)
     if not entries:
         raise HomeAssistantError(
@@ -248,7 +322,7 @@ def _get_client(
         )
 
     coordinators: GarminConnectCoordinators = entry.runtime_data
-    return coordinators.core.client
+    return coordinators
 
 
 @callback
@@ -532,6 +606,91 @@ def async_setup_services(hass: HomeAssistant) -> None:
                 translation_placeholders={"error": str(err)},
             ) from err
 
+    async def _workout_call(call: ServiceCall, error_key: str, method: str, **kwargs: Any) -> Any:
+        """Run a workout write and refresh activity data so the calendar updates."""
+        coordinators = _get_coordinators(hass, entity_id=call.data.get("entity_id"))
+        try:
+            result = await getattr(coordinators.core.client, method)(**kwargs)
+        except _SERVICE_ERRORS as err:
+            raise HomeAssistantError(
+                translation_domain=DOMAIN,
+                translation_key=error_key,
+                translation_placeholders={"error": str(err)},
+            ) from err
+        await coordinators.activity.async_request_refresh()
+        return result
+
+    async def handle_create_workout(call: ServiceCall) -> ServiceResponse:
+        """Handle create_workout; optionally schedule it in the same call."""
+        coordinators = _get_coordinators(hass, entity_id=call.data.get("entity_id"))
+        client = coordinators.core.client
+        schedule_date: date | None = call.data.get("date")
+        try:
+            created = await client.create_workout(call.data["workout"])
+            workout_id = created.get("workoutId")
+            schedule_id = None
+            if schedule_date is not None:
+                if workout_id is None:
+                    raise GarminConnectError("Garmin returned no workoutId")
+                schedule_id = _schedule_id(await client.schedule_workout(workout_id, schedule_date))
+        except _SERVICE_ERRORS as err:
+            raise HomeAssistantError(
+                translation_domain=DOMAIN,
+                translation_key="create_workout_failed",
+                translation_placeholders={"error": str(err)},
+            ) from err
+        await coordinators.activity.async_request_refresh()
+
+        if not call.return_response:
+            return None
+        response: dict[str, Any] = {"workout_id": workout_id}
+        if schedule_date is not None:
+            response |= {"schedule_id": schedule_id, "date": schedule_date.isoformat()}
+        return response
+
+    async def handle_update_workout(call: ServiceCall) -> None:
+        """Handle update_workout service call."""
+        await _workout_call(
+            call,
+            "update_workout_failed",
+            "update_workout",
+            workout_id=call.data["workout_id"],
+            workout=call.data["workout"],
+        )
+
+    async def handle_delete_workout(call: ServiceCall) -> None:
+        """Handle delete_workout service call."""
+        await _workout_call(
+            call, "delete_workout_failed", "delete_workout", workout_id=call.data["workout_id"]
+        )
+
+    async def handle_schedule_workout(call: ServiceCall) -> ServiceResponse:
+        """Handle schedule_workout service call."""
+        schedule_date: date = call.data["date"]
+        result = await _workout_call(
+            call,
+            "schedule_workout_failed",
+            "schedule_workout",
+            workout_id=call.data["workout_id"],
+            schedule_date=schedule_date,
+        )
+        if not call.return_response:
+            return None
+        return {
+            "schedule_id": _schedule_id(result or {}),
+            "workout_id": call.data["workout_id"],
+            "date": schedule_date.isoformat(),
+        }
+
+    async def handle_unschedule_workout(call: ServiceCall) -> None:
+        """Handle unschedule_workout service call."""
+        await _workout_call(
+            call,
+            "unschedule_workout_failed",
+            "unschedule_workout",
+            scheduled_workout_id=call.data["schedule_id"],
+        )
+
     hass.services.async_register(
         DOMAIN,
         SERVICE_SET_ACTIVE_GEAR,
@@ -586,4 +745,36 @@ def async_setup_services(hass: HomeAssistant) -> None:
         SERVICE_ADD_NUTRITION,
         handle_add_nutrition,
         schema=ADD_NUTRITION_SCHEMA,
+    )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_CREATE_WORKOUT,
+        handle_create_workout,
+        schema=CREATE_WORKOUT_SCHEMA,
+        supports_response=SupportsResponse.OPTIONAL,
+    )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_UPDATE_WORKOUT,
+        handle_update_workout,
+        schema=UPDATE_WORKOUT_SCHEMA,
+    )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_DELETE_WORKOUT,
+        handle_delete_workout,
+        schema=DELETE_WORKOUT_SCHEMA,
+    )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_SCHEDULE_WORKOUT,
+        handle_schedule_workout,
+        schema=SCHEDULE_WORKOUT_SCHEMA,
+        supports_response=SupportsResponse.OPTIONAL,
+    )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_UNSCHEDULE_WORKOUT,
+        handle_unschedule_workout,
+        schema=UNSCHEDULE_WORKOUT_SCHEMA,
     )

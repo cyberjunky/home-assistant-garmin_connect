@@ -562,6 +562,41 @@ data:
   entity_id: sensor.garmin_connect_my_running_shoes
 ```
 
+### Workouts
+
+Create, change and schedule structured workouts so they show up on your watch. The actions take Garmin's own workout JSON (the same format as [python-garminconnect](https://github.com/cyberjunky/python-garminconnect)), as an object or a JSON string from a template. Workout IDs are in the `last_workouts` attributes of the Last workouts sensor; schedule IDs are the `id` of the entries in the `upcoming` attribute of the Next scheduled workout sensor.
+
+| Action | Parameters | Response |
+|--------|------------|----------|
+| `garmin_connect.create_workout` | `workout`, optional `date` to schedule it right away | `workout_id`, plus `schedule_id` and `date` when scheduled |
+| `garmin_connect.update_workout` | `workout_id`, `workout` (complete JSON; keeps ID and schedules) | – |
+| `garmin_connect.delete_workout` | `workout_id` (also removes its calendar entries) | – |
+| `garmin_connect.schedule_workout` | `workout_id`, `date` | `schedule_id`, `workout_id`, `date` |
+| `garmin_connect.unschedule_workout` | `schedule_id` (keeps the workout) | – |
+
+All take an optional `entity_id` to pick the account.
+
+```yaml
+action: garmin_connect.create_workout
+data:
+  date: "{{ (now() + timedelta(days=1)).date() }}"
+  workout:
+    workoutName: "Easy 30 min"
+    sportType: { sportTypeId: 1, sportTypeKey: running }
+    workoutSegments:
+      - segmentOrder: 1
+        sportType: { sportTypeId: 1, sportTypeKey: running }
+        workoutSteps:
+          - type: ExecutableStepDTO
+            stepOrder: 1
+            stepType: { stepTypeId: 3, stepTypeKey: interval }
+            endCondition: { conditionTypeId: 2, conditionTypeKey: time }
+            endConditionValue: 1800
+            targetType: { workoutTargetTypeId: 4, workoutTargetTypeKey: heart.rate.zone }
+            zoneNumber: 2
+response_variable: created
+```
+
 ## Automation Examples
 
 ### Sync Withings scale data to Garmin
