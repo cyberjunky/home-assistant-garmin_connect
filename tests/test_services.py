@@ -4,8 +4,8 @@ from datetime import UTC, datetime
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import probatio as vol
 import pytest
-import voluptuous as vol
 from aiohttp import ClientError
 from ha_garmin import GarminConnectError
 from homeassistant.exceptions import HomeAssistantError
