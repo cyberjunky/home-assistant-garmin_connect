@@ -71,6 +71,16 @@ def test_event_from_goal_returns_none_without_date() -> None:
     assert _event_from_goal({"eventName": "5K Plan"}) is None
 
 
+def test_calendar_unavailable_until_first_fetch() -> None:
+    coord = MagicMock()
+    coord.last_update_success = True
+    coord.data = None
+    calendar = GarminScheduledWorkoutsCalendar(coord, "entry_id")
+    assert calendar.available is False
+    coord.data = mock_activity_data()
+    assert calendar.available is True
+
+
 def test_calendar_event_property_uses_next_scheduled_workout() -> None:
     """The entity's `event` (current/next) mirrors nextScheduledWorkout when
     it's sooner than the goal event."""

@@ -1869,7 +1869,7 @@ async def async_setup_entry(
 
     # One-time migration: update gear sensor unique_ids from the old name-slug
     # format to the UUID-based format.
-    _async_migrate_gear_unique_ids(ent_reg, entry.entry_id, coordinators.gear.data or {})
+    gear_migrated = False
 
     # Dynamic gear sensors: one per gear item, added as gear appears and
     # removed from the registry once Garmin no longer lists it.
@@ -1878,7 +1878,11 @@ async def async_setup_entry(
     @callback
     def _async_sync_gear() -> list[GarminConnectGearSensor]:
         """Return sensors for gear not seen before; drop entities for gear that is gone."""
+        nonlocal gear_migrated
         gear_stats = (coordinators.gear.data or {}).get("gearStats") or []
+        if not gear_migrated and gear_stats:
+            _async_migrate_gear_unique_ids(ent_reg, entry.entry_id, coordinators.gear.data)
+            gear_migrated = True
         current: dict[str, str] = {}
         for gear_stat in gear_stats:
             gear_uuid = gear_stat.get("uuid") or gear_stat.get("gearUuid", "")
@@ -1999,6 +2003,15 @@ class GarminConnectSensor(CoordinatorEntity[BaseGarminCoordinator], RestoreSenso
             self._last_known_value = cast(
                 str | int | float | datetime.datetime | None, last.native_value
             )
+
+    @property
+    def available(self) -> bool:
+        """Unavailable until the first fetch, unless a restored value can be shown."""
+        if not super().available:
+            return False
+        if self.coordinator.data is not None:
+            return True
+        return self.entity_description.preserve_value and self._last_known_value is not None
 
     @property
     def native_value(self) -> str | int | float | datetime.datetime | None:

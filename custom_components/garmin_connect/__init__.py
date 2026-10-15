@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import asyncio
 import logging
 from datetime import timedelta
 from pathlib import Path
@@ -214,19 +213,23 @@ async def async_setup_entry(hass: HomeAssistant, entry: GarminConnectConfigEntry
         is_cn=is_cn,
     )
 
-    # Core must succeed (raises ConfigEntryNotReady/AuthFailed otherwise); the
-    # other domains may fail individually without blocking setup.
+    # Core must succeed (raises ConfigEntryNotReady/AuthFailed otherwise; a
+    # stalled fetch hits UPDATE_TIMEOUT and becomes ConfigEntryNotReady too).
     await coordinators.core.async_config_entry_first_refresh()
-    await asyncio.gather(
-        *(coord.async_refresh() for coord in coordinators if coord is not coordinators.core),
-        return_exceptions=True,
-    )
 
     entry.runtime_data = coordinators
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
     entry.async_on_unload(entry.add_update_listener(async_options_update_listener))
+
+    # Register entities and their listeners before data arrives. Entry-owned
+    # background tasks do not hold HA startup open and are cancelled on unload.
+    for coord in coordinators:
+        if coord is not coordinators.core:
+            entry.async_create_background_task(
+                hass, coord.async_refresh(), f"Garmin initial {coord.data_name} refresh"
+            )
 
     return True
 

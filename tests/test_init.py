@@ -1,5 +1,6 @@
 """Tests for Garmin Connect integration setup and migration."""
 
+import asyncio
 from contextlib import ExitStack
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -189,6 +190,51 @@ async def test_setup_entry_core_failure_propagates() -> None:
         _stack_coordinators(stack, coord)
         with pytest.raises(ConfigEntryNotReady):
             await async_setup_entry(hass, entry)
+
+
+async def test_optional_refresh_does_not_block_startup(
+    hass, mock_config_entry, mock_auth, mock_client
+):
+    """Setup returns while optional refreshes are still pending."""
+    started = asyncio.Event()
+    release = asyncio.Event()
+    finished = asyncio.Event()
+    optional = _coord_mock()
+    optional.data_name = "training"
+
+    async def slow_refresh():
+        """Keep optional work pending until the test releases it."""
+        started.set()
+        await release.wait()
+        finished.set()
+
+    optional.async_refresh.side_effect = slow_refresh
+    core = _coord_mock()
+    with ExitStack() as stack:
+        _stack_coordinators(stack, core)
+        stack.enter_context(
+            patch("custom_components.garmin_connect.TrainingCoordinator", return_value=optional)
+        )
+
+        async def forward_platforms(*args):
+            """Optional refreshes must start only after entity listeners exist."""
+            optional.async_refresh.assert_not_awaited()
+
+        stack.enter_context(
+            patch.object(
+                hass.config_entries,
+                "async_forward_entry_setups",
+                new=AsyncMock(side_effect=forward_platforms),
+            )
+        )
+        assert await asyncio.wait_for(async_setup_entry(hass, mock_config_entry), timeout=1)
+        await asyncio.wait_for(started.wait(), timeout=1)
+        # HA's startup barrier deliberately excludes entry background tasks.
+        await asyncio.wait_for(hass.async_block_till_done(), timeout=1)
+        assert not finished.is_set()
+
+        release.set()
+        await asyncio.wait_for(finished.wait(), timeout=1)
 
 
 # ── Options listener ──────────────────────────────────────────────────────────
