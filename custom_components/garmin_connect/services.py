@@ -255,9 +255,13 @@ UNSCHEDULE_WORKOUT_SCHEMA = vol.Schema(
 
 
 def _schedule_id(result: dict[str, Any]) -> int | None:
-    """Return the calendar entry ID from a schedule_workout response."""
-    value = result.get("workoutScheduleId") or result.get("id")
-    return int(value) if isinstance(value, int | str) and str(value).isdigit() else None
+    """Return the calendar entry ID from a schedule_workout response.
+
+    Garmin answers {"workoutScheduleId": ..., "workout": {...}}; the same ID is
+    the "id" of the calendar item and what unschedule_workout takes.
+    """
+    value = result.get("workoutScheduleId")
+    return value if isinstance(value, int) and not isinstance(value, bool) else None
 
 
 def _get_client(

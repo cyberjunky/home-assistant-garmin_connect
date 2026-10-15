@@ -1016,7 +1016,7 @@ async def test_schedule_workout_response(mock_hass: MagicMock):
     async_setup_services(mock_hass)
     handler = _get_handler(mock_hass, "schedule_workout")
     client = _get_client(mock_hass)
-    client.schedule_workout.return_value = {"id": "7"}
+    client.schedule_workout.return_value = {"workoutScheduleId": 7, "workout": {}}
 
     call = MagicMock()
     call.data = {"workout_id": 42, "date": date(2026, 10, 16)}
