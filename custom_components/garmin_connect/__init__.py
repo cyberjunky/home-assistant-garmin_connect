@@ -198,7 +198,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: GarminConnectConfigEntry
     auth.di_refresh_token = entry.data[CONF_REFRESH_TOKEN]
     auth.di_client_id = entry.data[CONF_CLIENT_ID]
 
-    client = GarminClient(auth, is_cn=is_cn)
+    # HA's zone is the fallback for Garmin's calendar day; the process zone
+    # (often UTC in containers) must not decide when daily totals roll over.
+    client = GarminClient(auth, is_cn=is_cn, timezone=hass.config.time_zone)
 
     coordinators = GarminConnectCoordinators(
         core=CoreCoordinator(hass, entry, client, auth),
