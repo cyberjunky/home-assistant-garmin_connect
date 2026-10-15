@@ -9,7 +9,7 @@ pytest
 pytest-asyncio
 pytest-cov
 pytest-homeassistant-custom-component
-pyupgrade==3.21.2
+pyupgrade==3.22.0
 ruff==0.17.0
 types-pytz==2026.4.0.20260926
 types-requests
