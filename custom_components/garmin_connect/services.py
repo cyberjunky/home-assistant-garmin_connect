@@ -225,7 +225,7 @@ def _positive_id(value: Any) -> int:
         if not value.is_integer():
             raise vol.Invalid("ID must be a positive integer")
         value = int(value)
-    elif isinstance(value, str) and value.strip().isdigit():
+    elif isinstance(value, str) and value.strip().isascii() and value.strip().isdigit():
         value = int(value.strip())
     if not isinstance(value, int) or value < 1:
         raise vol.Invalid("ID must be a positive integer")

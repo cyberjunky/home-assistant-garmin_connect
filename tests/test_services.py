@@ -1085,7 +1085,7 @@ def test_workout_schema_rejects_non_objects(workout):
         CREATE_WORKOUT_SCHEMA({"workout": workout})
 
 
-@pytest.mark.parametrize("workout_id", [0, -1, "abc", 1.9, "1.9", True, None])
+@pytest.mark.parametrize("workout_id", [0, -1, "abc", 1.9, "1.9", True, None, "²", "٤٢"])
 def test_workout_ids_reject_values_int_would_change(workout_id):
     """1.9 or True must not silently become workout 1."""
     with pytest.raises(vol.Invalid):
