@@ -827,6 +827,7 @@
       "message": "Nie udało się zapisać wpisu żywieniowego: {error}"
     },
     "create_workout_failed": { "message": "Nie udało się utworzyć treningu: {error}" },
+    "create_workout_schedule_failed": { "message": "Trening {workout_id} został utworzony, ale nie udało się go zaplanować: {error}" },
     "update_workout_failed": { "message": "Nie udało się zaktualizować treningu: {error}" },
     "delete_workout_failed": { "message": "Nie udało się usunąć treningu: {error}" },
     "schedule_workout_failed": { "message": "Nie udało się zaplanować treningu: {error}" },

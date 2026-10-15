@@ -422,6 +422,7 @@
     "upload_activity_failed": { "message": "Failed to upload activity: {error}" },
     "add_nutrition_failed": { "message": "Failed to log nutrition: {error}" },
     "create_workout_failed": { "message": "Failed to create workout: {error}" },
+    "create_workout_schedule_failed": { "message": "Workout {workout_id} was created but could not be scheduled: {error}" },
     "update_workout_failed": { "message": "Failed to update workout: {error}" },
     "delete_workout_failed": { "message": "Failed to delete workout: {error}" },
     "schedule_workout_failed": { "message": "Failed to schedule workout: {error}" },

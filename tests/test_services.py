@@ -1085,7 +1085,55 @@ def test_workout_schema_rejects_non_objects(workout):
         CREATE_WORKOUT_SCHEMA({"workout": workout})
 
 
-@pytest.mark.parametrize("workout_id", [0, -1, "abc"])
-def test_workout_ids_must_be_positive(workout_id):
+@pytest.mark.parametrize("workout_id", [0, -1, "abc", 1.9, "1.9", True, None])
+def test_workout_ids_reject_values_int_would_change(workout_id):
+    """1.9 or True must not silently become workout 1."""
     with pytest.raises(vol.Invalid):
         DELETE_WORKOUT_SCHEMA({"workout_id": workout_id})
+
+
+@pytest.mark.parametrize("workout_id", [42, 42.0, "42", " 42 "])
+def test_workout_ids_accept_whole_numbers(workout_id):
+    assert DELETE_WORKOUT_SCHEMA({"workout_id": workout_id})["workout_id"] == 42
+
+
+async def test_create_workout_schedule_failure_names_created_workout(mock_hass: MagicMock):
+    """The workout exists after a failed schedule; say so and refresh anyway."""
+    async_setup_services(mock_hass)
+    handler = _get_handler(mock_hass, "create_workout")
+    client = _get_client(mock_hass)
+    client.create_workout.return_value = {"workoutId": 42}
+    client.schedule_workout.side_effect = GarminConnectError("boom")
+
+    call = MagicMock()
+    call.data = {"workout": _WORKOUT, "date": date(2026, 10, 16)}
+    with pytest.raises(HomeAssistantError) as exc:
+        await handler(call)
+    assert exc.value.translation_key == "create_workout_schedule_failed"
+    assert exc.value.translation_placeholders["workout_id"] == "42"
+    _activity_refresh(mock_hass).assert_awaited_once()
+
+
+async def test_create_workout_without_id_fails(mock_hass: MagicMock):
+    async_setup_services(mock_hass)
+    handler = _get_handler(mock_hass, "create_workout")
+    _get_client(mock_hass).create_workout.return_value = {}
+
+    call = MagicMock()
+    call.data = {"workout": _WORKOUT}
+    with pytest.raises(HomeAssistantError) as exc:
+        await handler(call)
+    assert exc.value.translation_key == "create_workout_failed"
+
+
+async def test_schedule_workout_without_id_fails(mock_hass: MagicMock):
+    """A 204/empty answer must not report success with schedule_id None."""
+    async_setup_services(mock_hass)
+    handler = _get_handler(mock_hass, "schedule_workout")
+    _get_client(mock_hass).schedule_workout.return_value = {}
+
+    call = MagicMock()
+    call.data = {"workout_id": 42, "date": date(2026, 10, 16)}
+    with pytest.raises(HomeAssistantError) as exc:
+        await handler(call)
+    assert exc.value.translation_key == "schedule_workout_failed"

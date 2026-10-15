@@ -404,6 +404,7 @@
     "add_hydration_failed": { "message": "Flüssigkeitszufuhr konnte nicht erfasst werden: {error}" },
     "add_nutrition_failed": { "message": "Ernährungseintrag konnte nicht erfasst werden: {error}" },
     "create_workout_failed": { "message": "Training konnte nicht erstellt werden: {error}" },
+    "create_workout_schedule_failed": { "message": "Training {workout_id} wurde erstellt, konnte aber nicht eingeplant werden: {error}" },
     "update_workout_failed": { "message": "Training konnte nicht aktualisiert werden: {error}" },
     "delete_workout_failed": { "message": "Training konnte nicht gelöscht werden: {error}" },
     "schedule_workout_failed": { "message": "Training konnte nicht eingeplant werden: {error}" },

@@ -213,7 +213,24 @@ def _workout_json(value: Any) -> dict[str, Any]:
     return value
 
 
-_POSITIVE_ID = vol.All(vol.Coerce(int), vol.Range(min=1))
+def _positive_id(value: Any) -> int:
+    """Validate a Garmin ID without int() silently changing it.
+
+    Accepts ints, whole floats (the UI number selector sends 42.0) and digit
+    strings; rejects bools, fractions like 1.9 and non-positive values.
+    """
+    if isinstance(value, bool):
+        raise vol.Invalid("ID must be a positive integer")
+    if isinstance(value, float):
+        if not value.is_integer():
+            raise vol.Invalid("ID must be a positive integer")
+        value = int(value)
+    elif isinstance(value, str) and value.strip().isdigit():
+        value = int(value.strip())
+    if not isinstance(value, int) or value < 1:
+        raise vol.Invalid("ID must be a positive integer")
+    return value
+
 
 CREATE_WORKOUT_SCHEMA = vol.Schema(
     {
@@ -226,7 +243,7 @@ CREATE_WORKOUT_SCHEMA = vol.Schema(
 UPDATE_WORKOUT_SCHEMA = vol.Schema(
     {
         vol.Optional("entity_id"): cv.entity_id,
-        vol.Required("workout_id"): _POSITIVE_ID,
+        vol.Required("workout_id"): _positive_id,
         vol.Required("workout"): _workout_json,
     }
 )
@@ -234,14 +251,14 @@ UPDATE_WORKOUT_SCHEMA = vol.Schema(
 DELETE_WORKOUT_SCHEMA = vol.Schema(
     {
         vol.Optional("entity_id"): cv.entity_id,
-        vol.Required("workout_id"): _POSITIVE_ID,
+        vol.Required("workout_id"): _positive_id,
     }
 )
 
 SCHEDULE_WORKOUT_SCHEMA = vol.Schema(
     {
         vol.Optional("entity_id"): cv.entity_id,
-        vol.Required("workout_id"): _POSITIVE_ID,
+        vol.Required("workout_id"): _positive_id,
         vol.Required("date"): cv.date,
     }
 )
@@ -249,19 +266,21 @@ SCHEDULE_WORKOUT_SCHEMA = vol.Schema(
 UNSCHEDULE_WORKOUT_SCHEMA = vol.Schema(
     {
         vol.Optional("entity_id"): cv.entity_id,
-        vol.Required("schedule_id"): _POSITIVE_ID,
+        vol.Required("schedule_id"): _positive_id,
     }
 )
 
 
-def _schedule_id(result: dict[str, Any]) -> int | None:
-    """Return the calendar entry ID from a schedule_workout response.
+def _returned_id(result: Any, key: str) -> int:
+    """Return the positive integer ID Garmin sent back under ``key``.
 
-    Garmin answers {"workoutScheduleId": ..., "workout": {...}}; the same ID is
-    the "id" of the calendar item and what unschedule_workout takes.
+    schedule_workout answers {"workoutScheduleId": ..., "workout": {...}}; that
+    ID is also the calendar item "id" and what unschedule_workout takes.
     """
-    value = result.get("workoutScheduleId")
-    return value if isinstance(value, int) and not isinstance(value, bool) else None
+    value = result.get(key) if isinstance(result, dict) else None
+    if not isinstance(value, int) or isinstance(value, bool) or value < 1:
+        raise GarminConnectError(f"Garmin response has no {key}")
+    return value
 
 
 def _get_client(
@@ -630,20 +649,37 @@ def async_setup_services(hass: HomeAssistant) -> None:
         client = coordinators.core.client
         schedule_date: date | None = call.data.get("date")
         try:
-            created = await client.create_workout(call.data["workout"])
-            workout_id = created.get("workoutId")
-            schedule_id = None
-            if schedule_date is not None:
-                if workout_id is None:
-                    raise GarminConnectError("Garmin returned no workoutId")
-                schedule_id = _schedule_id(await client.schedule_workout(workout_id, schedule_date))
+            workout_id = _returned_id(
+                await client.create_workout(call.data["workout"]), "workoutId"
+            )
         except _SERVICE_ERRORS as err:
             raise HomeAssistantError(
                 translation_domain=DOMAIN,
                 translation_key="create_workout_failed",
                 translation_placeholders={"error": str(err)},
             ) from err
-        await coordinators.activity.async_request_refresh()
+
+        schedule_id = None
+        try:
+            if schedule_date is not None:
+                try:
+                    schedule_id = _returned_id(
+                        await client.schedule_workout(workout_id, schedule_date),
+                        "workoutScheduleId",
+                    )
+                except _SERVICE_ERRORS as err:
+                    # The workout exists now; name it so a retry can schedule it
+                    # instead of creating a duplicate.
+                    raise HomeAssistantError(
+                        translation_domain=DOMAIN,
+                        translation_key="create_workout_schedule_failed",
+                        translation_placeholders={
+                            "workout_id": str(workout_id),
+                            "error": str(err),
+                        },
+                    ) from err
+        finally:
+            await coordinators.activity.async_request_refresh()
 
         if not call.return_response:
             return None
@@ -678,10 +714,18 @@ def async_setup_services(hass: HomeAssistant) -> None:
             workout_id=call.data["workout_id"],
             schedule_date=schedule_date,
         )
+        try:
+            schedule_id = _returned_id(result, "workoutScheduleId")
+        except GarminConnectError as err:
+            raise HomeAssistantError(
+                translation_domain=DOMAIN,
+                translation_key="schedule_workout_failed",
+                translation_placeholders={"error": str(err)},
+            ) from err
         if not call.return_response:
             return None
         return {
-            "schedule_id": _schedule_id(result or {}),
+            "schedule_id": schedule_id,
             "workout_id": call.data["workout_id"],
             "date": schedule_date.isoformat(),
         }
