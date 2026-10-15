@@ -3,6 +3,7 @@
 from datetime import UTC, datetime
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
+from zoneinfo import ZoneInfo
 
 import probatio as vol
 import pytest
@@ -659,11 +660,33 @@ async def test_add_hydration_with_timestamp(mock_hass: MagicMock) -> None:
     call = MagicMock()
     call.data = {"value_in_ml": 500.0, "timestamp": datetime(2026, 1, 24, 10, 0, 0)}
 
+    # A naive timestamp is HA-local wall-clock time, not the process zone.
+    with patch(
+        "custom_components.garmin_connect.services.dt_util.get_default_time_zone",
+        return_value=ZoneInfo("Europe/Istanbul"),
+    ):
+        await handler(call)
+
+    client.set_hydration.assert_awaited_once_with(
+        value_in_ml=500.0,
+        timestamp="2026-01-24T10:00:00+03:00",
+    )
+
+
+async def test_add_hydration_keeps_aware_timestamp(mock_hass: MagicMock) -> None:
+    """An aware timestamp is forwarded unchanged."""
+    async_setup_services(mock_hass)
+    handler = _get_handler(mock_hass, "add_hydration")
+    client = _get_client(mock_hass)
+
+    call = MagicMock()
+    call.data = {"value_in_ml": 500.0, "timestamp": datetime(2026, 1, 24, 10, 0, tzinfo=UTC)}
+
     await handler(call)
 
     client.set_hydration.assert_awaited_once_with(
         value_in_ml=500.0,
-        timestamp="2026-01-24T10:00:00",
+        timestamp="2026-01-24T10:00:00+00:00",
     )
 
 
@@ -735,7 +758,11 @@ async def test_add_nutrition_log_all_fields(mock_hass: MagicMock) -> None:
         "timestamp": datetime(2026, 4, 22, 12, 30, 0),
     }
 
-    await handler(call)
+    with patch(
+        "custom_components.garmin_connect.services.dt_util.get_default_time_zone",
+        return_value=ZoneInfo("Europe/Istanbul"),
+    ):
+        await handler(call)
 
     client.add_nutrition_log.assert_awaited_once_with(
         calories=650.0,
@@ -743,7 +770,7 @@ async def test_add_nutrition_log_all_fields(mock_hass: MagicMock) -> None:
         protein=35.0,
         fat=20.0,
         name="Lunch",
-        timestamp="2026-04-22T12:30:00",
+        timestamp="2026-04-22T12:30:00+03:00",
     )
 
 

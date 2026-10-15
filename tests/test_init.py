@@ -155,6 +155,25 @@ async def test_setup_entry_restores_di_tokens_onto_auth() -> None:
     assert auth.di_client_id == ENTRY_DATA[CONF_CLIENT_ID]
 
 
+async def test_setup_entry_passes_ha_time_zone_to_client() -> None:
+    """The Garmin day must follow HA's zone, not the process zone."""
+    entry = MagicMock()
+    entry.data = dict(ENTRY_DATA)
+    entry.options = {}
+    hass = MagicMock()
+    hass.config.time_zone = "Europe/Istanbul"
+
+    coord = _coord_mock()
+    with ExitStack() as stack:
+        stack.enter_context(patch("custom_components.garmin_connect.GarminAuth"))
+        client_cls = stack.enter_context(patch("custom_components.garmin_connect.GarminClient"))
+        _stack_coordinators(stack, coord)
+        hass.config_entries.async_forward_entry_setups = AsyncMock()
+        await async_setup_entry(hass, entry)
+
+    assert client_cls.call_args.kwargs["timezone"] == "Europe/Istanbul"
+
+
 async def test_setup_entry_records_region_for_reload_detection() -> None:
     """The China-region flag the client was built with is kept on runtime_data."""
     entry = MagicMock()

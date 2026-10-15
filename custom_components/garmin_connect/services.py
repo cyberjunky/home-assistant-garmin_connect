@@ -66,8 +66,16 @@ def _upload_path_allowed(hass: HomeAssistant, path: Path) -> bool:
 
 
 def _iso_timestamp(value: datetime | None) -> str | None:
-    """Serialize a validated timestamp for the library, which parses ISO 8601."""
-    return value.isoformat() if value is not None else None
+    """Serialize a validated timestamp for the library, which parses ISO 8601.
+
+    A naive timestamp is wall-clock time in HA's zone; without one the library
+    defaults to now in the Garmin calendar zone.
+    """
+    if value is None:
+        return None
+    if value.tzinfo is None:
+        value = value.replace(tzinfo=dt_util.get_default_time_zone())
+    return value.isoformat()
 
 
 # Service schemas. Ranges mirror the selectors in services.yaml so YAML and
