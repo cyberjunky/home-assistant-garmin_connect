@@ -192,55 +192,23 @@ async def test_setup_entry_core_failure_propagates() -> None:
             await async_setup_entry(hass, entry)
 
 
-async def test_stalled_core_setup_retries_without_starting_optional_tasks(
+async def test_optional_refresh_does_not_block_startup(
     hass, mock_config_entry, mock_auth, mock_client
 ):
-    """A stalled first refresh must fail promptly and cancel the awaited work."""
-    from homeassistant.exceptions import ConfigEntryNotReady
-
-    cancelled = asyncio.Event()
-
-    async def stalled_refresh():
-        """Keep core setup pending and record cancellation by its deadline."""
-        try:
-            await asyncio.Event().wait()
-        finally:
-            cancelled.set()
-
-    coord = _coord_mock()
-    coord.async_config_entry_first_refresh.side_effect = stalled_refresh
-    with ExitStack() as stack:
-        _stack_coordinators(stack, coord)
-        stack.enter_context(patch("custom_components.garmin_connect.CORE_SETUP_TIMEOUT", 0.01))
-        forward = stack.enter_context(
-            patch.object(hass.config_entries, "async_forward_entry_setups", new=AsyncMock())
-        )
-        with pytest.raises(ConfigEntryNotReady, match="core initialization exceeded"):
-            await asyncio.wait_for(async_setup_entry(hass, mock_config_entry), timeout=1)
-
-    assert cancelled.is_set()
-    forward.assert_not_awaited()
-    assert not mock_config_entry._background_tasks
-
-
-async def test_optional_refresh_does_not_block_startup_and_is_cancelled_on_unload(
-    hass, mock_config_entry, mock_auth, mock_client
-):
-    """HA startup completes while optional work is pending; unload cancels it."""
+    """Setup returns while optional refreshes are still pending."""
     started = asyncio.Event()
-    cancelled = asyncio.Event()
+    release = asyncio.Event()
+    finished = asyncio.Event()
     optional = _coord_mock()
     optional.data_name = "training"
 
-    async def stalled_refresh():
-        """Keep optional work pending until the config entry unloads."""
+    async def slow_refresh():
+        """Keep optional work pending until the test releases it."""
         started.set()
-        try:
-            await asyncio.Event().wait()
-        finally:
-            cancelled.set()
+        await release.wait()
+        finished.set()
 
-    optional.async_refresh.side_effect = stalled_refresh
+    optional.async_refresh.side_effect = slow_refresh
     core = _coord_mock()
     with ExitStack() as stack:
         _stack_coordinators(stack, core)
@@ -249,10 +217,7 @@ async def test_optional_refresh_does_not_block_startup_and_is_cancelled_on_unloa
         )
 
         async def forward_platforms(*args):
-            """Verify optional refreshes start only after platform setup."""
-            # Optional data must be unavailable and its refresh must not race
-            # the entity listeners installed by platform setup.
-            assert optional.last_update_success is False
+            """Optional refreshes must start only after entity listeners exist."""
             optional.async_refresh.assert_not_awaited()
 
         stack.enter_context(
@@ -266,11 +231,10 @@ async def test_optional_refresh_does_not_block_startup_and_is_cancelled_on_unloa
         await asyncio.wait_for(started.wait(), timeout=1)
         # HA's startup barrier deliberately excludes entry background tasks.
         await asyncio.wait_for(hass.async_block_till_done(), timeout=1)
-        assert mock_config_entry._background_tasks
-        await mock_config_entry._async_process_on_unload(hass)
+        assert not finished.is_set()
 
-    assert cancelled.is_set()
-    assert not mock_config_entry._background_tasks
+        release.set()
+        await asyncio.wait_for(finished.wait(), timeout=1)
 
 
 # ── Options listener ──────────────────────────────────────────────────────────

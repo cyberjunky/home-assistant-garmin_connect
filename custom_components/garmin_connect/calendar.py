@@ -110,6 +110,11 @@ class GarminScheduledWorkoutsCalendar(CoordinatorEntity[ActivityCoordinator], Ca
         )
 
     @property
+    def available(self) -> bool:
+        """Unavailable until the first activity fetch completes."""
+        return super().available and self.coordinator.data is not None
+
+    @property
     def event(self) -> CalendarEvent | None:
         """Return the next upcoming event -- scheduled workout or goal event, whichever is sooner."""
         data = self.coordinator.data or {}

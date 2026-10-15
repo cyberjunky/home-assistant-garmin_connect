@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import asyncio
 import logging
 from datetime import timedelta
 from pathlib import Path
@@ -10,7 +9,7 @@ from pathlib import Path
 from ha_garmin import GarminAuth, GarminClient
 from homeassistant.components.frontend import add_extra_js_url
 from homeassistant.components.http import StaticPathConfig
-from homeassistant.config_entries import ConfigEntryAuthFailed, ConfigEntryNotReady
+from homeassistant.config_entries import ConfigEntryAuthFailed
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import config_validation as cv
@@ -45,8 +44,6 @@ from .coordinator import (
 from .services import async_setup_services
 
 _LOGGER = logging.getLogger(__name__)
-
-CORE_SETUP_TIMEOUT = 30
 
 PLATFORMS: list[Platform] = [Platform.SENSOR, Platform.CALENDAR]
 
@@ -216,20 +213,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: GarminConnectConfigEntry
         is_cn=is_cn,
     )
 
-    # Bound the complete first refresh, including requests, retries and token
-    # refresh. A per-request socket timeout does not bound this operation.
-    try:
-        async with asyncio.timeout(CORE_SETUP_TIMEOUT):
-            await coordinators.core.async_config_entry_first_refresh()
-    except TimeoutError as err:
-        raise ConfigEntryNotReady(
-            f"Garmin core initialization exceeded {CORE_SETUP_TIMEOUT} seconds; "
-            "Home Assistant will retry setup"
-        ) from err
-
-    for coord in coordinators:
-        if coord is not coordinators.core:
-            coord.last_update_success = False
+    # Core must succeed (raises ConfigEntryNotReady/AuthFailed otherwise; a
+    # stalled fetch hits UPDATE_TIMEOUT and becomes ConfigEntryNotReady too).
+    await coordinators.core.async_config_entry_first_refresh()
 
     entry.runtime_data = coordinators
 

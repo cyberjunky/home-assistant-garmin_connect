@@ -2005,6 +2005,15 @@ class GarminConnectSensor(CoordinatorEntity[BaseGarminCoordinator], RestoreSenso
             )
 
     @property
+    def available(self) -> bool:
+        """Unavailable until the first fetch, unless a restored value can be shown."""
+        if not super().available:
+            return False
+        if self.coordinator.data is not None:
+            return True
+        return self.entity_description.preserve_value and self._last_known_value is not None
+
+    @property
     def native_value(self) -> str | int | float | datetime.datetime | None:
         """Return the state of the sensor."""
         if not self.coordinator.data:

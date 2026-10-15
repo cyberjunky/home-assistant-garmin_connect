@@ -312,6 +312,34 @@ def test_preserve_value_false_returns_none_on_absent_data() -> None:
     assert sensor.native_value is None
 
 
+def test_available_waits_for_first_fetch() -> None:
+    """Before the first fetch only sensors with a restored value are available."""
+    coord = MagicMock()
+    coord.last_update_success = True
+    coord.data = None
+    plain = GarminConnectSensor(
+        coord, GarminConnectSensorEntityDescription(key="a", translation_key="a"), "entry_id"
+    )
+    kept = GarminConnectSensor(
+        coord,
+        GarminConnectSensorEntityDescription(key="b", translation_key="b", preserve_value=True),
+        "entry_id",
+    )
+    assert plain.available is False
+    assert kept.available is False
+
+    kept._last_known_value = 75
+    assert kept.available is True
+    assert kept.native_value == 75
+
+    coord.data = {"a": 1}
+    assert plain.available is True
+
+    coord.last_update_success = False
+    assert plain.available is False
+    assert kept.available is False
+
+
 # ── Coordinator-specific sensor correctness ───────────────────────────────────
 
 
