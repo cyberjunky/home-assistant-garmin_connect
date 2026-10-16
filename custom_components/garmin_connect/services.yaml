@@ -167,8 +167,8 @@ add_blood_pressure:
       required: true
       selector:
         number:
-          min: 60
-          max: 250
+          min: 70
+          max: 260
           step: 1
           unit_of_measurement: mmHg
     diastolic:
@@ -186,8 +186,8 @@ add_blood_pressure:
       required: false
       selector:
         number:
-          min: 30
-          max: 220
+          min: 20
+          max: 250
           step: 1
           unit_of_measurement: bpm
     timestamp:

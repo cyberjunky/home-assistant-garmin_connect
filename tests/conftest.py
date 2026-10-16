@@ -223,7 +223,29 @@ def mock_activity_data() -> dict:
             "projectedRaceTimeDurationSeconds": 1829,
             "predictedRaceTimeDurationSeconds": 2101,
             "enrollmentTime": "2026-09-11T12:39:16.350",
+            "primaryEvent": False,
+            "race": True,
         },
+        "upcomingEvents": [
+            {
+                "eventName": "5K Plan",
+                "date": "2026-11-21",
+                "eventType": "running",
+                "targetDistance": 5.0,
+                "targetDistanceUnit": "kilometer",
+                "primaryEvent": False,
+                "race": True,
+            },
+            {
+                "eventName": "City Marathon",
+                "date": "2027-04-11",
+                "eventType": "running",
+                "targetDistance": 42.195,
+                "targetDistanceUnit": "kilometer",
+                "primaryEvent": True,
+                "race": True,
+            },
+        ],
     }
 
 
@@ -246,6 +268,12 @@ def mock_training_data() -> dict:
         },
         "vo2MaxValue": 37.0,
         "vo2MaxPreciseValue": 37.1,
+        "vo2MaxCyclingValue": 41.0,
+        "heatAcclimationPercentage": 35,
+        "heatAcclimationTrend": "ACCLIMATIZING",
+        "altitudeAcclimation": 1200,
+        "altitudeAcclimationTrend": None,
+        "currentAltitude": 1500,
         "morningTrainingReadiness": {
             "score": 68,
             "level": "FAIR",
@@ -308,6 +336,12 @@ def mock_goals_data() -> dict:
         ],
         "userPoints": 500,
         "userLevel": 5,
+        "lifetimeTotals": {
+            "totalSteps": 10428222,
+            "totalDistance": 8123456.0,
+            "totalCalories": 4567890,
+            "totalActiveDays": 2350,
+        },
         "activeGoals": [
             {
                 "name": "Run 100km",
@@ -331,14 +365,22 @@ def mock_gear_data() -> dict:
         "gearStats": [
             {
                 "uuid": "gear-uuid-1",
-                "displayName": "Running Shoes",
+                "gearUuid": "gear-uuid-1",
+                "gearName": "Running Shoes",
+                "gearTypeName": "Shoes",
                 "totalDistance": 500000.0,
+                "totalDurationSeconds": 180000,
                 "totalActivities": 50,
+                "daysUsed": 45,
+                "notes": "Race shoes",
                 "dateBegin": "2023-01-01",
+                "dateEnd": None,
                 "gearMakeName": "Nike",
                 "gearModelName": "Pegasus",
+                "customMakeModel": "Nike Pegasus",
                 "gearStatusName": "active",
                 "maximumMeters": 800000,
+                "maximumSeconds": None,
                 "defaultForActivity": ["running"],
             }
         ],

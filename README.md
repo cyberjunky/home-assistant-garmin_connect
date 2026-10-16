@@ -223,6 +223,9 @@ All sensors are created under a single "Garmin Connect" device. Entity IDs follo
 | Morning Training Readiness | Wake-up readiness score (%) |
 | Training Status | Current training status phrase |
 | VO2 Max | Most recent VO2 Max value (mL/(kg·min)) |
+| VO2 Max Cycling | Most recent cycling VO2 Max (mL/(kg·min)) |
+| Heat Acclimation | Heat acclimation (%), attribute `trend` |
+| Altitude Acclimation | Altitude acclimation (m), attributes `trend` and `current_altitude` |
 | Lactate Threshold HR | Lactate threshold heart rate (bpm) |
 | Lactate Threshold Speed | Lactate threshold pace (m/s) |
 | Power to Weight [Sport] | Dynamic per-sport power-to-weight sensor (W/kg), e.g. Running, Cycling |
@@ -245,6 +248,7 @@ All sensors are created under a single "Garmin Connect" device. Entity IDs follo
 | Goals History | Last 10 completed goals with status |
 | Badges | Total badges earned |
 | User Points / User Level | Gamification metrics |
+| Lifetime Steps / Distance / Calories / Active Days | Lifetime totals from your Garmin Connect profile (refreshed at most hourly) |
 
 > Goal sensors include detailed attributes: `goalType`, `targetValue`, `currentValue`, `progressPercent`, `startDate`, `endDate`, and `activityType`.
 
@@ -258,9 +262,10 @@ All sensors are created under a single "Garmin Connect" device. Entity IDs follo
 | Today's Scheduled Workout | Today's training-calendar session, e.g. from a Garmin Coach plan |
 | Next Scheduled Workout | The next upcoming training-calendar session (today or later) |
 | Training Plan Goal Event | Goal race from the active plan, or the primary/next race on your calendar: name, target distance, date, `days_until_event` countdown, projected/predicted time |
+| Upcoming Events | Number of upcoming races/events (up to a year ahead), each in the `events` attribute with the same fields as the goal event |
 | Last Synced | Last device sync timestamp |
 
-Scheduled workouts and the training plan's goal event (target race) are also exposed as a `calendar.garmin_connect_scheduled_workouts` calendar entity — usable with HA's built-in Calendar dashboard card, `calendar.get_events`, and `trigger: calendar` automations.
+Scheduled workouts, the training plan's goal event (target race) and other upcoming events are also exposed as a `calendar.garmin_connect_scheduled_workouts` calendar entity — usable with HA's built-in Calendar dashboard card, `calendar.get_events`, and `trigger: calendar` automations.
 
 > **Note on adaptive/Coach plans:** don't expect a full plan's worth of sessions here. Garmin only assigns the *next* workout once it sees how the current one goes, so there's typically exactly one scheduled workout at a time, plus the plan's goal event far out on the calendar — with nothing in between. Confirmed directly against Garmin Connect's own calendar UI, not just this integration's access to it: the gap is real on Garmin's side.
 
@@ -330,7 +335,7 @@ action:
 
 ### Gear Tracking
 
-Gear sensors are dynamically created for each piece of equipment registered in Garmin Connect (shoes, bikes, etc.). They track total distance in meters and include attributes like `gear_uuid`, `total_activities`, `gear_make_name`, `gear_model_name`, and `default_for_activity`.
+Gear sensors are dynamically created for each piece of equipment registered in Garmin Connect (shoes, bikes, etc.). They track total distance in meters and include attributes like `gear_uuid`, `total_activities`, `total_duration_seconds`, `days_used`, `notes`, `gear_make_name`, `gear_model_name`, and `default_for_activity`. Retired gear is included (`gear_status_name: retired`).
 
 ## Activity Route Map
 
@@ -426,9 +431,9 @@ Record a blood pressure measurement.
 | Parameter | Required | Description |
 |-----------|----------|-------------|
 | `entity_id` | No | Garmin Connect entity whose account should receive the measurement |
-| `systolic` | Yes | Systolic pressure (60–250 mmHg) |
+| `systolic` | Yes | Systolic pressure (70–260 mmHg) |
 | `diastolic` | Yes | Diastolic pressure (40–150 mmHg) |
-| `pulse` | Yes | Pulse rate (30–220 bpm) |
+| `pulse` | No | Pulse rate (20–250 bpm) |
 | `timestamp` | No | ISO datetime (defaults to now) |
 | `notes` | No | Additional notes |
 

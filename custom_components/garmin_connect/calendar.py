@@ -39,7 +39,7 @@ def _event_from_workout(workout: dict[str, Any]) -> CalendarEvent | None:
 
 
 def _event_from_goal(goal: dict[str, Any]) -> CalendarEvent | None:
-    """Build a CalendarEvent from the training plan's goal event (target race).
+    """Build a CalendarEvent from a goal or upcoming event (e.g. a race).
 
     Same all-day-event shape as _event_from_workout -- Garmin gives a
     date, not a time.
@@ -64,6 +64,20 @@ def _event_from_goal(goal: dict[str, Any]) -> CalendarEvent | None:
     )
 
 
+def _goal_events(data: dict[str, Any]) -> list[CalendarEvent]:
+    """Build events for upcomingEvents plus the goal event, once each.
+
+    The goal event is normally one of upcomingEvents too; matching uids
+    keep it from showing twice.
+    """
+    events: dict[str | None, CalendarEvent] = {}
+    for goal in [data.get("trainingPlanGoalEvent") or {}, *(data.get("upcomingEvents") or [])]:
+        event = _event_from_goal(goal)
+        if event is not None:
+            events.setdefault(event.uid, event)
+    return list(events.values())
+
+
 def _in_range(event: CalendarEvent, start_date: datetime, end_date: datetime, tzinfo: Any) -> bool:
     """Per HA's calendar contract: start_date bounds the event's own end and
     end_date bounds the event's own start (both exclusive) -- not a plain
@@ -78,11 +92,11 @@ def _in_range(event: CalendarEvent, start_date: datetime, end_date: datetime, tz
 class GarminScheduledWorkoutsCalendar(CoordinatorEntity[ActivityCoordinator], CalendarEntity):
     """Calendar of upcoming Garmin training-calendar sessions.
 
-    Backed by ActivityCoordinator's scheduledWorkouts and
-    trainingPlanGoalEvent, which only cover the current and next calendar
-    month and only dates from today onward (ha-garmin fetch_activity_data)
-    -- browsing further out or into the past in the Calendar UI shows
-    nothing.
+    Backed by ActivityCoordinator's scheduledWorkouts, which only cover the
+    current and next calendar month, plus upcomingEvents (races and plan
+    goal events, up to a year out) and trainingPlanGoalEvent -- all from
+    today onward (ha-garmin fetch_activity_data), so browsing into the past
+    in the Calendar UI shows nothing.
 
     For adaptive/Coach plans, don't expect a full plan's worth of
     sessions here: Garmin only assigns the *next* workout once it sees
@@ -120,7 +134,7 @@ class GarminScheduledWorkoutsCalendar(CoordinatorEntity[ActivityCoordinator], Ca
         data = self.coordinator.data or {}
         candidates = [
             _event_from_workout(data.get("nextScheduledWorkout") or {}),
-            _event_from_goal(data.get("trainingPlanGoalEvent") or {}),
+            *_goal_events(data),
         ]
         upcoming = [event for event in candidates if event is not None]
         return min(upcoming, key=lambda event: event.start) if upcoming else None
@@ -128,7 +142,7 @@ class GarminScheduledWorkoutsCalendar(CoordinatorEntity[ActivityCoordinator], Ca
     async def async_get_events(
         self, _hass: HomeAssistant, start_date: datetime, end_date: datetime
     ) -> list[CalendarEvent]:
-        """Return scheduled workouts and the goal event within the given range."""
+        """Return scheduled workouts and upcoming events within the given range."""
         data = self.coordinator.data or {}
         workouts = data.get("scheduledWorkouts") or []
         tzinfo = start_date.tzinfo
@@ -139,10 +153,9 @@ class GarminScheduledWorkoutsCalendar(CoordinatorEntity[ActivityCoordinator], Ca
             if event is not None and _in_range(event, start_date, end_date, tzinfo):
                 events.append(event)
 
-        goal_event = _event_from_goal(data.get("trainingPlanGoalEvent") or {})
-        if goal_event is not None and _in_range(goal_event, start_date, end_date, tzinfo):
-            events.append(goal_event)
-
+        events.extend(
+            event for event in _goal_events(data) if _in_range(event, start_date, end_date, tzinfo)
+        )
         return events
 
 

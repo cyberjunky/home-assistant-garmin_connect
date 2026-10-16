@@ -21,6 +21,8 @@ TO_REDACT = {
     "profileImageUrlMedium",
     "profileImageUrlSmall",
     "profileImageUrlLarge",
+    # Free text (gear notes) can hold anything personal.
+    "notes",
     # A full GPS track is both huge and a location trace.
     "polyline",
 }
