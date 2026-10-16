@@ -205,3 +205,39 @@ def test_calendar_event_property_uses_upcoming_event_without_goal() -> None:
     calendar = GarminScheduledWorkoutsCalendar(coord, "entry_id")
     assert calendar.event is not None
     assert calendar.event.summary == "10K"
+
+async def test_calendar_get_events_includes_upcoming_events() -> None:
+    """Upcoming races show up; the goal event, also an upcoming event, appears once."""
+    coord = MagicMock()
+    goal = {"eventName": "5K Plan", "date": "2026-11-21", "eventType": "running"}
+    coord.data = {
+        "scheduledWorkouts": [],
+        "trainingPlanGoalEvent": goal,
+        "upcomingEvents": [
+            goal,
+            {"eventName": "Parkrun", "date": "2026-11-07", "eventType": "running"},
+            {"eventName": "Marathon", "date": "2027-04-18", "eventType": "running"},
+        ],
+    }
+    calendar = GarminScheduledWorkoutsCalendar(coord, "entry_id")
+
+    start = datetime(2026, 11, 1, tzinfo=UTC)
+    end = datetime(2026, 11, 30, tzinfo=UTC)
+    events = await calendar.async_get_events(None, start, end)
+
+    assert sorted(event.summary for event in events) == ["5K Plan", "Parkrun"]
+
+
+def test_calendar_event_property_considers_upcoming_events() -> None:
+    """A race sooner than the next workout and the goal event is the next event."""
+    coord = MagicMock()
+    coord.data = {
+        "nextScheduledWorkout": {"date": "2026-11-10", "title": "Easy Run"},
+        "trainingPlanGoalEvent": {"eventName": "5K Plan", "date": "2026-11-21"},
+        "upcomingEvents": [{"eventName": "Parkrun", "date": "2026-11-07"}],
+    }
+    calendar = GarminScheduledWorkoutsCalendar(coord, "entry_id")
+
+    event = calendar.event
+    assert event is not None
+    assert event.summary == "Parkrun"

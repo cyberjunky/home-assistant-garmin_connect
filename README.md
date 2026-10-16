@@ -265,7 +265,7 @@ All sensors are created under a single "Garmin Connect" device. Entity IDs follo
 | Upcoming Events | Number of upcoming races/events (up to a year ahead), each in the `events` attribute with the same fields as the goal event |
 | Last Synced | Last device sync timestamp |
 
-Scheduled workouts, the training plan's goal event (target race) and other upcoming events are also exposed as a `calendar.garmin_connect_scheduled_workouts` calendar entity — usable with HA's built-in Calendar dashboard card, `calendar.get_events`, and `trigger: calendar` automations.
+Scheduled workouts, the training plan's goal event (target race) and your other upcoming races and events (up to a year ahead) are also exposed as a `calendar.garmin_connect_scheduled_workouts` calendar entity — usable with HA's built-in Calendar dashboard card, `calendar.get_events`, and `trigger: calendar` automations.
 
 > **Note on adaptive/Coach plans:** don't expect a full plan's worth of sessions here. Garmin only assigns the *next* workout once it sees how the current one goes, so there's typically exactly one scheduled workout at a time, plus the plan's goal event far out on the calendar — with nothing in between. Confirmed directly against Garmin Connect's own calendar UI, not just this integration's access to it: the gap is real on Garmin's side.
 
