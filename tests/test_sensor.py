@@ -64,7 +64,7 @@ def test_all_sensor_descriptions_have_translation_keys() -> None:
         )
 
 
-def test_no_sensor_uses_total_without_last_reset() -> None:
+def test_no_sensor_uses_total_without_last_reset():
     """No sensor may use TOTAL, since none of them sets last_reset.
 
     Without last_reset, Home Assistant subtracts each daily reset from the
