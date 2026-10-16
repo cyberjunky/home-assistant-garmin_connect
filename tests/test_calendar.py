@@ -178,3 +178,30 @@ async def test_calendar_get_events_excludes_goal_event_out_of_range() -> None:
     start = datetime(2026, 9, 1, tzinfo=UTC)
     end = datetime(2026, 9, 30, tzinfo=UTC)
     assert await calendar.async_get_events(None, start, end) == []
+
+
+async def test_calendar_get_events_includes_upcoming_events_once() -> None:
+    """upcomingEvents show up too; the goal event, also listed there, appears once."""
+    coord = MagicMock()
+    coord.data = mock_activity_data()
+    calendar = GarminScheduledWorkoutsCalendar(coord, "entry_id")
+
+    start = datetime(2026, 11, 1, tzinfo=UTC)
+    end = datetime(2027, 5, 1, tzinfo=UTC)
+    events = await calendar.async_get_events(None, start, end)
+
+    assert sorted(event.summary for event in events) == ["5K Plan", "City Marathon"]
+
+
+def test_calendar_event_property_uses_upcoming_event_without_goal() -> None:
+    """With no workout or goal event, the next upcoming event is the current event."""
+    coord = MagicMock()
+    coord.data = {
+        "upcomingEvents": [
+            {"eventName": "Half Marathon", "date": "2027-03-01"},
+            {"eventName": "10K", "date": "2026-12-12"},
+        ]
+    }
+    calendar = GarminScheduledWorkoutsCalendar(coord, "entry_id")
+    assert calendar.event is not None
+    assert calendar.event.summary == "10K"

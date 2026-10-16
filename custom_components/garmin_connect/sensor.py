@@ -835,6 +835,16 @@ ACTIVITY_TRACKING_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         value_fn=lambda data: (data.get("trainingPlanGoalEvent") or {}).get("eventName"),
         attributes_fn=lambda data: _goal_event_attributes(data.get("trainingPlanGoalEvent") or {}),
     ),
+    GarminConnectSensorEntityDescription(
+        key="upcomingEvents",
+        translation_key="upcoming_events",
+        coordinator_type=CoordinatorType.ACTIVITY,
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fn=lambda data: len(data.get("upcomingEvents") or []),
+        attributes_fn=lambda data: {
+            "events": [_goal_event_attributes(e) for e in data.get("upcomingEvents") or []],
+        },
+    ),
 )
 
 
@@ -990,6 +1000,38 @@ TRAINING_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         native_unit_of_measurement="mL/(kg·min)",
         value_fn=lambda data: data.get("vo2MaxValue"),
         preserve_value=True,
+    ),
+    GarminConnectSensorEntityDescription(
+        key="vo2MaxCycling",
+        translation_key="vo2_max_cycling",
+        coordinator_type=CoordinatorType.TRAINING,
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement="mL/(kg·min)",
+        value_fn=lambda data: data.get("vo2MaxCyclingValue"),
+        preserve_value=True,
+    ),
+    GarminConnectSensorEntityDescription(
+        key="heatAcclimation",
+        translation_key="heat_acclimation",
+        coordinator_type=CoordinatorType.TRAINING,
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=PERCENTAGE,
+        value_fn=lambda data: data.get("heatAcclimationPercentage"),
+        attributes_fn=lambda data: {"trend": data.get("heatAcclimationTrend")},
+    ),
+    GarminConnectSensorEntityDescription(
+        key="altitudeAcclimation",
+        translation_key="altitude_acclimation",
+        coordinator_type=CoordinatorType.TRAINING,
+        device_class=SensorDeviceClass.DISTANCE,
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=UnitOfLength.METERS,
+        suggested_display_precision=0,
+        value_fn=lambda data: data.get("altitudeAcclimation"),
+        attributes_fn=lambda data: {
+            "trend": data.get("altitudeAcclimationTrend"),
+            "current_altitude": data.get("currentAltitude"),
+        },
     ),
 )
 
@@ -1198,6 +1240,46 @@ GOALS_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         translation_key="user_level",
         coordinator_type=CoordinatorType.GOALS,
         state_class=SensorStateClass.MEASUREMENT,
+    ),
+    GarminConnectSensorEntityDescription(
+        key="lifetimeSteps",
+        translation_key="lifetime_steps",
+        coordinator_type=CoordinatorType.GOALS,
+        state_class=SensorStateClass.TOTAL_INCREASING,
+        native_unit_of_measurement="steps",
+        value_fn=lambda data: (data.get("lifetimeTotals") or {}).get("totalSteps"),
+        preserve_value=True,
+    ),
+    GarminConnectSensorEntityDescription(
+        key="lifetimeDistance",
+        translation_key="lifetime_distance",
+        coordinator_type=CoordinatorType.GOALS,
+        device_class=SensorDeviceClass.DISTANCE,
+        state_class=SensorStateClass.TOTAL_INCREASING,
+        native_unit_of_measurement=UnitOfLength.METERS,
+        suggested_unit_of_measurement=UnitOfLength.KILOMETERS,
+        suggested_display_precision=0,
+        value_fn=lambda data: (data.get("lifetimeTotals") or {}).get("totalDistance"),
+        preserve_value=True,
+    ),
+    GarminConnectSensorEntityDescription(
+        key="lifetimeCalories",
+        translation_key="lifetime_calories",
+        coordinator_type=CoordinatorType.GOALS,
+        state_class=SensorStateClass.TOTAL_INCREASING,
+        native_unit_of_measurement=UnitOfEnergy.KILO_CALORIE,
+        suggested_display_precision=0,
+        value_fn=lambda data: (data.get("lifetimeTotals") or {}).get("totalCalories"),
+        preserve_value=True,
+    ),
+    GarminConnectSensorEntityDescription(
+        key="lifetimeActiveDays",
+        translation_key="lifetime_active_days",
+        coordinator_type=CoordinatorType.GOALS,
+        state_class=SensorStateClass.TOTAL_INCREASING,
+        native_unit_of_measurement="days",
+        value_fn=lambda data: (data.get("lifetimeTotals") or {}).get("totalActiveDays"),
+        preserve_value=True,
     ),
     GarminConnectSensorEntityDescription(
         key="activeGoals",
@@ -2107,6 +2189,10 @@ class GarminConnectGearSensor(CoordinatorEntity[GearCoordinator], SensorEntity):
                     "gear_status_name": gear_stat.get("gearStatusName"),
                     "custom_make_model": gear_stat.get("customMakeModel"),
                     "maximum_meters": gear_stat.get("maximumMeters"),
+                    "maximum_seconds": gear_stat.get("maximumSeconds"),
+                    "total_duration_seconds": gear_stat.get("totalDurationSeconds"),
+                    "days_used": gear_stat.get("daysUsed"),
+                    "notes": gear_stat.get("notes"),
                     "default_for_activity": gear_stat.get("defaultForActivity", []),
                 }
         return {}

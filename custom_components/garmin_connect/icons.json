@@ -165,7 +165,15 @@
       "wellness_end_time": { "default": "mdi:clock" },
       "wellness_start_time": { "default": "mdi:clock" },
       "yesterday_distance": { "default": "mdi:map-marker-distance" },
-      "yesterday_steps": { "default": "mdi:walk" }
+      "yesterday_steps": { "default": "mdi:walk" },
+      "altitude_acclimation": { "default": "mdi:image-filter-hdr" },
+      "heat_acclimation": { "default": "mdi:thermometer-high" },
+      "lifetime_active_days": { "default": "mdi:calendar-check" },
+      "lifetime_calories": { "default": "mdi:fire" },
+      "lifetime_distance": { "default": "mdi:map-marker-distance" },
+      "lifetime_steps": { "default": "mdi:walk" },
+      "upcoming_events": { "default": "mdi:calendar-star" },
+      "vo2_max_cycling": { "default": "mdi:bike" }
     }
   }
 }

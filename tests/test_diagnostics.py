@@ -126,6 +126,7 @@ def test_to_redact_contains_expected_keys() -> None:
         "profileImageUrlMedium",
         "profileImageUrlSmall",
         "profileImageUrlLarge",
+        "notes",
         "polyline",
     }
     assert TO_REDACT == expected

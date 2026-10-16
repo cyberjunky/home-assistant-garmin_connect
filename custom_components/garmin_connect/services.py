@@ -121,9 +121,9 @@ ADD_BODY_COMPOSITION_SCHEMA = vol.Schema(
 ADD_BLOOD_PRESSURE_SCHEMA = vol.Schema(
     {
         vol.Optional("entity_id"): cv.entity_id,
-        vol.Required("systolic"): vol.All(vol.Coerce(int), vol.Range(min=60, max=250)),
+        vol.Required("systolic"): vol.All(vol.Coerce(int), vol.Range(min=70, max=260)),
         vol.Required("diastolic"): vol.All(vol.Coerce(int), vol.Range(min=40, max=150)),
-        vol.Optional("pulse"): vol.All(vol.Coerce(int), vol.Range(min=30, max=220)),
+        vol.Optional("pulse"): vol.All(vol.Coerce(int), vol.Range(min=20, max=250)),
         vol.Optional("timestamp"): cv.datetime,
         vol.Optional("notes"): cv.string,
     }

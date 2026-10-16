@@ -504,12 +504,25 @@
       "next_scheduled_workout": { "name": "Następny zaplanowany trening" },
       "today_scheduled_workout": { "name": "Dzisiejszy zaplanowany trening" },
       "training_plan_goal_event": { "name": "Cel planu treningowego" },
+      "upcoming_events": { "name": "Nadchodzące wydarzenia" },
       "solar_intensity": { "name": "Natężenie słoneczne" },
       "solar_time_gained": { "name": "Czas zyskany dzięki energii słonecznej" },
       "power_to_weight": { "name": "Stosunek mocy do masy {sport}" },
       "functional_threshold_power": { "name": "FTP {sport}" },
       "user_level": {
         "name": "Poziom użytkownika"
+      },
+      "lifetime_steps": {
+        "name": "Kroki łącznie"
+      },
+      "lifetime_distance": {
+        "name": "Dystans łącznie"
+      },
+      "lifetime_calories": {
+        "name": "Kalorie łącznie"
+      },
+      "lifetime_active_days": {
+        "name": "Aktywne dni łącznie"
       },
       "user_points": {
         "name": "Punkty użytkownika"
@@ -522,6 +535,15 @@
       },
       "vo2_max": {
         "name": "VO2 Max"
+      },
+      "vo2_max_cycling": {
+        "name": "VO2 Max kolarstwo"
+      },
+      "heat_acclimation": {
+        "name": "Aklimatyzacja cieplna"
+      },
+      "altitude_acclimation": {
+        "name": "Aklimatyzacja wysokościowa"
       },
       "weekly_distance_avg": {
         "name": "Średni dystans tygodniowy"
