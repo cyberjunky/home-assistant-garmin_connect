@@ -4,7 +4,7 @@ import datetime
 import json
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from homeassistant.components.sensor import SensorDeviceClass
+from homeassistant.components.sensor import SensorDeviceClass, SensorStateClass
 
 from custom_components.garmin_connect.sensor import (
     _COORDINATOR_SENSOR_MAP,
@@ -61,6 +61,19 @@ def test_all_sensor_descriptions_have_translation_keys() -> None:
     for desc in _all_descriptions():
         assert desc.translation_key or desc.name, (
             f"Sensor {desc.key} missing both translation_key and name"
+        )
+
+
+def test_no_sensor_uses_total_without_last_reset():
+    """No sensor may use TOTAL, since none of them sets last_reset.
+
+    Without last_reset, Home Assistant subtracts each daily reset from the
+    long-term sum, so daily statistics of Garmin's daily counters go negative.
+    """
+    for desc in _all_descriptions():
+        assert desc.state_class != SensorStateClass.TOTAL, (
+            f"{desc.key} uses TOTAL without last_reset; use TOTAL_INCREASING for "
+            "daily counters or MEASUREMENT for values that do not accumulate"
         )
 
 
