@@ -8,7 +8,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 from zoneinfo import ZoneInfo
 
-import probatio as vol
 from aiohttp import ClientError
 from ha_garmin import GarminConnectError
 from homeassistant.core import (
@@ -24,6 +23,11 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.util import dt as dt_util
 
 from .const import DOMAIN
+
+try:
+    import probatio as vol
+except ImportError:  # Home Assistant < 2026.10 ships voluptuous instead
+    import voluptuous as vol  # type: ignore[no-redef]
 
 if TYPE_CHECKING:
     from ha_garmin import GarminClient

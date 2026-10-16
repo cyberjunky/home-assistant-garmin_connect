@@ -6,7 +6,6 @@ import logging
 from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any
 
-import probatio as vol
 from aiohttp import ClientError
 from ha_garmin import (
     GarminAuth,
@@ -37,6 +36,11 @@ from .const import (
     MAX_SCAN_INTERVAL,
     MIN_SCAN_INTERVAL,
 )
+
+try:
+    import probatio as vol
+except ImportError:  # Home Assistant < 2026.10 ships voluptuous instead
+    import voluptuous as vol  # type: ignore[no-redef]
 
 _LOGGER = logging.getLogger(__name__)
 
