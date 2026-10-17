@@ -563,3 +563,20 @@ unschedule_workout:
           mode: box
           min: 1
           max: 999999999999
+get_day_summary:
+  name: Get day summary
+  description: Fetch the daily summary (steps, stress, Body Battery, resting heart rate, intensity minutes) for any date from Garmin Connect and return it.
+  fields:
+    date:
+      name: Date
+      description: The day to fetch.
+      required: true
+      selector:
+        date:
+    entity_id:
+      name: Entity
+      description: Optional Garmin Connect entity whose account to read.
+      selector:
+        entity:
+          integration: garmin_connect
+          domain: sensor

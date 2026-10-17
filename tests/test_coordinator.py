@@ -341,3 +341,105 @@ def test_coordinator_names_use_data_domain() -> None:
     body = BodyCoordinator(coordinator.hass, coordinator.config_entry, client, coordinator.auth)
     assert coordinator.name == "garmin_connect_core"
     assert body.name == "garmin_connect_body"
+
+
+# ── Yesterday's final summary ────────────────────────────────────────────────
+
+_RAW_DAY = {
+    "calendarDate": "2026-10-17",
+    "averageStressLevel": 42,
+    "maxStressLevel": 97,
+    "stressDuration": 30000,
+    "highStressDuration": 3600,
+    "restStressDuration": 24000,
+    "bodyBatteryHighestValue": 89,
+    "bodyBatteryLowestValue": 8,
+    "bodyBatteryChargedValue": 70,
+    "bodyBatteryDrainedValue": 81,
+    "restingHeartRate": 52,
+    "moderateIntensityMinutes": 10,
+    "vigorousIntensityMinutes": 25,
+    "activeKilocalories": 610,
+    "totalSteps": 6909,
+}
+
+
+def test_summarize_day_maps_fields() -> None:
+    from custom_components.garmin_connect.coordinator import summarize_day
+
+    out = summarize_day(_RAW_DAY, date(2026, 10, 17))
+    assert out["yesterdayDate"] == "2026-10-17"
+    assert out["yesterdayAverageStressLevel"] == 42
+    assert out["yesterdayStressMinutes"] == 500
+    assert out["yesterdayHighStressMinutes"] == 60
+    assert out["yesterdayBodyBatteryHighest"] == 89
+    assert out["yesterdayIntensityMinutes"] == 60
+    assert out["yesterdayRestingHeartRate"] == 52
+
+
+def test_summarize_day_drops_garmin_no_data_stress() -> None:
+    from custom_components.garmin_connect.coordinator import summarize_day
+
+    out = summarize_day({"averageStressLevel": -1, "maxStressLevel": -2}, date(2026, 10, 17))
+    assert out["yesterdayAverageStressLevel"] is None
+    assert out["yesterdayMaxStressLevel"] is None
+    assert out["yesterdayIntensityMinutes"] is None
+    assert out["yesterdayDate"] == "2026-10-17"
+
+
+def _yesterday_client(today: date, last_sync: str = "s1") -> AsyncMock:
+    client = AsyncMock()
+    client.today = MagicMock(return_value=today)
+    client.fetch_core_data = AsyncMock(
+        side_effect=lambda: {"totalSteps": 1, "lastSyncTimestamp": client.last_sync}
+    )
+    client.last_sync = last_sync
+    client._get_user_summary_raw = AsyncMock(return_value=dict(_RAW_DAY))
+    return client
+
+
+async def test_core_adds_yesterday_and_caches() -> None:
+    client = _yesterday_client(date(2026, 10, 18))
+    coordinator = _make_base(client)
+
+    data = await coordinator._async_update_data()
+    assert data["totalSteps"] == 1
+    assert data["yesterdayAverageStressLevel"] == 42
+    client._get_user_summary_raw.assert_awaited_once_with(date(2026, 10, 17))
+
+    # Same day, same sync, within 30 min: no second call, values kept.
+    data = await coordinator._async_update_data()
+    assert data["yesterdayAverageStressLevel"] == 42
+    assert client._get_user_summary_raw.await_count == 1
+
+
+async def test_core_refetches_yesterday_on_new_sync() -> None:
+    client = _yesterday_client(date(2026, 10, 18))
+    coordinator = _make_base(client)
+    await coordinator._async_update_data()
+
+    client.last_sync = "s2"  # the watch uploaded (e.g. at 2:25 am)
+    client._get_user_summary_raw.return_value = {**_RAW_DAY, "averageStressLevel": 44}
+    data = await coordinator._async_update_data()
+    assert data["yesterdayAverageStressLevel"] == 44
+    assert client._get_user_summary_raw.await_count == 2
+
+
+async def test_core_survives_yesterday_failure() -> None:
+    client = _yesterday_client(date(2026, 10, 18))
+    client._get_user_summary_raw = AsyncMock(side_effect=GarminConnectError("503"))
+    coordinator = _make_base(client)
+
+    data = await coordinator._async_update_data()
+    assert data == {"totalSteps": 1, "lastSyncTimestamp": "s1"}
+
+
+async def test_get_day_returns_summary_and_raw() -> None:
+    client = _yesterday_client(date(2026, 10, 18))
+    coordinator = _make_base(client)
+
+    out = await coordinator.async_get_day(date(2026, 10, 17))
+    assert out["summary"]["averageStressLevel"] == 42
+    assert out["summary"]["date"] == "2026-10-17"
+    assert out["summary"]["totalSteps"] == 6909
+    assert out["raw"]["maxStressLevel"] == 97
