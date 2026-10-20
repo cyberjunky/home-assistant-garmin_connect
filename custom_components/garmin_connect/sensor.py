@@ -1040,6 +1040,18 @@ TRAINING_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
 # Data from ha_garmin.fetch_body_data()
 # ha_garmin computes weightKg, boneMassKg, muscleMassKg via _add_computed_fields
 
+
+def _weigh_in_attributes(data: dict[str, Any]) -> dict[str, Any]:
+    """Return the time of the weigh-in from its UTC epoch milliseconds."""
+    timestamp_gmt = data.get("timestampGMT")
+    if isinstance(timestamp_gmt, bool) or not isinstance(timestamp_gmt, int | float):
+        return {}
+    try:
+        return {"measurement_time": dt_util.utc_from_timestamp(timestamp_gmt / 1000)}
+    except OverflowError, OSError, ValueError:
+        return {}
+
+
 BODY_COMPOSITION_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
     GarminConnectSensorEntityDescription(
         key="weightKg",
@@ -1049,6 +1061,7 @@ BODY_COMPOSITION_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement=UnitOfMass.KILOGRAMS,
         preserve_value=True,
+        attributes_fn=_weigh_in_attributes,
     ),
     GarminConnectSensorEntityDescription(
         key="bmi",

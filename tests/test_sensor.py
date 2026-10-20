@@ -4,6 +4,7 @@ import datetime
 import json
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import pytest
 from homeassistant.components.sensor import SensorDeviceClass, SensorStateClass
 
 from custom_components.garmin_connect.sensor import (
@@ -389,6 +390,32 @@ def test_weight_uses_pre_computed_kg_key() -> None:
     coord = MagicMock()
     coord.data = mock_body_data()
     sensor = GarminConnectSensor(coord, desc, "entry_id")
+    assert sensor.native_value == 75.0
+
+
+def test_weight_measurement_time_is_the_utc_weigh_in():
+    """measurement_time comes from timestampGMT, not from the local wall clock in 'date'."""
+    desc = next(d for d in BODY_COMPOSITION_SENSORS if d.key == "weightKg")
+    coord = MagicMock()
+    coord.data = mock_body_data()
+    sensor = GarminConnectSensor(coord, desc, "entry_id")
+    assert sensor.extra_state_attributes == {
+        "measurement_time": datetime.datetime(2026, 10, 18, 13, 13, 52, tzinfo=datetime.UTC)
+    }
+
+
+@pytest.mark.parametrize(
+    "timestamp_gmt",
+    [None, "1792329232000", True, 1e18],
+    ids=["missing", "string", "bool", "out_of_range"],
+)
+def test_weight_without_usable_timestamp_has_no_measurement_time(timestamp_gmt):
+    """A weigh-in without a usable timestampGMT leaves the attribute out instead of raising."""
+    desc = next(d for d in BODY_COMPOSITION_SENSORS if d.key == "weightKg")
+    coord = MagicMock()
+    coord.data = {"weightKg": 75.0, "timestampGMT": timestamp_gmt}
+    sensor = GarminConnectSensor(coord, desc, "entry_id")
+    assert sensor.extra_state_attributes == {}
     assert sensor.native_value == 75.0
 
 
