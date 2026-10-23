@@ -1362,3 +1362,36 @@ def test_empty_gear_list_does_not_prune() -> None:
     coordinators.gear.data = None
     _listener(coordinators.gear)()
     registry.async_remove.assert_not_called()
+
+
+def test_scheduled_workout_sensors_add_steps_summary() -> None:
+    """Today's and the next workout expose a readable line per step."""
+    data = mock_activity_data()
+    steps = [
+        {"stepOrder": 1, "stepType": "warmup", "endCondition": "lap.button"},
+        {
+            "stepOrder": 2,
+            "stepType": "interval",
+            "endCondition": "distance",
+            "endConditionValue": 4828.02,
+            "targetType": "heart.rate.zone",
+            "targetValueOne": 141.0,
+            "targetValueTwo": 159.0,
+        },
+    ]
+    data["todayScheduledWorkout"]["workoutSteps"] = steps
+    data["nextScheduledWorkout"]["workoutSteps"] = steps
+
+    for key in ("todayScheduledWorkout", "nextScheduledWorkout"):
+        desc = next(d for d in ACTIVITY_TRACKING_SENSORS if d.key == key)
+        attrs = desc.attributes_fn(data)
+        assert attrs["workoutSteps"] == steps
+        assert attrs["steps_summary"] == [
+            "Warm-up until lap press",
+            "Interval 4.83 km @ 141–159 bpm",
+        ]
+
+
+def test_scheduled_workout_without_steps_has_no_summary() -> None:
+    desc = next(d for d in ACTIVITY_TRACKING_SENSORS if d.key == "todayScheduledWorkout")
+    assert "steps_summary" not in desc.attributes_fn(mock_activity_data())

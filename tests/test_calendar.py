@@ -206,6 +206,7 @@ def test_calendar_event_property_uses_upcoming_event_without_goal() -> None:
     assert calendar.event is not None
     assert calendar.event.summary == "10K"
 
+
 async def test_calendar_get_events_includes_upcoming_events() -> None:
     """Upcoming races show up; the goal event, also an upcoming event, appears once."""
     coord = MagicMock()
@@ -241,3 +242,38 @@ def test_calendar_event_property_considers_upcoming_events() -> None:
     event = calendar.event
     assert event is not None
     assert event.summary == "Parkrun"
+
+
+async def test_calendar_workout_description_lists_steps() -> None:
+    """The next workout's steps describe its calendar event; others keep their sport."""
+    coord = MagicMock()
+    next_workout = {
+        "id": 1,
+        "date": "2026-10-30",
+        "title": "Run Workout",
+        "sportTypeKey": "running",
+        "workoutSteps": [
+            {"stepType": "warmup", "endCondition": "lap.button"},
+            {"stepType": "interval", "endCondition": "distance", "endConditionValue": 1000.0},
+        ],
+    }
+    coord.data = {
+        "nextScheduledWorkout": next_workout,
+        "scheduledWorkouts": [
+            {k: v for k, v in next_workout.items() if k != "workoutSteps"},
+            {"id": 2, "date": "2026-10-31", "title": "Long Run", "sportTypeKey": "running"},
+        ],
+    }
+    calendar = GarminScheduledWorkoutsCalendar(coord, "entry_id")
+
+    events = await calendar.async_get_events(
+        None, datetime(2026, 10, 1, tzinfo=UTC), datetime(2026, 11, 30, tzinfo=UTC)
+    )
+
+    descriptions = {event.summary: event.description for event in events}
+    assert descriptions == {
+        "Run Workout": "Warm-up until lap press\nInterval 1.00 km",
+        "Long Run": "running",
+    }
+    assert calendar.event is not None
+    assert calendar.event.description == "Warm-up until lap press\nInterval 1.00 km"

@@ -42,6 +42,7 @@ from .coordinator import (
     GearCoordinator,
     TrainingCoordinator,
 )
+from .workout import steps_summary
 
 # Limit parallel updates to prevent API rate limiting
 PARALLEL_UPDATES = 1
@@ -816,7 +817,9 @@ ACTIVITY_TRACKING_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         translation_key="today_scheduled_workout",
         coordinator_type=CoordinatorType.ACTIVITY,
         value_fn=lambda data: (data.get("todayScheduledWorkout") or {}).get("title"),
-        attributes_fn=lambda data: data.get("todayScheduledWorkout") or {},
+        attributes_fn=lambda data: _scheduled_workout_attributes(
+            data.get("todayScheduledWorkout") or {}
+        ),
     ),
     GarminConnectSensorEntityDescription(
         key="nextScheduledWorkout",
@@ -824,7 +827,7 @@ ACTIVITY_TRACKING_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         coordinator_type=CoordinatorType.ACTIVITY,
         value_fn=lambda data: (data.get("nextScheduledWorkout") or {}).get("title"),
         attributes_fn=lambda data: {
-            **(data.get("nextScheduledWorkout") or {}),
+            **_scheduled_workout_attributes(data.get("nextScheduledWorkout") or {}),
             "upcoming": data.get("scheduledWorkouts") or [],
         },
     ),
@@ -846,6 +849,13 @@ ACTIVITY_TRACKING_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         },
     ),
 )
+
+
+def _scheduled_workout_attributes(workout: dict[str, Any]) -> dict[str, Any]:
+    """The workout as ha-garmin returns it, plus one readable line per step."""
+    if not workout.get("workoutSteps"):
+        return workout
+    return {**workout, "steps_summary": steps_summary(workout)}
 
 
 def _goal_event_attributes(event: dict[str, Any]) -> dict[str, Any]:

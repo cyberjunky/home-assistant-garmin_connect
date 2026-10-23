@@ -13,6 +13,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN
 from .coordinator import ActivityCoordinator, GarminConnectConfigEntry
+from .workout import steps_summary
 
 
 def _event_from_workout(workout: dict[str, Any]) -> CalendarEvent | None:
@@ -20,7 +21,8 @@ def _event_from_workout(workout: dict[str, Any]) -> CalendarEvent | None:
 
     Garmin only gives a date, not a time of day, so these are all-day
     events -- end is the day after start, matching the iCal/HA convention
-    that an all-day event's end date is exclusive.
+    that an all-day event's end date is exclusive. When the workout carries
+    its steps (today's and the next one do), they're the description.
     """
     workout_date = workout.get("date")
     if not workout_date:
@@ -33,7 +35,7 @@ def _event_from_workout(workout: dict[str, Any]) -> CalendarEvent | None:
         start=start,
         end=start + timedelta(days=1),
         summary=workout.get("title") or "Scheduled workout",
-        description=workout.get("sportTypeKey"),
+        description="\n".join(steps_summary(workout)) or workout.get("sportTypeKey"),
         uid=str(workout["id"]) if workout.get("id") is not None else None,
     )
 
@@ -62,6 +64,18 @@ def _event_from_goal(goal: dict[str, Any]) -> CalendarEvent | None:
         description=description,
         uid=f"goal_{event_name}_{goal_date}",
     )
+
+
+def _with_steps(data: dict[str, Any], workout: dict[str, Any]) -> dict[str, Any]:
+    """Return today's or the next workout, which carry steps, for the same item."""
+    for detailed in (data.get("todayScheduledWorkout"), data.get("nextScheduledWorkout")):
+        if (
+            isinstance(detailed, dict)
+            and detailed.get("id") is not None
+            and detailed.get("id") == workout.get("id")
+        ):
+            return detailed
+    return workout
 
 
 def _calendar_events(data: dict[str, Any]) -> list[CalendarEvent]:
@@ -147,7 +161,7 @@ class GarminScheduledWorkoutsCalendar(CoordinatorEntity[ActivityCoordinator], Ca
 
         events = []
         for workout in workouts:
-            event = _event_from_workout(workout)
+            event = _event_from_workout(_with_steps(data, workout))
             if event is not None and _in_range(event, start_date, end_date, tzinfo):
                 events.append(event)
 

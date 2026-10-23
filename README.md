@@ -259,13 +259,32 @@ All sensors are created under a single "Garmin Connect" device. Entity IDs follo
 | Last Activity | Most recent activity with details |
 | Last Activities | Recent activities list (attributes) |
 | Last Workout / Workouts | Scheduled/planned training sessions |
-| Today's Scheduled Workout | Today's training-calendar session, e.g. from a Garmin Coach plan |
-| Next Scheduled Workout | The next upcoming training-calendar session (today or later) |
+| Today's Scheduled Workout | Today's training-calendar session, e.g. from a Garmin Coach plan, with its steps and targets (see below) |
+| Next Scheduled Workout | The next upcoming training-calendar session (today or later), with its steps and targets (see below) |
 | Training Plan Goal Event | Goal race from the active plan, or the primary/next race on your calendar: name, target distance, date, `days_until_event` countdown, projected/predicted time |
 | Upcoming Events | Number of upcoming races/events (up to a year ahead), each in the `events` attribute with the same fields as the goal event |
 | Last Synced | Last device sync timestamp |
 
-Scheduled workouts, the training plan's goal event (target race) and your other upcoming races and events (up to a year ahead) are also exposed as a `calendar.garmin_connect_scheduled_workouts` calendar entity — usable with HA's built-in Calendar dashboard card, `calendar.get_events`, and `trigger: calendar` automations.
+#### Workout steps and targets
+
+For a workout from your workout library (created in Garmin Connect, or synced from a service such as Final Surge or TrainingPeaks), the Today's and Next Scheduled Workout sensors include its structure:
+
+- `workoutSteps`: one entry per step: `stepType` (`warmup`, `interval`, `recovery`, `cooldown`, ...), how it ends (`endCondition` + `endConditionValue`: meters for distance, seconds for time), and its target (`targetType` + `targetValueOne`/`targetValueTwo`, or `zoneNumber`). Repeats are `{"stepType": "repeat", "numberOfIterations": n, "steps": [...]}`. Targets are in Garmin's units: bpm, watts, m/s for pace and speed.
+- `steps_summary`: one readable line per step, e.g. `Interval 4.83 km @ 141–159 bpm` or `4× (Interval 400 m @ 4:00–4:30 /km; Recovery 1:30 @ HR zone 2)`. Distances and paces are metric.
+- `estimatedDistanceInMeters`, `estimatedDurationInSecs`, `workoutProvider`
+
+Garmin Coach / adaptive-plan sessions have no library workout, so they come without steps.
+
+Example notification with today's workout:
+
+```yaml
+action: notify.mobile_app_phone
+data:
+  title: "{{ states('sensor.garmin_connect_today_s_scheduled_workout') }}"
+  message: "{{ state_attr('sensor.garmin_connect_today_s_scheduled_workout', 'steps_summary') | join('\n') }}"
+```
+
+Scheduled workouts, the training plan's goal event (target race) and your other upcoming races and events (up to a year ahead) are also exposed as a `calendar.garmin_connect_scheduled_workouts` calendar entity — usable with HA's built-in Calendar dashboard card, `calendar.get_events`, and `trigger: calendar` automations. Today's and the next workout list their steps as the event description.
 
 > **Note on adaptive/Coach plans:** don't expect a full plan's worth of sessions here. Garmin only assigns the *next* workout once it sees how the current one goes, so there's typically exactly one scheduled workout at a time, plus the plan's goal event far out on the calendar — with nothing in between. Confirmed directly against Garmin Connect's own calendar UI, not just this integration's access to it: the gap is real on Garmin's side.
 
