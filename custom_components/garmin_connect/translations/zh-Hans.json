@@ -204,7 +204,7 @@
       "stress_qualifier": { "name": "压力级别" },
       "total_calories": { "name": "总卡路里" },
       "total_distance": { "name": "总距离" },
-      "total_intensity_minutes": { "name": "高强度运动时间" },
+      "total_intensity_minutes": { "name": "强度分钟数" },
       "total_sleep_duration": { "name": "总睡眠时长" },
       "total_steps": { "name": "总步数" },
       "total_stress_duration": { "name": "压力总时长" },
@@ -268,7 +268,7 @@
       "yesterday_body_battery_charged": { "name": "昨日身体电量充电" },
       "yesterday_body_battery_drained": { "name": "昨日身体电量耗电" },
       "yesterday_resting_heart_rate": { "name": "昨日静息心率" },
-      "yesterday_intensity_minutes": { "name": "昨日高强度运动时间" }
+      "yesterday_intensity_minutes": { "name": "昨日强度分钟数" }
     }
   },
   "services": {

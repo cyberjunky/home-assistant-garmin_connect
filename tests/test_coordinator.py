@@ -405,7 +405,7 @@ def _with_yesterday_sensor(coordinator: CoreCoordinator) -> CoreCoordinator:
     return coordinator
 
 
-async def test_core_skips_yesterday_without_enabled_sensor() -> None:
+async def test_core_skips_yesterday_without_enabled_sensor():
     client = _yesterday_client(date(2026, 10, 18))
     coordinator = _make_base(client)
 
@@ -414,7 +414,7 @@ async def test_core_skips_yesterday_without_enabled_sensor() -> None:
     client._get_user_summary_raw.assert_not_awaited()
 
 
-async def test_core_adds_yesterday_and_caches() -> None:
+async def test_core_adds_yesterday_and_caches():
     client = _yesterday_client(date(2026, 10, 18))
     coordinator = _with_yesterday_sensor(_make_base(client))
 
@@ -429,7 +429,7 @@ async def test_core_adds_yesterday_and_caches() -> None:
     assert client._get_user_summary_raw.await_count == 1
 
 
-async def test_core_refetches_yesterday_on_new_day() -> None:
+async def test_core_refetches_yesterday_on_new_day():
     client = _yesterday_client(date(2026, 10, 18))
     coordinator = _with_yesterday_sensor(_make_base(client))
     await coordinator._async_update_data()
@@ -440,7 +440,21 @@ async def test_core_refetches_yesterday_on_new_day() -> None:
     assert client._get_user_summary_raw.await_count == 2
 
 
-async def test_core_drops_old_yesterday_when_new_day_fetch_fails() -> None:
+async def test_core_retries_yesterday_after_empty_summary():
+    client = _yesterday_client(date(2026, 10, 18))
+    client._get_user_summary_raw.return_value = {}
+    coordinator = _with_yesterday_sensor(_make_base(client))
+
+    data = await coordinator._async_update_data()
+    assert "yesterdayAverageStressLevel" not in data
+
+    client._get_user_summary_raw.return_value = dict(_RAW_DAY)
+    data = await coordinator._async_update_data()
+    assert data["yesterdayAverageStressLevel"] == 42
+    assert client._get_user_summary_raw.await_count == 2
+
+
+async def test_core_drops_old_yesterday_when_new_day_fetch_fails():
     """After midnight a failed fetch must not show the day before as yesterday."""
     client = _yesterday_client(date(2026, 10, 18))
     coordinator = _with_yesterday_sensor(_make_base(client))
@@ -468,6 +482,7 @@ async def test_core_refetches_yesterday_on_new_sync() -> None:
     data = await coordinator._async_update_data()
     assert data["yesterdayAverageStressLevel"] == 44
     assert client._get_user_summary_raw.await_count == 2
+    client._get_user_summary_raw.assert_awaited_with(date(2026, 10, 17))
 
 
 async def test_core_survives_yesterday_failure() -> None:

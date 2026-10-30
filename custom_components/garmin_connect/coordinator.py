@@ -242,12 +242,15 @@ class CoreCoordinator(BaseGarminCoordinator):
     async def _yesterday_summary(self, last_sync: Any) -> dict[str, Any]:
         """Return yesterday's summary, re-fetched on a new day or watch sync.
 
-        A failed fetch leaves the cache as it was, so the next poll retries.
+        A failed or empty fetch leaves the cache as it was, so the next poll
+        retries.
         """
         target = self.client.today() - timedelta(days=1)
         if target != self._yesterday_date or last_sync != self._yesterday_sync:
             raw = await self.client._get_user_summary_raw(target)  # noqa: SLF001
-            self._yesterday = summarize_day(raw, target) if raw else {}
+            if not raw:
+                return {}
+            self._yesterday = summarize_day(raw, target)
             self._yesterday_date = target
             self._yesterday_sync = last_sync
         return self._yesterday

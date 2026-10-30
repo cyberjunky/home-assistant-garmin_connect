@@ -105,7 +105,7 @@ def test_menstrual_sensors_disabled_by_default() -> None:
         )
 
 
-def test_yesterday_summary_sensors_disabled_and_fetched_on_demand() -> None:
+def test_yesterday_summary_sensors_disabled_and_fetched_on_demand():
     """Yesterday's summary sensors cost an API call, so they're opt-in.
 
     Their coordinator context lets CoreCoordinator skip the fetch while none
