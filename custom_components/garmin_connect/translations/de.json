@@ -259,7 +259,19 @@
       "wellness_end_time": { "name": "Wellness Endzeit" },
       "wellness_start_time": { "name": "Wellness Startzeit" },
       "yesterday_distance": { "name": "Distanz gestern" },
-      "yesterday_steps": { "name": "Schritte gestern" }
+      "yesterday_steps": { "name": "Schritte gestern" },
+      "yesterday_active_calories": { "name": "Aktive Kalorien gestern" },
+      "yesterday_avg_stress_level": { "name": "Durchschnittliches Stresslevel gestern" },
+      "yesterday_max_stress_level": { "name": "Maximales Stresslevel gestern" },
+      "yesterday_stress_duration": { "name": "Stressdauer gestern" },
+      "yesterday_high_stress_duration": { "name": "Dauer hoher Stress gestern" },
+      "yesterday_rest_stress_duration": { "name": "Dauer Ruhestress gestern" },
+      "yesterday_body_battery_highest": { "name": "Body Battery Höchstwert gestern" },
+      "yesterday_body_battery_lowest": { "name": "Body Battery Tiefstwert gestern" },
+      "yesterday_body_battery_charged": { "name": "Body Battery geladen gestern" },
+      "yesterday_body_battery_drained": { "name": "Body Battery verbraucht gestern" },
+      "yesterday_resting_heart_rate": { "name": "Ruhepuls gestern" },
+      "yesterday_intensity_minutes": { "name": "Intensitätsminuten gestern" }
     }
   },
   "services": {
@@ -405,6 +417,14 @@
         "gear_uuid": { "name": "Ausrüstungs-UUID", "description": "Die UUID der hinzuzufügenden Ausrüstung." },
         "entity_id": { "name": "Ausrüstungs-Sensor", "description": "Alternative zur Ausrüstungs-UUID — wähle eine Ausrüstungs-Sensor-Entität." }
       }
+    },
+    "get_day_summary": {
+      "name": "Tageszusammenfassung abrufen",
+      "description": "Ruft die Tageszusammenfassung (Schritte, Stress, Body Battery, Ruhepuls, Intensitätsminuten) für ein beliebiges Datum von Garmin Connect ab und gibt sie zurück.",
+      "fields": {
+        "date": { "name": "Datum", "description": "Der abzurufende Tag." },
+        "entity_id": { "name": "Garmin Connect-Entität", "description": "Optionale Garmin Connect-Entität, deren Konto gelesen wird." }
+      }
     }
   },
   "exceptions": {
@@ -432,7 +452,8 @@
     "ambiguous_account": { "message": "Es sind mehrere Garmin-Connect-Konten eingerichtet. Gib eine entity_id an, um das gewünschte Konto auszuwählen." },
     "set_active_gear_failed": { "message": "Aktive Ausrüstung konnte nicht festgelegt werden: {error}" },
     "unsupported_file_format": { "message": "Nicht unterstützte Aktivitätsdatei {file_path}. Unterstützte Formate: {formats}" },
-    "upload_activity_failed": { "message": "Aktivität konnte nicht hochgeladen werden: {error}" }
+    "upload_activity_failed": { "message": "Aktivität konnte nicht hochgeladen werden: {error}" },
+    "get_day_summary_failed": { "message": "Tageszusammenfassung konnte nicht abgerufen werden: {error}" }
   },
   "issues": {
     "connect_plus_required": {

@@ -37,6 +37,7 @@ from homeassistant.util import dt as dt_util
 
 from .const import DOMAIN
 from .coordinator import (
+    YESTERDAY_CONTEXT,
     BaseGarminCoordinator,
     GarminConnectConfigEntry,
     GearCoordinator,
@@ -76,6 +77,9 @@ class GarminConnectSensorEntityDescription(SensorEntityDescription):
 
     preserve_value: bool = False
     """Retain last known value when API returns None (weight, sleep at midnight, etc)."""
+
+    coordinator_context: str | None = None
+    """Coordinator context; lets the coordinator skip data no enabled sensor uses."""
 
 
 # ── CORE coordinator sensors ─────────────────────────────────────────────────
@@ -736,12 +740,15 @@ SYNC_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
     ),
 )
 
-# Yesterday's final daily summary (CoreCoordinator keeps it fresh), so a day
-# isn't lost when the watch only uploads after midnight.
+# Yesterday's final daily summary, so a day isn't lost when the watch only
+# uploads after midnight. Disabled by default: CoreCoordinator only fetches it
+# (one extra call per new watch sync) while one of these is enabled.
 YESTERDAY_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
     GarminConnectSensorEntityDescription(
         key="yesterdayAverageStressLevel",
         translation_key="yesterday_avg_stress_level",
+        coordinator_context=YESTERDAY_CONTEXT,
+        entity_registry_enabled_default=False,
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement="level",
         attributes_fn=lambda data: {"date": data.get("yesterdayDate")},
@@ -749,12 +756,16 @@ YESTERDAY_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
     GarminConnectSensorEntityDescription(
         key="yesterdayMaxStressLevel",
         translation_key="yesterday_max_stress_level",
+        coordinator_context=YESTERDAY_CONTEXT,
+        entity_registry_enabled_default=False,
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement="level",
     ),
     GarminConnectSensorEntityDescription(
         key="yesterdayStressMinutes",
         translation_key="yesterday_stress_duration",
+        coordinator_context=YESTERDAY_CONTEXT,
+        entity_registry_enabled_default=False,
         device_class=SensorDeviceClass.DURATION,
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement=UnitOfTime.MINUTES,
@@ -762,6 +773,8 @@ YESTERDAY_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
     GarminConnectSensorEntityDescription(
         key="yesterdayHighStressMinutes",
         translation_key="yesterday_high_stress_duration",
+        coordinator_context=YESTERDAY_CONTEXT,
+        entity_registry_enabled_default=False,
         device_class=SensorDeviceClass.DURATION,
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement=UnitOfTime.MINUTES,
@@ -769,6 +782,8 @@ YESTERDAY_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
     GarminConnectSensorEntityDescription(
         key="yesterdayRestMinutes",
         translation_key="yesterday_rest_stress_duration",
+        coordinator_context=YESTERDAY_CONTEXT,
+        entity_registry_enabled_default=False,
         device_class=SensorDeviceClass.DURATION,
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement=UnitOfTime.MINUTES,
@@ -776,36 +791,48 @@ YESTERDAY_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
     GarminConnectSensorEntityDescription(
         key="yesterdayBodyBatteryHighest",
         translation_key="yesterday_body_battery_highest",
+        coordinator_context=YESTERDAY_CONTEXT,
+        entity_registry_enabled_default=False,
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement=PERCENTAGE,
     ),
     GarminConnectSensorEntityDescription(
         key="yesterdayBodyBatteryLowest",
         translation_key="yesterday_body_battery_lowest",
+        coordinator_context=YESTERDAY_CONTEXT,
+        entity_registry_enabled_default=False,
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement=PERCENTAGE,
     ),
     GarminConnectSensorEntityDescription(
         key="yesterdayBodyBatteryCharged",
         translation_key="yesterday_body_battery_charged",
+        coordinator_context=YESTERDAY_CONTEXT,
+        entity_registry_enabled_default=False,
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement=PERCENTAGE,
     ),
     GarminConnectSensorEntityDescription(
         key="yesterdayBodyBatteryDrained",
         translation_key="yesterday_body_battery_drained",
+        coordinator_context=YESTERDAY_CONTEXT,
+        entity_registry_enabled_default=False,
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement=PERCENTAGE,
     ),
     GarminConnectSensorEntityDescription(
         key="yesterdayRestingHeartRate",
         translation_key="yesterday_resting_heart_rate",
+        coordinator_context=YESTERDAY_CONTEXT,
+        entity_registry_enabled_default=False,
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement="bpm",
     ),
     GarminConnectSensorEntityDescription(
         key="yesterdayIntensityMinutes",
         translation_key="yesterday_intensity_minutes",
+        coordinator_context=YESTERDAY_CONTEXT,
+        entity_registry_enabled_default=False,
         device_class=SensorDeviceClass.DURATION,
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement=UnitOfTime.MINUTES,
@@ -817,6 +844,8 @@ YESTERDAY_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
     GarminConnectSensorEntityDescription(
         key="yesterdayActiveCalories",
         translation_key="yesterday_active_calories",
+        coordinator_context=YESTERDAY_CONTEXT,
+        entity_registry_enabled_default=False,
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement=UnitOfEnergy.KILO_CALORIE,
     ),
@@ -2151,7 +2180,7 @@ class GarminConnectSensor(CoordinatorEntity[BaseGarminCoordinator], RestoreSenso
         entry_id: str,
     ) -> None:
         """Initialize the sensor."""
-        super().__init__(coordinator)
+        super().__init__(coordinator, context=description.coordinator_context)
         self.entity_description = description
         self._attr_unique_id = f"{entry_id}_{description.key}"
         self._attr_device_info = DeviceInfo(

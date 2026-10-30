@@ -87,7 +87,7 @@ The integration uses cloud polling to fetch data from Garmin Connect servers. Da
 | Menstrual | Cycle phase, day, fertile window |
 | Nutrition | Consumed calories & macros, goals, per-meal breakdown (Connect+, disabled by default) |
 
-> **Yesterday's totals:** every poll asks Garmin for *today*. If the watch only uploads after midnight, the last hours of the previous day never reach the daily sensors. The `Yesterday …` sensors fix that: the Core coordinator re-reads the previous day's summary when the date rolls over, when a new device sync lands, and otherwise every 30 minutes (one extra API call at most per 30 minutes). Use them for end-of-day reports, or `garmin_connect.get_day_summary` for any other date.
+> **Yesterday's totals:** every poll asks Garmin for *today*. If the watch only uploads after midnight, the last hours of the previous day never reach the daily sensors. The `Yesterday …` stress, Body Battery, resting heart rate, intensity minutes and active calories sensors fix that. They are **disabled by default**: enable the ones you want under **Settings → Devices & services → Garmin Connect → Entities**. While at least one is enabled, the previous day's summary is read again when the date rolls over and when a new watch sync lands (one extra API call each time); with none enabled, nothing extra is fetched. Use them for end-of-day reports, or `garmin_connect.get_day_summary` for any other date.
 
 > **Tip:** Garmin devices sync to Garmin Connect when in Bluetooth range of the paired phone or via WiFi. Sensors update after your device syncs to Garmin Connect **and** the integration polls for new data.
 

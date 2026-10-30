@@ -206,6 +206,7 @@ def test_calendar_event_property_uses_upcoming_event_without_goal() -> None:
     assert calendar.event is not None
     assert calendar.event.summary == "10K"
 
+
 async def test_calendar_get_events_includes_upcoming_events() -> None:
     """Upcoming races show up; the goal event, also an upcoming event, appears once."""
     coord = MagicMock()
