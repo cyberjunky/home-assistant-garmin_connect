@@ -303,6 +303,8 @@ def mock_body_data() -> dict:
     """Sample data for BodyCoordinator (fetch_body_data output)."""
     return {
         "weightKg": 75.0,
+        "timestampGMT": 1792329232000,
+        "date": 1792336432000,
         "bmi": 24.5,
         "bodyFat": 18.5,
         "bodyWater": 60.0,

@@ -181,7 +181,7 @@ All sensors are created under a single "Garmin Connect" device. Entity IDs follo
 
 | Sensor | Description |
 |--------|-------------|
-| Weight | Body weight in kg |
+| Weight | Body weight in kg, attribute `measurement_time` (timestamp of the weigh-in) |
 | BMI | Body Mass Index |
 | Body Fat / Body Water | Percentage measurements |
 | Muscle Mass / Bone Mass | Mass measurements in kg |
