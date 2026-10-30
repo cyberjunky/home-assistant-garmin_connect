@@ -736,8 +736,95 @@ SYNC_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
     ),
 )
 
+# Yesterday's final daily summary (CoreCoordinator keeps it fresh), so a day
+# isn't lost when the watch only uploads after midnight.
+YESTERDAY_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
+    GarminConnectSensorEntityDescription(
+        key="yesterdayAverageStressLevel",
+        translation_key="yesterday_avg_stress_level",
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement="level",
+        attributes_fn=lambda data: {"date": data.get("yesterdayDate")},
+    ),
+    GarminConnectSensorEntityDescription(
+        key="yesterdayMaxStressLevel",
+        translation_key="yesterday_max_stress_level",
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement="level",
+    ),
+    GarminConnectSensorEntityDescription(
+        key="yesterdayStressMinutes",
+        translation_key="yesterday_stress_duration",
+        device_class=SensorDeviceClass.DURATION,
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=UnitOfTime.MINUTES,
+    ),
+    GarminConnectSensorEntityDescription(
+        key="yesterdayHighStressMinutes",
+        translation_key="yesterday_high_stress_duration",
+        device_class=SensorDeviceClass.DURATION,
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=UnitOfTime.MINUTES,
+    ),
+    GarminConnectSensorEntityDescription(
+        key="yesterdayRestMinutes",
+        translation_key="yesterday_rest_stress_duration",
+        device_class=SensorDeviceClass.DURATION,
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=UnitOfTime.MINUTES,
+    ),
+    GarminConnectSensorEntityDescription(
+        key="yesterdayBodyBatteryHighest",
+        translation_key="yesterday_body_battery_highest",
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=PERCENTAGE,
+    ),
+    GarminConnectSensorEntityDescription(
+        key="yesterdayBodyBatteryLowest",
+        translation_key="yesterday_body_battery_lowest",
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=PERCENTAGE,
+    ),
+    GarminConnectSensorEntityDescription(
+        key="yesterdayBodyBatteryCharged",
+        translation_key="yesterday_body_battery_charged",
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=PERCENTAGE,
+    ),
+    GarminConnectSensorEntityDescription(
+        key="yesterdayBodyBatteryDrained",
+        translation_key="yesterday_body_battery_drained",
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=PERCENTAGE,
+    ),
+    GarminConnectSensorEntityDescription(
+        key="yesterdayRestingHeartRate",
+        translation_key="yesterday_resting_heart_rate",
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement="bpm",
+    ),
+    GarminConnectSensorEntityDescription(
+        key="yesterdayIntensityMinutes",
+        translation_key="yesterday_intensity_minutes",
+        device_class=SensorDeviceClass.DURATION,
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=UnitOfTime.MINUTES,
+        attributes_fn=lambda data: {
+            "moderate": data.get("yesterdayModerateIntensityMinutes"),
+            "vigorous": data.get("yesterdayVigorousIntensityMinutes"),
+        },
+    ),
+    GarminConnectSensorEntityDescription(
+        key="yesterdayActiveCalories",
+        translation_key="yesterday_active_calories",
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=UnitOfEnergy.KILO_CALORIE,
+    ),
+)
+
 # All CORE sensor descriptions
 CORE_SENSOR_DESCRIPTIONS: tuple[GarminConnectSensorEntityDescription, ...] = (
+    *YESTERDAY_SENSORS,
     *ACTIVITY_SENSORS,
     *CALORIES_SENSORS,
     *HEART_RATE_SENSORS,

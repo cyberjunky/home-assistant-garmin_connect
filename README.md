@@ -87,6 +87,8 @@ The integration uses cloud polling to fetch data from Garmin Connect servers. Da
 | Menstrual | Cycle phase, day, fertile window |
 | Nutrition | Consumed calories & macros, goals, per-meal breakdown (Connect+, disabled by default) |
 
+> **Yesterday's totals:** every poll asks Garmin for *today*. If the watch only uploads after midnight, the last hours of the previous day never reach the daily sensors. The `Yesterday …` sensors fix that: the Core coordinator re-reads the previous day's summary when the date rolls over, when a new device sync lands, and otherwise every 30 minutes (one extra API call at most per 30 minutes). Use them for end-of-day reports, or `garmin_connect.get_day_summary` for any other date.
+
 > **Tip:** Garmin devices sync to Garmin Connect when in Bluetooth range of the paired phone or via WiFi. Sensors update after your device syncs to Garmin Connect **and** the integration polls for new data.
 
 ## Sensors
@@ -103,6 +105,7 @@ All sensors are created under a single "Garmin Connect" device. Entity IDs follo
 | Daily Step Goal | Your configured step target |
 | Distance | Distance walked/run in meters |
 | Yesterday Steps / Distance | Previous day's complete totals |
+| Yesterday Active Calories | Previous day's final active calories |
 | Weekly Step / Distance Avg | 7-day averages |
 | Floors Ascended / Descended | Floors climbed and descended |
 | Floors Ascended Distance | Vertical distance climbed in meters |
@@ -145,6 +148,10 @@ All sensors are created under a single "Garmin Connect" device. Entity IDs follo
 | Total Stress Duration | Total time in stress |
 | Rest / Activity / Low / Medium / High Stress Duration | Duration breakdowns |
 | Stress Percentage | Percentage breakdowns by category |
+| Yesterday Average / Max Stress | Previous day's final stress (attribute `date`) |
+| Yesterday Stress / High Stress / Rest Duration | Previous day's final durations in minutes |
+| Yesterday Resting Heart Rate | Previous day's resting heart rate |
+| Yesterday Intensity Minutes | Previous day's moderate + 2× vigorous (attributes `moderate`, `vigorous`) |
 
 ### Sleep
 
@@ -168,6 +175,7 @@ All sensors are created under a single "Garmin Connect" device. Entity IDs follo
 | Body Battery | Current energy level (0–100) |
 | Charged / Drained | Energy gained and spent |
 | Highest / Lowest | Daily peak and low |
+| Yesterday Highest / Lowest / Charged / Drained | Previous day's final Body Battery |
 
 ### Body Composition
 
@@ -521,6 +529,24 @@ data:
   activity_id: 23545484677
   file_format: gpx
 response_variable: download
+```
+
+### garmin_connect.get_day_summary
+
+Return the daily summary for any date (response only). Useful to backfill a day that was missed, or to read a past day in a script.
+
+| Parameter | Required | Description |
+|-----------|----------|-------------|
+| `entity_id` | No | Garmin Connect entity whose account to read |
+| `date` | Yes | Date to read, e.g. `2026-10-16` |
+
+The response has `date`, `summary` (the same fields as the `Yesterday …` sensors, plus `totalSteps` and `totalDistanceMeters`) and `raw` (Garmin's full daily summary).
+
+```yaml
+action: garmin_connect.get_day_summary
+data:
+  date: "2026-10-16"
+response_variable: day
 ```
 
 ### garmin_connect.add_nutrition_log

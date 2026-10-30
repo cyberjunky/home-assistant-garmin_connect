@@ -258,13 +258,33 @@
       "wellness_end_time": { "name": "Wellness end time" },
       "wellness_start_time": { "name": "Wellness start time" },
       "yesterday_distance": { "name": "Yesterday distance" },
-      "yesterday_steps": { "name": "Yesterday steps" }
+      "yesterday_steps": { "name": "Yesterday steps" },
+      "yesterday_active_calories": { "name": "Yesterday active calories" },
+      "yesterday_avg_stress_level": { "name": "Yesterday avg stress level" },
+      "yesterday_body_battery_charged": { "name": "Yesterday body battery charged" },
+      "yesterday_body_battery_drained": { "name": "Yesterday body battery drained" },
+      "yesterday_body_battery_highest": { "name": "Yesterday body battery highest" },
+      "yesterday_body_battery_lowest": { "name": "Yesterday body battery lowest" },
+      "yesterday_high_stress_duration": { "name": "Yesterday high stress duration" },
+      "yesterday_intensity_minutes": { "name": "Yesterday intensity minutes" },
+      "yesterday_max_stress_level": { "name": "Yesterday max stress level" },
+      "yesterday_resting_heart_rate": { "name": "Yesterday resting heart rate" },
+      "yesterday_rest_stress_duration": { "name": "Yesterday rest duration" },
+      "yesterday_stress_duration": { "name": "Yesterday stress duration" }
     },
     "calendar": {
       "scheduled_workouts": { "name": "Scheduled workouts" }
     }
   },
   "services": {
+    "get_day_summary": {
+      "name": "Get day summary",
+      "description": "Fetch the daily summary (steps, stress, Body Battery, resting heart rate, intensity minutes) for any date from Garmin Connect and return it.",
+      "fields": {
+        "date": { "name": "Date", "description": "The day to fetch." },
+        "entity_id": { "name": "Entity", "description": "Optional Garmin Connect entity whose account to read." }
+      }
+    },
     "set_active_gear": {
       "name": "Set active gear",
       "description": "Set gear as active/default for an activity type.",
@@ -410,6 +430,7 @@
     }
   },
   "exceptions": {
+    "get_day_summary_failed": { "message": "Failed to fetch the day summary: {error}" },
     "add_blood_pressure_failed": { "message": "Failed to add blood pressure: {error}" },
     "add_hydration_failed": { "message": "Failed to log hydration: {error}" },
     "add_nutrition_failed": { "message": "Failed to log nutrition: {error}" },

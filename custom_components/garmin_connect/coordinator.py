@@ -158,14 +158,117 @@ class BaseGarminCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             self._update_tokens_if_changed()
 
 
+YESTERDAY_REFRESH = timedelta(minutes=30)
+
+
+def summarize_day(raw: dict[str, Any], day: date) -> dict[str, Any]:
+    """Map a raw Garmin daily summary to the 'yesterday*' fields.
+
+    Garmin reports stress as -1/-2 when there isn't enough data; those become None.
+    """
+
+    def _stress(value: Any) -> Any:
+        return value if isinstance(value, (int, float)) and value >= 0 else None
+
+    def _minutes(seconds: Any) -> Any:
+        return round(seconds / 60) if isinstance(seconds, (int, float)) else None
+
+    moderate = raw.get("moderateIntensityMinutes")
+    vigorous = raw.get("vigorousIntensityMinutes")
+    intensity = (
+        (moderate or 0) + (vigorous or 0) * 2
+        if moderate is not None or vigorous is not None
+        else None
+    )
+    return {
+        "yesterdayDate": raw.get("calendarDate") or day.isoformat(),
+        "yesterdayAverageStressLevel": _stress(raw.get("averageStressLevel")),
+        "yesterdayMaxStressLevel": _stress(raw.get("maxStressLevel")),
+        "yesterdayStressMinutes": _minutes(raw.get("stressDuration")),
+        "yesterdayHighStressMinutes": _minutes(raw.get("highStressDuration")),
+        "yesterdayRestMinutes": _minutes(raw.get("restStressDuration")),
+        "yesterdayBodyBatteryHighest": raw.get("bodyBatteryHighestValue"),
+        "yesterdayBodyBatteryLowest": raw.get("bodyBatteryLowestValue"),
+        "yesterdayBodyBatteryCharged": raw.get("bodyBatteryChargedValue"),
+        "yesterdayBodyBatteryDrained": raw.get("bodyBatteryDrainedValue"),
+        "yesterdayRestingHeartRate": raw.get("restingHeartRate"),
+        "yesterdayIntensityMinutes": intensity,
+        "yesterdayModerateIntensityMinutes": moderate,
+        "yesterdayVigorousIntensityMinutes": vigorous,
+        "yesterdayActiveCalories": raw.get("activeKilocalories"),
+        "yesterdayFloorsAscended": raw.get("floorsAscended"),
+    }
+
+
 class CoreCoordinator(BaseGarminCoordinator):
-    """Coordinator for core data: summary, steps, sleep (~50 sensors)."""
+    """Coordinator for core data: summary, steps, sleep (~50 sensors).
+
+    Also keeps yesterday's final daily summary (stress, Body Battery, resting
+    HR, intensity minutes), so a day isn't lost when the watch only uploads
+    after midnight. Re-fetched when the date rolls, when a new watch sync
+    lands, and at most every 30 minutes otherwise (one extra API call).
+    """
 
     data_name = "core"
 
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        entry: ConfigEntry,
+        client: GarminClient,
+        auth: GarminAuth,
+    ) -> None:
+        """Initialize."""
+        super().__init__(hass, entry, client, auth)
+        self._yesterday: dict[str, Any] = {}
+        self._yesterday_date: date | None = None
+        self._yesterday_sync: Any = None
+        self._yesterday_fetched = None
+
     async def _fetch(self) -> dict[str, Any]:
-        """Fetch core data."""
-        return await self.client.fetch_core_data()
+        """Fetch core data plus yesterday's final summary."""
+        data = await self.client.fetch_core_data()
+        try:
+            await self._refresh_yesterday(data.get("lastSyncTimestamp"))
+        except (GarminConnectError, ClientError) as err:
+            _LOGGER.debug("Error fetching yesterday's summary: %s", err)
+        if self._yesterday and isinstance(data, dict):
+            data.update(self._yesterday)
+        return data
+
+    async def _refresh_yesterday(self, last_sync: Any) -> None:
+        """Fetch yesterday's summary if the date, the sync or the clock says so."""
+        today = self.client.today()
+        if not isinstance(today, date):
+            return
+        target = today - timedelta(days=1)
+        now = dt_util.utcnow()
+        if (
+            self._yesterday
+            and target == self._yesterday_date
+            and last_sync == self._yesterday_sync
+            and self._yesterday_fetched is not None
+            and now - self._yesterday_fetched < YESTERDAY_REFRESH
+        ):
+            return
+        raw = await self.client._get_user_summary_raw(target)  # noqa: SLF001
+        self._yesterday_fetched = now
+        if not raw or not isinstance(raw, dict):
+            return
+        self._yesterday = summarize_day(raw, target)
+        self._yesterday_date = target
+        self._yesterday_sync = last_sync
+
+    async def async_get_day(self, day: date) -> dict[str, Any]:
+        """Return the mapped and raw daily summary for any date."""
+        raw = await self.client._get_user_summary_raw(day)  # noqa: SLF001
+        fields = {
+            key.removeprefix("yesterday")[:1].lower() + key.removeprefix("yesterday")[1:]: value
+            for key, value in summarize_day(raw or {}, day).items()
+        }
+        fields["totalSteps"] = (raw or {}).get("totalSteps")
+        fields["totalDistanceMeters"] = (raw or {}).get("totalDistanceMeters")
+        return {"summary": fields, "raw": raw or {}}
 
 
 class ActivityCoordinator(BaseGarminCoordinator):
