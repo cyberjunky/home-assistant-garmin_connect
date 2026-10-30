@@ -77,7 +77,7 @@ def _get_client_for_entry(mock_hass: MagicMock, entry_id: str) -> AsyncMock:
 
 
 async def test_setup_registers_all_services(mock_hass: MagicMock) -> None:
-    """async_setup_services must register all 14 service handlers."""
+    """async_setup_services must register all 15 service handlers."""
     async_setup_services(mock_hass)
 
     registered = {call[0][1] for call in mock_hass.services.async_register.call_args_list}
@@ -96,6 +96,7 @@ async def test_setup_registers_all_services(mock_hass: MagicMock) -> None:
         "delete_workout",
         "schedule_workout",
         "unschedule_workout",
+        "get_day_summary",
     }
 
 

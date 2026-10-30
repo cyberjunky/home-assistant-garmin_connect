@@ -119,6 +119,8 @@
       "devices": { "name": "设备" },
       "endurance_score": { "name": "耐力得分" },
       "fitness_age": { "name": "健身年龄" },
+      "vigorous_days_avg": { "name": "每周高强度天数" },
+      "vigorous_minutes_avg": { "name": "每周高强度分钟数" },
       "floors_ascended": { "name": "上升楼层" },
       "floors_ascended_distance": { "name": "上升楼层距离" },
       "floors_ascended_goal": { "name": "上升楼层目标" },
@@ -204,7 +206,7 @@
       "stress_qualifier": { "name": "压力级别" },
       "total_calories": { "name": "总卡路里" },
       "total_distance": { "name": "总距离" },
-      "total_intensity_minutes": { "name": "高强度运动时间" },
+      "total_intensity_minutes": { "name": "强度分钟数" },
       "total_sleep_duration": { "name": "总睡眠时长" },
       "total_steps": { "name": "总步数" },
       "total_stress_duration": { "name": "压力总时长" },
@@ -256,7 +258,19 @@
       "wellness_end_time": { "name": "健康监测结束时间" },
       "wellness_start_time": { "name": "健康监测开始时间" },
       "yesterday_distance": { "name": "昨日距离" },
-      "yesterday_steps": { "name": "昨日步数" }
+      "yesterday_steps": { "name": "昨日步数" },
+      "yesterday_active_calories": { "name": "昨日活动卡路里" },
+      "yesterday_avg_stress_level": { "name": "昨日平均压力等级" },
+      "yesterday_max_stress_level": { "name": "昨日最高压力等级" },
+      "yesterday_stress_duration": { "name": "昨日压力时长" },
+      "yesterday_high_stress_duration": { "name": "昨日高度压力时长" },
+      "yesterday_rest_stress_duration": { "name": "昨日休息时压力时长" },
+      "yesterday_body_battery_highest": { "name": "昨日身体电量最高值" },
+      "yesterday_body_battery_lowest": { "name": "昨日身体电量最低值" },
+      "yesterday_body_battery_charged": { "name": "昨日身体电量充电" },
+      "yesterday_body_battery_drained": { "name": "昨日身体电量耗电" },
+      "yesterday_resting_heart_rate": { "name": "昨日静息心率" },
+      "yesterday_intensity_minutes": { "name": "昨日强度分钟数" }
     }
   },
   "services": {
@@ -346,6 +360,14 @@
         "gear_uuid": { "name": "装备 UUID", "description": "要添加的装备的 UUID。" },
         "entity_id": { "name": "装备传感器实体", "description": "gear_uuid 的替代项 — 选择一个装备传感器实体。" }
       }
+    },
+    "get_day_summary": {
+      "name": "获取每日摘要",
+      "description": "从 Garmin Connect 获取任意日期的每日摘要（步数、压力、身体电量、静息心率、强度分钟数）并返回。",
+      "fields": {
+        "date": { "name": "日期", "description": "要获取的日期。" },
+        "entity_id": { "name": "Garmin Connect 实体", "description": "可选，指定要读取其账户的 Garmin Connect 实体。" }
+      }
     }
   },
   "exceptions": {
@@ -366,6 +388,7 @@
     "set_active_gear_failed": { "message": "设置默认装备失败:{error}" },
     "unsupported_file_format": { "message": "不支持的活动文件 {file_path}。支持的格式:{formats}" },
     "upload_activity_failed": { "message": "上传活动失败:{error}" },
-    "add_nutrition_failed": { "message": "记录营养失败:{error}" }
+    "add_nutrition_failed": { "message": "记录营养失败:{error}" },
+    "get_day_summary_failed": { "message": "获取每日摘要失败：{error}" }
   }
 }

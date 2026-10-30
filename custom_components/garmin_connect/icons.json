@@ -13,7 +13,8 @@
     "update_workout": { "service": "mdi:clipboard-edit-outline" },
     "delete_workout": { "service": "mdi:clipboard-remove-outline" },
     "schedule_workout": { "service": "mdi:calendar-plus" },
-    "unschedule_workout": { "service": "mdi:calendar-remove" }
+    "unschedule_workout": { "service": "mdi:calendar-remove" },
+    "get_day_summary": { "service": "mdi:calendar-today" }
   },
   "entity": {
     "sensor": {
@@ -51,6 +52,8 @@
       "devices": { "default": "mdi:watch" },
       "endurance_score": { "default": "mdi:run" },
       "fitness_age": { "default": "mdi:calendar-heart" },
+      "vigorous_days_avg": { "default": "mdi:calendar-check" },
+      "vigorous_minutes_avg": { "default": "mdi:run-fast" },
       "floors_ascended": { "default": "mdi:stairs-up" },
       "floors_ascended_distance": { "default": "mdi:stairs-up" },
       "floors_ascended_goal": { "default": "mdi:target" },
@@ -166,6 +169,18 @@
       "wellness_start_time": { "default": "mdi:clock" },
       "yesterday_distance": { "default": "mdi:map-marker-distance" },
       "yesterday_steps": { "default": "mdi:walk" },
+      "yesterday_active_calories": { "default": "mdi:fire" },
+      "yesterday_avg_stress_level": { "default": "mdi:gauge" },
+      "yesterday_max_stress_level": { "default": "mdi:gauge-full" },
+      "yesterday_stress_duration": { "default": "mdi:timer-alert" },
+      "yesterday_high_stress_duration": { "default": "mdi:timer-remove" },
+      "yesterday_rest_stress_duration": { "default": "mdi:timer-pause" },
+      "yesterday_body_battery_highest": { "default": "mdi:battery-charging-100" },
+      "yesterday_body_battery_lowest": { "default": "mdi:battery-heart-outline" },
+      "yesterday_body_battery_charged": { "default": "mdi:battery-plus" },
+      "yesterday_body_battery_drained": { "default": "mdi:battery-minus" },
+      "yesterday_resting_heart_rate": { "default": "mdi:heart-pulse" },
+      "yesterday_intensity_minutes": { "default": "mdi:fire" },
       "altitude_acclimation": { "default": "mdi:image-filter-hdr" },
       "heat_acclimation": { "default": "mdi:thermometer-high" },
       "lifetime_active_days": { "default": "mdi:calendar-check" },

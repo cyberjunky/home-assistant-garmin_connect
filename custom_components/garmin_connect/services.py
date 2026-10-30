@@ -49,6 +49,7 @@ SERVICE_UPDATE_WORKOUT = "update_workout"
 SERVICE_DELETE_WORKOUT = "delete_workout"
 SERVICE_SCHEDULE_WORKOUT = "schedule_workout"
 SERVICE_UNSCHEDULE_WORKOUT = "unschedule_workout"
+SERVICE_GET_DAY_SUMMARY = "get_day_summary"
 
 # Errors the library raises for bad input (unparsable timestamp, value out of
 # its own limits, unsupported file) on top of its API/network errors.
@@ -271,6 +272,14 @@ UNSCHEDULE_WORKOUT_SCHEMA = vol.Schema(
     {
         vol.Optional("entity_id"): cv.entity_id,
         vol.Required("schedule_id"): _positive_id,
+    }
+)
+
+
+GET_DAY_SUMMARY_SCHEMA = vol.Schema(
+    {
+        vol.Optional("entity_id"): cv.entity_id,
+        vol.Required("date"): cv.date,
     }
 )
 
@@ -743,6 +752,20 @@ def async_setup_services(hass: HomeAssistant) -> None:
             scheduled_workout_id=call.data["schedule_id"],
         )
 
+    async def handle_get_day_summary(call: ServiceCall) -> ServiceResponse:
+        """Return the daily summary for any date (backfills a day the watch synced late)."""
+        coordinators = _get_coordinators(hass, entity_id=call.data.get("entity_id"))
+        day: date = call.data["date"]
+        try:
+            result = await coordinators.core.async_get_day(day)
+        except _SERVICE_ERRORS as err:
+            raise HomeAssistantError(
+                translation_domain=DOMAIN,
+                translation_key="get_day_summary_failed",
+                translation_placeholders={"error": str(err)},
+            ) from err
+        return {"date": day.isoformat(), **result}
+
     hass.services.async_register(
         DOMAIN,
         SERVICE_SET_ACTIVE_GEAR,
@@ -829,4 +852,11 @@ def async_setup_services(hass: HomeAssistant) -> None:
         SERVICE_UNSCHEDULE_WORKOUT,
         handle_unschedule_workout,
         schema=UNSCHEDULE_WORKOUT_SCHEMA,
+    )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_GET_DAY_SUMMARY,
+        handle_get_day_summary,
+        schema=GET_DAY_SUMMARY_SCHEMA,
+        supports_response=SupportsResponse.ONLY,
     )
