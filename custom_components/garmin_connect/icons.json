@@ -137,6 +137,7 @@
       "rest_stress_duration": { "default": "mdi:timer-pause" },
       "rest_stress_percentage": { "default": "mdi:flash-alert" },
       "resting_heart_rate": { "default": "mdi:heart-pulse" },
+      "latest_heart_rate": { "default": "mdi:heart-flash" },
       "sedentary_time": { "default": "mdi:seat" },
       "skin_temp_change": { "default": "mdi:thermometer-lines" },
       "sleep_duration": { "default": "mdi:sleep" },

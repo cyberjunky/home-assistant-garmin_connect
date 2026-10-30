@@ -15,6 +15,7 @@ from custom_components.garmin_connect.const import (
     CONF_TOKEN,
 )
 from custom_components.garmin_connect.coordinator import (
+    LATEST_HEART_RATE_CONTEXT,
     YESTERDAY_CONTEXT,
     BodyCoordinator,
     CoreCoordinator,
@@ -392,7 +393,7 @@ def _yesterday_client(today: date, last_sync: str = "s1") -> AsyncMock:
     client = AsyncMock()
     client.today = MagicMock(return_value=today)
     client.fetch_core_data = AsyncMock(
-        side_effect=lambda: {"totalSteps": 1, "lastSyncTimestamp": client.last_sync}
+        side_effect=lambda **_: {"totalSteps": 1, "lastSyncTimestamp": client.last_sync}
     )
     client.last_sync = last_sync
     client._get_user_summary_raw = AsyncMock(return_value=dict(_RAW_DAY))
@@ -503,3 +504,18 @@ async def test_get_day_returns_summary_and_raw() -> None:
     assert out["summary"]["date"] == "2026-10-17"
     assert out["summary"]["totalSteps"] == 6909
     assert out["raw"]["maxStressLevel"] == 97
+
+
+# ── Latest heart rate ────────────────────────────────────────────────────────
+
+
+async def test_core_asks_for_latest_heart_rate_only_for_enabled_sensor():
+    client = _yesterday_client(date(2026, 10, 18))
+    coordinator = _make_base(client)
+    await coordinator._async_update_data()
+    client.fetch_core_data.assert_awaited_with(latest_heart_rate=False)
+
+    coordinator.async_contexts = lambda: iter([LATEST_HEART_RATE_CONTEXT])  # type: ignore[method-assign]
+    await coordinator._async_update_data()
+    client.fetch_core_data.assert_awaited_with(latest_heart_rate=True)
+    client._get_user_summary_raw.assert_not_awaited()

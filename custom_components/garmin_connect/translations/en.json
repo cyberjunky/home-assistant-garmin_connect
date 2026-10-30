@@ -211,6 +211,7 @@
       "rest_stress_duration": { "name": "Rest stress duration" },
       "rest_stress_percentage": { "name": "Rest stress percentage" },
       "resting_heart_rate": { "name": "Resting heart rate" },
+      "latest_heart_rate": { "name": "Latest heart rate" },
       "sedentary_time": { "name": "Sedentary time" },
       "sleep_need": { "name": "Sleep need" },
       "bedtime": { "name": "Bedtime" },

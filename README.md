@@ -126,6 +126,9 @@ All sensors are created under a single "Garmin Connect" device. Entity IDs follo
 | Resting Heart Rate | Daily resting HR |
 | Min / Max Heart Rate | Daily HR range |
 | 7-Day Average Resting Heart Rate | Weekly resting HR average |
+| Latest Heart Rate | Newest heart rate sample Garmin has, with its `measurement_time`; disabled by default (see below) |
+
+> **Latest heart rate** is not live: Garmin only receives heart rate samples (about every 2 minutes) when your watch syncs, so this is the last sample from the last sync. It's disabled by default because it costs a request; while enabled, that request is made once per new watch sync, not on every poll. Its age in minutes, for a template or automation: `{{ ((now() - state_attr('sensor.garmin_connect_latest_heart_rate', 'measurement_time')).total_seconds() / 60) | round(0) }}`
 | Min / Max Average Heart Rate | Average min/max HR |
 | Abnormal Heart Rate Alerts | Count of abnormal HR alerts |
 
