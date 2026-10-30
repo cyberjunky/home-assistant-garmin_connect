@@ -574,7 +574,19 @@
       },
       "yesterday_steps": {
         "name": "Wczorajsze kroki"
-      }
+      },
+      "yesterday_active_calories": { "name": "Kalorie aktywne wczoraj" },
+      "yesterday_avg_stress_level": { "name": "Średni poziom stresu wczoraj" },
+      "yesterday_max_stress_level": { "name": "Maks. poziom stresu wczoraj" },
+      "yesterday_stress_duration": { "name": "Czas stresu wczoraj" },
+      "yesterday_high_stress_duration": { "name": "Czas wysokiego stresu wczoraj" },
+      "yesterday_rest_stress_duration": { "name": "Czas stresu w spoczynku wczoraj" },
+      "yesterday_body_battery_highest": { "name": "Body Battery najwyższa wczoraj" },
+      "yesterday_body_battery_lowest": { "name": "Body Battery najniższa wczoraj" },
+      "yesterday_body_battery_charged": { "name": "Body Battery naładowana wczoraj" },
+      "yesterday_body_battery_drained": { "name": "Body Battery rozładowana wczoraj" },
+      "yesterday_resting_heart_rate": { "name": "Tętno spoczynkowe wczoraj" },
+      "yesterday_intensity_minutes": { "name": "Minuty intensywności wczoraj" }
     }
   },
   "services": {
@@ -836,6 +848,14 @@
           "description": "Alternatywa dla gear_uuid — wybierz encję czujnika sprzętu."
         }
       }
+    },
+    "get_day_summary": {
+      "name": "Pobierz podsumowanie dnia",
+      "description": "Pobiera z Garmin Connect podsumowanie dnia (kroki, stres, Body Battery, tętno spoczynkowe, minuty intensywności) dla dowolnej daty i je zwraca.",
+      "fields": {
+        "date": { "name": "Data", "description": "Dzień do pobrania." },
+        "entity_id": { "name": "Encja Garmin Connect", "description": "Opcjonalna encja Garmin Connect, z której konta odczytać dane." }
+      }
     }
   },
   "exceptions": {
@@ -890,6 +910,7 @@
     "unsupported_file_format": { "message": "Nieobsługiwany plik aktywności {file_path}. Obsługiwane formaty: {formats}" },
     "upload_activity_failed": {
       "message": "Nie udało się przesłać aktywności: {error}"
-    }
+    },
+    "get_day_summary_failed": { "message": "Nie udało się pobrać podsumowania dnia: {error}" }
   }
 }

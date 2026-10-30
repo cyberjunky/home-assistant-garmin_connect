@@ -105,6 +105,27 @@ def test_menstrual_sensors_disabled_by_default() -> None:
         )
 
 
+def test_yesterday_summary_sensors_disabled_and_fetched_on_demand() -> None:
+    """Yesterday's summary sensors cost an API call, so they're opt-in.
+
+    Their coordinator context lets CoreCoordinator skip the fetch while none
+    is enabled. Yesterday steps/distance come free with today's data.
+    """
+    from custom_components.garmin_connect.coordinator import YESTERDAY_CONTEXT
+
+    on_demand = [d for d in _all_descriptions() if d.coordinator_context == YESTERDAY_CONTEXT]
+    assert len(on_demand) == 12
+    assert all(d.entity_registry_enabled_default is False for d in on_demand)
+
+    coord = MagicMock()
+    with patch(
+        "homeassistant.helpers.update_coordinator.CoordinatorEntity.__init__",
+        return_value=None,
+    ) as base_init:
+        GarminConnectSensor(coord, on_demand[0], "entry_id")
+    base_init.assert_called_once_with(coord, context=YESTERDAY_CONTEXT)
+
+
 def test_nutrition_sensors_disabled_by_default() -> None:
     """All nutrition sensors must be disabled by default (Connect+ feature)."""
     for desc in NUTRITION_SENSORS:

@@ -260,7 +260,7 @@
       "yesterday_distance": { "name": "Yesterday distance" },
       "yesterday_steps": { "name": "Yesterday steps" },
       "yesterday_active_calories": { "name": "Yesterday active calories" },
-      "yesterday_avg_stress_level": { "name": "Yesterday avg stress level" },
+      "yesterday_avg_stress_level": { "name": "Yesterday average stress level" },
       "yesterday_body_battery_charged": { "name": "Yesterday body battery charged" },
       "yesterday_body_battery_drained": { "name": "Yesterday body battery drained" },
       "yesterday_body_battery_highest": { "name": "Yesterday body battery highest" },
@@ -269,7 +269,7 @@
       "yesterday_intensity_minutes": { "name": "Yesterday intensity minutes" },
       "yesterday_max_stress_level": { "name": "Yesterday max stress level" },
       "yesterday_resting_heart_rate": { "name": "Yesterday resting heart rate" },
-      "yesterday_rest_stress_duration": { "name": "Yesterday rest duration" },
+      "yesterday_rest_stress_duration": { "name": "Yesterday rest stress duration" },
       "yesterday_stress_duration": { "name": "Yesterday stress duration" }
     },
     "calendar": {
