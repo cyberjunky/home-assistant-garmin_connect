@@ -128,7 +128,7 @@ All sensors are created under a single "Garmin Connect" device. Entity IDs follo
 | 7-Day Average Resting Heart Rate | Weekly resting HR average |
 | Latest Heart Rate | Newest heart rate sample Garmin has, with its `measurement_time`; disabled by default (see below) |
 
-> **Latest heart rate** is not live: Garmin only receives heart rate samples (about every 2 minutes) when your watch syncs, so this is the last sample from the last sync. It's disabled by default because it costs a request; while enabled, that request is made once per new watch sync, not on every poll. Its age in minutes, for a template or automation: `{{ ((now() - state_attr('sensor.garmin_connect_latest_heart_rate', 'measurement_time')).total_seconds() / 60) | round(0) }}`
+> **Latest heart rate** is not live: Garmin only receives heart rate samples (about every 2 minutes) when your watch syncs, so this is the last sample from the last sync. It's disabled by default because it costs a request; while enabled, that request is made once per new watch sync, not on every poll. Its age in minutes, for a template or automation (empty while there's no sample): `{% set t = state_attr('sensor.garmin_connect_latest_heart_rate', 'measurement_time') %}{{ ((now() - t).total_seconds() / 60) | round(0) if t else none }}`
 | Min / Max Average Heart Rate | Average min/max HR |
 | Abnormal Heart Rate Alerts | Count of abnormal HR alerts |
 
@@ -242,12 +242,14 @@ All sensors are created under a single "Garmin Connect" device. Entity IDs follo
 | Lactate Threshold Speed | Lactate threshold pace (m/s) |
 | Power to Weight [Sport] | Dynamic per-sport power-to-weight sensor (W/kg), e.g. Running, Cycling |
 | FTP [Sport] | Dynamic per-sport functional threshold power sensor (W), e.g. Running, Cycling |
-| Next Alarm | Next scheduled alarm time |
+| Next Alarm | Next scheduled alarm time, from the alarms Garmin syncs to its cloud (see below) |
 | Solar Intensity | Solar charging utilization (%) at the moment of the last sync, for solar-capable devices |
 | Average Solar Intensity | Solar charging utilization (%) averaged over today's readings so far |
 | Solar Time Gained | Extra battery time gained from solar today (minutes), resets daily |
 | Devices | Number of registered Garmin devices, with per-device details and last used device as attributes |
 | Connected Sensors | Number of paired ANT+/BLE sensors (power meters, HR straps, etc.), with per-sensor id and battery status as attributes |
+
+> **Next alarm** only sees the alarms Garmin makes available through its API. For some devices that is not all of them: for the CIRQA, only the first two alarms in the Garmin Connect app's list (sorted by time of day) come through, so a later alarm can be missing ([#628](https://github.com/cyberjunky/home-assistant-garmin_connect/issues/628)). The integration can't read alarms Garmin doesn't provide.
 
 > Power-to-weight and FTP sensors are created dynamically for each available sport in your Garmin training data. Names are formatted like `Power to Weight Running` and `FTP Running`.
 
@@ -260,7 +262,9 @@ All sensors are created under a single "Garmin Connect" device. Entity IDs follo
 | Goals History | Last 10 completed goals with status |
 | Badges | Total badges earned |
 | User Points / User Level | Gamification metrics |
-| Lifetime Steps / Distance / Calories / Active Days | Lifetime totals from your Garmin Connect profile (refreshed at most hourly) |
+| Lifetime Steps / Distance / Calories / Active Days | Lifetime totals from your Garmin Connect profile (refreshed at most hourly); disabled by default, see below |
+
+> **Lifetime totals** are disabled by default; enable the sensors you want. Garmin only provides lifetime totals when they are shown in your Garmin Connect profile: on the web, open **Account Settings → Public Profile** and under **Show in profile** enable **Lifetime Totals**. Your profile can stay visible to **Only me**, so nothing becomes public. Until then the lifetime sensors are unavailable and a Repairs issue explains the setting; it clears itself once the totals come through, on the next update. With all lifetime sensors disabled, lifetime totals aren't fetched at all.
 
 > Goal sensors include detailed attributes: `goalType`, `targetValue`, `currentValue`, `progressPercent`, `startDate`, `endDate`, and `activityType`.
 

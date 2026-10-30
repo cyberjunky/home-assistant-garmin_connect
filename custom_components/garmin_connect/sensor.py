@@ -38,6 +38,7 @@ from homeassistant.util import dt as dt_util
 from .const import DOMAIN
 from .coordinator import (
     LATEST_HEART_RATE_CONTEXT,
+    LIFETIME_CONTEXT,
     YESTERDAY_CONTEXT,
     BaseGarminCoordinator,
     GarminConnectConfigEntry,
@@ -82,6 +83,9 @@ class GarminConnectSensorEntityDescription(SensorEntityDescription):
 
     coordinator_context: str | None = None
     """Coordinator context; lets the coordinator skip data no enabled sensor uses."""
+
+    available_fn: Callable[[dict[str, Any]], bool] | None = None
+    """Return False when the coordinator data can't provide this sensor."""
 
 
 # ── CORE coordinator sensors ─────────────────────────────────────────────────
@@ -1396,6 +1400,11 @@ def _fitness_age_component_attributes(data: dict[str, Any], name: str) -> dict[s
     }
 
 
+def _lifetime_totals_shown(data: dict[str, Any]) -> bool:
+    """False while the Garmin profile hides lifetime totals (a Repairs issue explains)."""
+    return not data.get("lifetimeTotalsHidden")
+
+
 # ── GOALS coordinator sensors ─────────────────────────────────────────────────
 # Data from ha_garmin.fetch_goals_data()
 
@@ -1442,6 +1451,9 @@ GOALS_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
     GarminConnectSensorEntityDescription(
         key="lifetimeSteps",
         translation_key="lifetime_steps",
+        coordinator_context=LIFETIME_CONTEXT,
+        entity_registry_enabled_default=False,
+        available_fn=_lifetime_totals_shown,
         coordinator_type=CoordinatorType.GOALS,
         state_class=SensorStateClass.TOTAL_INCREASING,
         native_unit_of_measurement="steps",
@@ -1451,6 +1463,9 @@ GOALS_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
     GarminConnectSensorEntityDescription(
         key="lifetimeDistance",
         translation_key="lifetime_distance",
+        coordinator_context=LIFETIME_CONTEXT,
+        entity_registry_enabled_default=False,
+        available_fn=_lifetime_totals_shown,
         coordinator_type=CoordinatorType.GOALS,
         device_class=SensorDeviceClass.DISTANCE,
         state_class=SensorStateClass.TOTAL_INCREASING,
@@ -1463,6 +1478,9 @@ GOALS_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
     GarminConnectSensorEntityDescription(
         key="lifetimeCalories",
         translation_key="lifetime_calories",
+        coordinator_context=LIFETIME_CONTEXT,
+        entity_registry_enabled_default=False,
+        available_fn=_lifetime_totals_shown,
         coordinator_type=CoordinatorType.GOALS,
         state_class=SensorStateClass.TOTAL_INCREASING,
         native_unit_of_measurement=UnitOfEnergy.KILO_CALORIE,
@@ -1473,6 +1491,9 @@ GOALS_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
     GarminConnectSensorEntityDescription(
         key="lifetimeActiveDays",
         translation_key="lifetime_active_days",
+        coordinator_context=LIFETIME_CONTEXT,
+        entity_registry_enabled_default=False,
+        available_fn=_lifetime_totals_shown,
         coordinator_type=CoordinatorType.GOALS,
         state_class=SensorStateClass.TOTAL_INCREASING,
         native_unit_of_measurement="days",
@@ -2290,7 +2311,8 @@ class GarminConnectSensor(CoordinatorEntity[BaseGarminCoordinator], RestoreSenso
         if not super().available:
             return False
         if self.coordinator.data is not None:
-            return True
+            available_fn = self.entity_description.available_fn
+            return available_fn is None or available_fn(self.coordinator.data)
         return self.entity_description.preserve_value and self._last_known_value is not None
 
     @property

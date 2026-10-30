@@ -919,5 +919,15 @@
       "message": "Nie udało się przesłać aktywności: {error}"
     },
     "get_day_summary_failed": { "message": "Nie udało się pobrać podsumowania dnia: {error}" }
+  },
+  "issues": {
+    "connect_plus_required": {
+      "title": "Dane o odżywianiu wymagają Garmin Connect+",
+      "description": "Czujniki odżywiania dla {title} są niedostępne, ponieważ Twoje konto Garmin nie ma aktywnej subskrypcji Connect+. Wykup Connect+ w aplikacji Garmin Connect, aby włączyć rejestrowanie posiłków, lub wyłącz czujniki odżywiania tej integracji."
+    },
+    "lifetime_totals_hidden": {
+      "title": "Garmin ukrywa Twoje dane łączne",
+      "description": "Garmin Connect odmawia danych łącznych dla {title}, dlatego czujniki łącznych kroków, dystansu, kalorii i aktywnych dni są niedostępne. Garmin udostępnia je tylko wtedy, gdy są pokazywane w Twoim profilu: w Garmin Connect w przeglądarce otwórz Ustawienia konta → Profil publiczny i w sekcji „Pokaż w profilu” włącz dane łączne. Profil może pozostać widoczny tylko dla Ciebie, więc nic nie staje się publiczne. Czujniki zaktualizują się przy następnym odświeżeniu. Jeśli nie chcesz tych czujników, wyłącz je."
+    }
   }
 }

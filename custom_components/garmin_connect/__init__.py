@@ -14,6 +14,7 @@ from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.typing import ConfigType
 from homeassistant.loader import async_get_integration
 
@@ -40,6 +41,8 @@ from .coordinator import (
     MenstrualCoordinator,
     NutritionCoordinator,
     TrainingCoordinator,
+    connect_plus_issue_id,
+    lifetime_hidden_issue_id,
 )
 from .services import async_setup_services
 
@@ -260,3 +263,12 @@ async def async_options_update_listener(
 async def async_unload_entry(hass: HomeAssistant, entry: GarminConnectConfigEntry) -> bool:
     """Unload a config entry."""
     return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+
+
+async def async_remove_entry(hass: HomeAssistant, entry: GarminConnectConfigEntry) -> None:
+    """Remove the entry's repair issues along with it."""
+    for issue_id in (
+        connect_plus_issue_id(entry.entry_id),
+        lifetime_hidden_issue_id(entry.entry_id),
+    ):
+        ir.async_delete_issue(hass, DOMAIN, issue_id)
