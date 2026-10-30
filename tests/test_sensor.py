@@ -11,6 +11,7 @@ from custom_components.garmin_connect.sensor import (
     ACTIVITY_TRACKING_SENSORS,
     BLOOD_PRESSURE_SENSORS,
     BODY_COMPOSITION_SENSORS,
+    FITNESS_AGE_SENSORS,
     GEAR_SENSORS,
     GOALS_SENSORS,
     HEALTH_MONITORING_SENSORS,
@@ -518,6 +519,38 @@ def test_lifetime_totals_missing_is_none() -> None:
     coord = MagicMock()
     coord.data = {"lifetimeTotals": {}}
     assert GarminConnectSensor(coord, desc, "entry_id").native_value is None
+
+
+def test_fitness_age_vigorous_factors():
+    """Vigorous days/minutes per week come from fitness-age's components."""
+    coord = MagicMock()
+    coord.data = mock_body_data()
+
+    def sensor(key: str) -> GarminConnectSensor:
+        desc = next(d for d in FITNESS_AGE_SENSORS if d.key == key)
+        return GarminConnectSensor(coord, desc, "entry_id")
+
+    days = sensor("vigorousDaysAvg")
+    assert days.native_value == 0.3
+    assert days.extra_state_attributes == {
+        "target": 3,
+        "potential_fitness_age": 54.0,
+        "weeks_averaged": 6,
+        "stale": False,
+    }
+    minutes = sensor("vigorousMinutesAvg")
+    assert minutes.native_value == 5.6
+    assert minutes.extra_state_attributes["target"] == 75
+
+
+def test_fitness_age_vigorous_factors_missing():
+    desc = next(d for d in FITNESS_AGE_SENSORS if d.key == "vigorousDaysAvg")
+    coord = MagicMock()
+    for data in ({}, {"components": None}, {"components": {"vigorousDaysAvg": None}}):
+        coord.data = data
+        sensor = GarminConnectSensor(coord, desc, "entry_id")
+        assert sensor.native_value is None
+        assert sensor.extra_state_attributes == {}
 
 
 def test_bp_systolic_value_and_attributes() -> None:

@@ -1259,6 +1259,27 @@ FITNESS_AGE_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         suggested_display_precision=1,
     ),
     GarminConnectSensorEntityDescription(
+        key="vigorousDaysAvg",
+        translation_key="vigorous_days_avg",
+        coordinator_type=CoordinatorType.BODY,
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement="days",
+        suggested_display_precision=1,
+        value_fn=lambda data: _fitness_age_component(data, "vigorousDaysAvg").get("value"),
+        attributes_fn=lambda data: _fitness_age_component_attributes(data, "vigorousDaysAvg"),
+    ),
+    GarminConnectSensorEntityDescription(
+        key="vigorousMinutesAvg",
+        translation_key="vigorous_minutes_avg",
+        coordinator_type=CoordinatorType.BODY,
+        device_class=SensorDeviceClass.DURATION,
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=UnitOfTime.MINUTES,
+        suggested_display_precision=0,
+        value_fn=lambda data: _fitness_age_component(data, "vigorousMinutesAvg").get("value"),
+        attributes_fn=lambda data: _fitness_age_component_attributes(data, "vigorousMinutesAvg"),
+    ),
+    GarminConnectSensorEntityDescription(
         key="metabolicAge",
         translation_key="metabolic_age",
         coordinator_type=CoordinatorType.BODY,
@@ -1283,6 +1304,28 @@ FITNESS_AGE_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         preserve_value=True,
     ),
 )
+
+
+def _fitness_age_component(data: dict[str, Any], name: str) -> dict[str, Any]:
+    """Return one Fitness Age factor from fitness-age's components block."""
+    component = (data.get("components") or {}).get(name)
+    return component if isinstance(component, dict) else {}
+
+
+def _fitness_age_component_attributes(data: dict[str, Any], name: str) -> dict[str, Any]:
+    """Garmin's target for a Fitness Age factor and what reaching it is worth.
+
+    Vigorous days/minutes are weekly averages over numOfWeeksForIm weeks.
+    """
+    component = _fitness_age_component(data, name)
+    if not component:
+        return {}
+    return {
+        "target": component.get("targetValue"),
+        "potential_fitness_age": component.get("potentialAge"),
+        "weeks_averaged": component.get("numOfWeeksForIm"),
+        "stale": component.get("stale"),
+    }
 
 
 # ── GOALS coordinator sensors ─────────────────────────────────────────────────
