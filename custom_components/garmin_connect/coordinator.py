@@ -158,6 +158,20 @@ class BaseGarminCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             self._update_tokens_if_changed()
 
 
+def connect_plus_issue_id(entry_id: str) -> str:
+    """Repair issue raised while nutrition data needs Garmin Connect+."""
+    return f"nutrition_connect_plus_required_{entry_id}"
+
+
+def lifetime_hidden_issue_id(entry_id: str) -> str:
+    """Repair issue raised while the Garmin profile hides lifetime totals."""
+    return f"lifetime_totals_hidden_{entry_id}"
+
+
+# Coordinator context of the lifetime sensors: lifetime totals are only fetched
+# while at least one of them (disabled by default) is enabled.
+LIFETIME_CONTEXT = "lifetime"
+
 # Coordinator context of the yesterday sensors: yesterday's summary is only
 # fetched while at least one of them (disabled by default) is enabled.
 YESTERDAY_CONTEXT = "yesterday"
@@ -303,8 +317,36 @@ class GoalsCoordinator(BaseGarminCoordinator):
     data_name = "goals"
 
     async def _fetch(self) -> dict[str, Any]:
-        """Fetch goals data."""
-        return await self.client.fetch_goals_data()
+        """Fetch goals data; lifetime totals only if a lifetime sensor is enabled."""
+        return await self.client.fetch_goals_data(
+            lifetime_totals=LIFETIME_CONTEXT in self.async_contexts()
+        )
+
+    @property
+    def _lifetime_hidden_issue_id(self) -> str:
+        return lifetime_hidden_issue_id(self.config_entry.entry_id)
+
+    async def _async_update_data(self) -> dict[str, Any]:
+        """Fetch goals data and raise a repair issue while lifetime totals are hidden.
+
+        Garmin refuses them unless "Lifetime Totals" is shown in the user's
+        profile; the issue says how, and goes away once they come through or
+        the lifetime sensors are disabled.
+        """
+        data = await super()._async_update_data()
+        if data.get("lifetimeTotalsHidden"):
+            ir.async_create_issue(
+                self.hass,
+                DOMAIN,
+                self._lifetime_hidden_issue_id,
+                is_fixable=False,
+                severity=ir.IssueSeverity.WARNING,
+                translation_key="lifetime_totals_hidden",
+                translation_placeholders={"title": self.config_entry.title},
+            )
+        else:
+            ir.async_delete_issue(self.hass, DOMAIN, self._lifetime_hidden_issue_id)
+        return data
 
 
 class GearCoordinator(BaseGarminCoordinator):
@@ -361,7 +403,7 @@ class NutritionCoordinator(BaseGarminCoordinator):
 
     @property
     def _connect_plus_issue_id(self) -> str:
-        return f"nutrition_connect_plus_required_{self.config_entry.entry_id}"
+        return connect_plus_issue_id(self.config_entry.entry_id)
 
     def _has_enabled_nutrition_entity(self) -> bool:
         """Return True if the user has enabled at least one nutrition sensor.

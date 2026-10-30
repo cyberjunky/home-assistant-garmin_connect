@@ -357,6 +357,7 @@ def mock_goals_data() -> dict:
         ],
         "userPoints": 500,
         "userLevel": 5,
+        "lifetimeTotalsHidden": False,
         "lifetimeTotals": {
             "totalSteps": 10428222,
             "totalDistance": 8123456.0,

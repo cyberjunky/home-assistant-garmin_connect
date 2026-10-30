@@ -15,10 +15,12 @@ from custom_components.garmin_connect.const import (
     CONF_TOKEN,
 )
 from custom_components.garmin_connect.coordinator import (
+    LIFETIME_CONTEXT,
     YESTERDAY_CONTEXT,
     BodyCoordinator,
     CoreCoordinator,
     GearCoordinator,
+    GoalsCoordinator,
     NutritionCoordinator,
 )
 
@@ -503,3 +505,62 @@ async def test_get_day_returns_summary_and_raw() -> None:
     assert out["summary"]["date"] == "2026-10-17"
     assert out["summary"]["totalSteps"] == 6909
     assert out["raw"]["maxStressLevel"] == 97
+
+
+# ── Lifetime totals ──────────────────────────────────────────────────────────
+
+
+def _make_goals(client: AsyncMock) -> GoalsCoordinator:
+    entry = MagicMock()
+    entry.entry_id = "test_entry_id"
+    entry.title = "runner@example.com"
+    entry.options = {}
+    entry.data = dict(ENTRY_DATA)
+    auth = MagicMock()
+    auth.di_token = None  # nothing to persist
+    return GoalsCoordinator(MagicMock(), entry, client, auth)
+
+
+def _goals_client(*, hidden: bool) -> AsyncMock:
+    client = AsyncMock()
+    client.fetch_goals_data = AsyncMock(
+        return_value={"lifetimeTotals": {}, "lifetimeTotalsHidden": hidden}
+    )
+    return client
+
+
+async def test_goals_skip_lifetime_totals_without_enabled_sensor():
+    client = _goals_client(hidden=False)
+    with patch("custom_components.garmin_connect.coordinator.ir"):
+        await _make_goals(client)._async_update_data()
+    client.fetch_goals_data.assert_awaited_once_with(lifetime_totals=False)
+
+
+async def test_goals_fetch_lifetime_totals_for_enabled_sensor():
+    client = _goals_client(hidden=False)
+    coordinator = _make_goals(client)
+    coordinator.async_contexts = lambda: iter([LIFETIME_CONTEXT])  # type: ignore[method-assign]
+    with patch("custom_components.garmin_connect.coordinator.ir"):
+        await coordinator._async_update_data()
+    client.fetch_goals_data.assert_awaited_once_with(lifetime_totals=True)
+
+
+async def test_goals_repair_issue_while_lifetime_totals_hidden():
+    coordinator = _make_goals(_goals_client(hidden=True))
+    with patch("custom_components.garmin_connect.coordinator.ir") as ir:
+        await coordinator._async_update_data()
+    ir.async_create_issue.assert_called_once()
+    args, kwargs = ir.async_create_issue.call_args
+    assert args[2] == "lifetime_totals_hidden_test_entry_id"
+    assert kwargs["translation_key"] == "lifetime_totals_hidden"
+    assert kwargs["translation_placeholders"] == {"title": "runner@example.com"}
+    ir.async_delete_issue.assert_not_called()
+
+
+async def test_goals_repair_issue_cleared_when_lifetime_totals_shown():
+    coordinator = _make_goals(_goals_client(hidden=False))
+    with patch("custom_components.garmin_connect.coordinator.ir") as ir:
+        await coordinator._async_update_data()
+    ir.async_create_issue.assert_not_called()
+    ir.async_delete_issue.assert_called_once()
+    assert ir.async_delete_issue.call_args.args[2] == "lifetime_totals_hidden_test_entry_id"

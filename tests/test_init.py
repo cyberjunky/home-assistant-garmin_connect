@@ -11,6 +11,7 @@ from custom_components.garmin_connect import (
     _migrate_entity_unique_ids,
     async_migrate_entry,
     async_options_update_listener,
+    async_remove_entry,
     async_setup,
     async_setup_entry,
     async_unload_entry,
@@ -308,6 +309,17 @@ async def test_unload_entry_unloads_platforms() -> None:
 
     assert await async_unload_entry(hass, entry) is True
     hass.services.async_remove.assert_not_called()
+
+
+async def test_remove_entry_removes_its_repair_issues():
+    entry = MagicMock()
+    entry.entry_id = "abc"
+    with patch("custom_components.garmin_connect.ir.async_delete_issue") as delete:
+        await async_remove_entry(MagicMock(), entry)
+    assert {c.args[2] for c in delete.call_args_list} == {
+        "nutrition_connect_plus_required_abc",
+        "lifetime_totals_hidden_abc",
+    }
 
 
 # ── Migration tests ───────────────────────────────────────────────────────────

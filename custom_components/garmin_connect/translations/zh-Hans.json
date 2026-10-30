@@ -390,5 +390,15 @@
     "upload_activity_failed": { "message": "上传活动失败:{error}" },
     "add_nutrition_failed": { "message": "记录营养失败:{error}" },
     "get_day_summary_failed": { "message": "获取每日摘要失败：{error}" }
+  },
+  "issues": {
+    "connect_plus_required": {
+      "title": "营养数据需要 Garmin Connect+",
+      "description": "{title} 的营养传感器不可用，因为你的 Garmin 账户没有有效的 Connect+ 订阅。请在 Garmin Connect 应用中订阅 Connect+ 以启用营养记录，或禁用此集成的营养传感器。"
+    },
+    "lifetime_totals_hidden": {
+      "title": "Garmin 隐藏了你的累计数据",
+      "description": "Garmin Connect 拒绝提供 {title} 的累计数据，因此累计步数、距离、卡路里和活跃天数传感器不可用。只有在你的个人资料中显示累计数据时，Garmin 才会提供：在网页版 Garmin Connect 中打开“账户设置 → 公开个人资料”，在“在个人资料中显示”下启用累计数据。个人资料可以保持“仅自己可见”，不会公开任何内容。传感器将在下次刷新时更新。如果你不需要这些传感器，请将其禁用。"
+    }
   }
 }

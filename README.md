@@ -259,7 +259,9 @@ All sensors are created under a single "Garmin Connect" device. Entity IDs follo
 | Goals History | Last 10 completed goals with status |
 | Badges | Total badges earned |
 | User Points / User Level | Gamification metrics |
-| Lifetime Steps / Distance / Calories / Active Days | Lifetime totals from your Garmin Connect profile (refreshed at most hourly) |
+| Lifetime Steps / Distance / Calories / Active Days | Lifetime totals from your Garmin Connect profile (refreshed at most hourly); disabled by default, see below |
+
+> **Lifetime totals** are disabled by default; enable the sensors you want. Garmin only provides lifetime totals when they are shown in your Garmin Connect profile: on the web, open **Account Settings → Public Profile** and under **Show in profile** enable **Lifetime Totals**. Your profile can stay visible to **Only me**, so nothing becomes public. Until then the lifetime sensors are unavailable and a Repairs issue explains the setting; it clears itself once the totals come through, on the next update. With all lifetime sensors disabled, lifetime totals aren't fetched at all.
 
 > Goal sensors include detailed attributes: `goalType`, `targetValue`, `currentValue`, `progressPercent`, `startDate`, `endDate`, and `activityType`.
 

@@ -128,6 +128,24 @@ def test_yesterday_summary_sensors_disabled_and_fetched_on_demand():
     base_init.assert_called_once_with(coord, context=YESTERDAY_CONTEXT)
 
 
+def test_lifetime_sensors_opt_in_and_unavailable_while_hidden():
+    """Lifetime totals cost a request and need a profile setting: opt-in, explained when hidden."""
+    from custom_components.garmin_connect.coordinator import LIFETIME_CONTEXT
+
+    lifetime = [d for d in GOALS_SENSORS if d.key.startswith("lifetime")]
+    assert len(lifetime) == 4
+    assert all(d.coordinator_context == LIFETIME_CONTEXT for d in lifetime)
+    assert all(d.entity_registry_enabled_default is False for d in lifetime)
+
+    coord = MagicMock()
+    coord.last_update_success = True
+    sensor = GarminConnectSensor(coord, lifetime[0], "entry_id")
+    coord.data = mock_goals_data()
+    assert sensor.available is True
+    coord.data = {**mock_goals_data(), "lifetimeTotals": {}, "lifetimeTotalsHidden": True}
+    assert sensor.available is False
+
+
 def test_nutrition_sensors_disabled_by_default() -> None:
     """All nutrition sensors must be disabled by default (Connect+ feature)."""
     for desc in NUTRITION_SENSORS:
