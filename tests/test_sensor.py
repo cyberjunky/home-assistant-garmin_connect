@@ -1418,7 +1418,7 @@ def test_empty_gear_list_does_not_prune() -> None:
     registry.async_remove.assert_not_called()
 
 
-def test_scheduled_workout_sensors_add_steps_summary() -> None:
+def test_scheduled_workout_sensors_add_steps_summary():
     """Today's and the next workout expose a readable line per step."""
     data = mock_activity_data()
     steps = [
@@ -1446,6 +1446,6 @@ def test_scheduled_workout_sensors_add_steps_summary() -> None:
         ]
 
 
-def test_scheduled_workout_without_steps_has_no_summary() -> None:
+def test_scheduled_workout_without_steps_has_no_summary():
     desc = next(d for d in ACTIVITY_TRACKING_SENSORS if d.key == "todayScheduledWorkout")
     assert "steps_summary" not in desc.attributes_fn(mock_activity_data())

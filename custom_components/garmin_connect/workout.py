@@ -34,8 +34,9 @@ def _distance(meters: float) -> str:
 
 
 def _range(low: float | None, high: float | None, fmt: Callable[[float], str]) -> str | None:
-    values = sorted(v for v in (low, high) if v)
-    if not values:
+    # 0 is a real bound (0–100 W); only a range without any non-zero bound is empty.
+    values = sorted(v for v in (low, high) if v is not None)
+    if not any(values):
         return None
     if len(values) == 1 or values[0] == values[1]:
         return fmt(values[0])

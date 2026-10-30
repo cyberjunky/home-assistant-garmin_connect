@@ -290,7 +290,7 @@ Example notification with today's workout:
 action: notify.mobile_app_phone
 data:
   title: "{{ states('sensor.garmin_connect_today_s_scheduled_workout') }}"
-  message: "{{ state_attr('sensor.garmin_connect_today_s_scheduled_workout', 'steps_summary') | join('\n') }}"
+  message: "{{ (state_attr('sensor.garmin_connect_today_s_scheduled_workout', 'steps_summary') or []) | join('\n') }}"
 ```
 
 Scheduled workouts, the training plan's goal event (target race) and your other upcoming races and events (up to a year ahead) are also exposed as a `calendar.garmin_connect_scheduled_workouts` calendar entity — usable with HA's built-in Calendar dashboard card, `calendar.get_events`, and `trigger: calendar` automations. Today's and the next workout list their steps as the event description.

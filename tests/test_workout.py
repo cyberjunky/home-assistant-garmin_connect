@@ -68,14 +68,36 @@ from custom_components.garmin_connect.workout import step_summary, steps_summary
             },
             "Cycling: Interval 10:00",
         ),
+        (
+            {
+                "stepType": "interval",
+                "endCondition": "time",
+                "endConditionValue": 300.0,
+                "targetType": "power.zone",
+                "targetValueOne": 0,
+                "targetValueTwo": 100,
+            },
+            "Interval 5:00 @ 0–100 W",
+        ),
+        (
+            {
+                "stepType": "interval",
+                "endCondition": "time",
+                "endConditionValue": 300.0,
+                "targetType": "power.zone",
+                "targetValueOne": 0,
+                "targetValueTwo": 0,
+            },
+            "Interval 5:00",
+        ),
         ({"stepType": "main_set"}, "Main Set"),
     ],
 )
-def test_step_summary(step: dict, expected: str) -> None:
+def test_step_summary(step: dict, expected: str):
     assert step_summary(step) == expected
 
 
-def test_repeat_group_lists_its_steps() -> None:
+def test_repeat_group_lists_its_steps():
     step = {
         "stepType": "repeat",
         "numberOfIterations": 4,
@@ -87,5 +109,5 @@ def test_repeat_group_lists_its_steps() -> None:
     assert step_summary(step) == "4× (Interval 400 m; Recovery 1:30)"
 
 
-def test_workout_without_steps_has_no_summary() -> None:
+def test_workout_without_steps_has_no_summary():
     assert steps_summary({"title": "Benchmark Run"}) == []

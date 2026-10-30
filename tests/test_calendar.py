@@ -244,7 +244,7 @@ def test_calendar_event_property_considers_upcoming_events() -> None:
     assert event.summary == "Parkrun"
 
 
-async def test_calendar_workout_description_lists_steps() -> None:
+async def test_calendar_workout_description_lists_steps():
     """The next workout's steps describe its calendar event; others keep their sport."""
     coord = MagicMock()
     next_workout = {
