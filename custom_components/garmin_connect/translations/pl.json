@@ -186,6 +186,12 @@
       "fitness_age": {
         "name": "Wiek fitness"
       },
+      "vigorous_days_avg": {
+        "name": "Dni intensywnej aktywności na tydzień"
+      },
+      "vigorous_minutes_avg": {
+        "name": "Minuty intensywnej aktywności na tydzień"
+      },
       "floors_ascended": {
         "name": "Piętra w górę"
       },

@@ -224,6 +224,7 @@ All sensors are created under a single "Garmin Connect" device. Entity IDs follo
 | Sensor | Description |
 |--------|-------------|
 | Fitness Age / Achievable / Previous Fitness Age | Estimated fitness ages |
+| Vigorous Days / Vigorous Minutes per Week | The two activity factors of Fitness Age: weekly averages over the last weeks (`weeks_averaged`), with Garmin's `target` and the `potential_fitness_age` reaching it would give |
 | Chronological Age | Your actual age |
 | Endurance Score | Overall endurance rating |
 | Hill Score | Hill running/climbing score |

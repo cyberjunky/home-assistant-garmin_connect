@@ -119,6 +119,8 @@
       "devices": { "name": "设备" },
       "endurance_score": { "name": "耐力得分" },
       "fitness_age": { "name": "健身年龄" },
+      "vigorous_days_avg": { "name": "每周高强度天数" },
+      "vigorous_minutes_avg": { "name": "每周高强度分钟数" },
       "floors_ascended": { "name": "上升楼层" },
       "floors_ascended_distance": { "name": "上升楼层距离" },
       "floors_ascended_goal": { "name": "上升楼层目标" },

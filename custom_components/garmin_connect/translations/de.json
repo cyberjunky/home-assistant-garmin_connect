@@ -126,6 +126,8 @@
       "devices": { "name": "Geräte" },
       "endurance_score": { "name": "Endurance Score" },
       "fitness_age": { "name": "Fitnessalter" },
+      "vigorous_days_avg": { "name": "Intensive Tage pro Woche" },
+      "vigorous_minutes_avg": { "name": "Intensive Minuten pro Woche" },
       "floors_ascended": { "name": "Etagen aufwärts" },
       "floors_ascended_distance": { "name": "Aufstiegshöhe" },
       "floors_ascended_goal": { "name": "Ziel Etagen aufwärts" },

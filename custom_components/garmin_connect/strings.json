@@ -125,6 +125,8 @@
       "devices": { "name": "Devices" },
       "endurance_score": { "name": "Endurance score" },
       "fitness_age": { "name": "Fitness age" },
+      "vigorous_days_avg": { "name": "Vigorous days per week" },
+      "vigorous_minutes_avg": { "name": "Vigorous minutes per week" },
       "floors_ascended": { "name": "Floors ascended" },
       "floors_ascended_distance": { "name": "Floors ascended distance" },
       "floors_ascended_goal": { "name": "Floors ascended goal" },

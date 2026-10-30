@@ -52,6 +52,8 @@
       "devices": { "default": "mdi:watch" },
       "endurance_score": { "default": "mdi:run" },
       "fitness_age": { "default": "mdi:calendar-heart" },
+      "vigorous_days_avg": { "default": "mdi:calendar-check" },
+      "vigorous_minutes_avg": { "default": "mdi:run-fast" },
       "floors_ascended": { "default": "mdi:stairs-up" },
       "floors_ascended_distance": { "default": "mdi:stairs-up" },
       "floors_ascended_goal": { "default": "mdi:target" },
