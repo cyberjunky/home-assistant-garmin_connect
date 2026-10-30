@@ -461,6 +461,10 @@
     "connect_plus_required": {
       "title": "Ernährungsdaten erfordern Garmin Connect+",
       "description": "Die Ernährungssensoren für {title} sind nicht verfügbar, weil dein Garmin-Konto kein aktives Connect+-Abonnement hat. Schliesse in der Garmin-Connect-App ein Connect+-Abonnement ab, um die Ernährungserfassung zu aktivieren, oder deaktiviere die Ernährungssensoren dieser Integration."
+    },
+    "lifetime_totals_hidden": {
+      "title": "Garmin verbirgt deine Gesamtdaten",
+      "description": "Garmin Connect verweigert die Gesamtdaten für {title}, daher sind die Sensoren für Schritte, Distanz, Kalorien und aktive Tage gesamt nicht verfügbar. Garmin liefert sie nur, wenn sie in deinem Profil angezeigt werden: Öffne in Garmin Connect im Web Kontoeinstellungen → Öffentliches Profil und aktiviere unter „Im Profil anzeigen“ die Gesamtdaten. Dein Profil kann für „Nur ich“ sichtbar bleiben, es wird also nichts öffentlich. Die Sensoren werden innerhalb einer Stunde aktualisiert. Wenn du diese Sensoren nicht möchtest, deaktiviere sie stattdessen."
     }
   }
 }

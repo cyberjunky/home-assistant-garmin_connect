@@ -463,6 +463,10 @@
     "connect_plus_required": {
       "title": "Nutrition data requires Garmin Connect+",
       "description": "Nutrition sensors for {title} are unavailable because your Garmin account does not have an active Connect+ subscription. Subscribe to Connect+ in the Garmin Connect app to enable nutrition logging, or disable the nutrition sensors for this integration."
+    },
+    "lifetime_totals_hidden": {
+      "title": "Garmin hides your lifetime totals",
+      "description": "Garmin Connect refuses the lifetime totals for {title}, so the Lifetime steps, distance, calories and active days sensors are unavailable. Garmin only provides them when they are shown in your profile: in Garmin Connect on the web, open Account Settings → Public Profile, and under \"Show in profile\" enable Lifetime Totals. Your profile can stay visible to \"Only me\", so nothing becomes public. The sensors update within an hour. If you don't want these sensors, disable them instead."
     }
   }
 }
