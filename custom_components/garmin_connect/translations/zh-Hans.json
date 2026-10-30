@@ -192,6 +192,7 @@
       "rest_stress_duration": { "name": "休息时压力时长" },
       "rest_stress_percentage": { "name": "休息时压力百分比" },
       "resting_heart_rate": { "name": "静息心率" },
+      "latest_heart_rate": { "name": "最新心率" },
       "sedentary_time": { "name": "久坐时间" },
       "sleep_need": { "name": "所需睡眠" },
       "bedtime": { "name": "就寝时间" },

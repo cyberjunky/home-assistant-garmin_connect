@@ -432,6 +432,7 @@
       "resting_heart_rate": {
         "name": "Tętno spoczynkowe"
       },
+      "latest_heart_rate": { "name": "Ostatnie tętno" },
       "sedentary_time": {
         "name": "Czas siedzący"
       },

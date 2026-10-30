@@ -158,6 +158,11 @@ class BaseGarminCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             self._update_tokens_if_changed()
 
 
+# Coordinator context of the latest heart rate sensor: its samples are only
+# fetched while it (disabled by default) is enabled.
+LATEST_HEART_RATE_CONTEXT = "latest_heart_rate"
+
+
 def connect_plus_issue_id(entry_id: str) -> str:
     """Repair issue raised while nutrition data needs Garmin Connect+."""
     return f"nutrition_connect_plus_required_{entry_id}"
@@ -242,9 +247,12 @@ class CoreCoordinator(BaseGarminCoordinator):
         self._yesterday_sync: Any = None
 
     async def _fetch(self) -> dict[str, Any]:
-        """Fetch core data, plus yesterday's final summary if a sensor uses it."""
-        data = await self.client.fetch_core_data()
-        if YESTERDAY_CONTEXT not in self.async_contexts():
+        """Fetch core data, plus yesterday's summary and latest heart rate if used."""
+        contexts = set(self.async_contexts())
+        data = await self.client.fetch_core_data(
+            latest_heart_rate=LATEST_HEART_RATE_CONTEXT in contexts
+        )
+        if YESTERDAY_CONTEXT not in contexts:
             return data
         try:
             yesterday = await self._yesterday_summary(data.get("lastSyncTimestamp"))

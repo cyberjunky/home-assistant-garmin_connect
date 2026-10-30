@@ -212,6 +212,7 @@
       "rest_stress_duration": { "name": "Dauer Ruhestress" },
       "rest_stress_percentage": { "name": "Anteil Ruhestress" },
       "resting_heart_rate": { "name": "Ruhepuls" },
+      "latest_heart_rate": { "name": "Letzte Herzfrequenz" },
       "sedentary_time": { "name": "Inaktive Zeit" },
       "sleep_need": { "name": "Schlafbedarf" },
       "bedtime": { "name": "Schlafenszeit" },

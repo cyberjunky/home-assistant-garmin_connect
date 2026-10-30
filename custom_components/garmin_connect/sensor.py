@@ -37,6 +37,7 @@ from homeassistant.util import dt as dt_util
 
 from .const import DOMAIN
 from .coordinator import (
+    LATEST_HEART_RATE_CONTEXT,
     LIFETIME_CONTEXT,
     YESTERDAY_CONTEXT,
     BaseGarminCoordinator,
@@ -213,6 +214,21 @@ CALORIES_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
 
 # Heart Rate Sensors
 HEART_RATE_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
+    # Newest sample Garmin has, i.e. from the last watch sync: not live heart
+    # rate. Opt-in: it costs a request per new sync.
+    GarminConnectSensorEntityDescription(
+        key="latestHeartRate",
+        translation_key="latest_heart_rate",
+        coordinator_context=LATEST_HEART_RATE_CONTEXT,
+        entity_registry_enabled_default=False,
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement="bpm",
+        attributes_fn=lambda data: (
+            {"measurement_time": data["latestHeartRateTime"]}
+            if data.get("latestHeartRateTime")
+            else {}
+        ),
+    ),
     GarminConnectSensorEntityDescription(
         key="restingHeartRate",
         translation_key="resting_heart_rate",

@@ -128,6 +128,26 @@ def test_yesterday_summary_sensors_disabled_and_fetched_on_demand():
     base_init.assert_called_once_with(coord, context=YESTERDAY_CONTEXT)
 
 
+def test_latest_heart_rate_sensor():
+    """Opt-in; value and measurement_time come from ha-garmin's latest sample."""
+    from custom_components.garmin_connect.coordinator import LATEST_HEART_RATE_CONTEXT
+
+    desc = next(d for d in _all_descriptions() if d.key == "latestHeartRate")
+    assert desc.entity_registry_enabled_default is False
+    assert desc.coordinator_context == LATEST_HEART_RATE_CONTEXT
+
+    measured = datetime.datetime(2026, 10, 30, 5, 48, tzinfo=datetime.UTC)
+    coord = MagicMock()
+    coord.data = {"latestHeartRate": 56, "latestHeartRateTime": measured}
+    sensor = GarminConnectSensor(coord, desc, "entry_id")
+    assert sensor.native_value == 56
+    assert sensor.extra_state_attributes == {"measurement_time": measured}
+
+    coord.data = {"latestHeartRate": None, "latestHeartRateTime": None}
+    assert sensor.native_value is None
+    assert sensor.extra_state_attributes == {}
+
+
 def test_lifetime_sensors_opt_in_and_unavailable_while_hidden():
     """Lifetime totals cost a request and need a profile setting: opt-in, explained when hidden."""
     from custom_components.garmin_connect.coordinator import LIFETIME_CONTEXT
