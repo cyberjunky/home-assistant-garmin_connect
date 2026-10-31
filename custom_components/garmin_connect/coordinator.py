@@ -17,7 +17,6 @@ from ha_garmin.exceptions import GarminAuthError, GarminConnectError
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import ConfigEntryAuthFailed
-from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from homeassistant.util import dt as dt_util
@@ -110,6 +109,11 @@ class BaseGarminCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         """Update the coordinator's polling interval."""
         self.update_interval = update_interval
 
+    @property
+    def has_listeners(self) -> bool:
+        """Return True if an enabled entity or other listener uses this data."""
+        return bool(self._listeners)
+
     async def _fetch(self) -> dict[str, Any]:
         """Fetch this coordinator's data from Garmin Connect."""
         raise NotImplementedError
@@ -181,6 +185,9 @@ LIFETIME_CONTEXT = "lifetime"
 # fetched while at least one of them (disabled by default) is enabled.
 YESTERDAY_CONTEXT = "yesterday"
 
+# Core contexts that add API calls to the core fetch.
+_CORE_OPT_IN_CONTEXTS = frozenset({LATEST_HEART_RATE_CONTEXT, YESTERDAY_CONTEXT})
+
 
 def summarize_day(raw: dict[str, Any], day: date) -> dict[str, Any]:
     """Map a raw Garmin daily summary to the 'yesterday*' fields.
@@ -245,6 +252,11 @@ class CoreCoordinator(BaseGarminCoordinator):
         self._yesterday: dict[str, Any] = {}
         self._yesterday_date: date | None = None
         self._yesterday_sync: Any = None
+
+    @property
+    def has_opt_in_listeners(self) -> bool:
+        """Return True if an enabled sensor needs data beyond the core fetch."""
+        return not _CORE_OPT_IN_CONTEXTS.isdisjoint(self.async_contexts())
 
     async def _fetch(self) -> dict[str, Any]:
         """Fetch core data, plus yesterday's summary and latest heart rate if used."""
@@ -413,21 +425,6 @@ class NutritionCoordinator(BaseGarminCoordinator):
     def _connect_plus_issue_id(self) -> str:
         return connect_plus_issue_id(self.config_entry.entry_id)
 
-    def _has_enabled_nutrition_entity(self) -> bool:
-        """Return True if the user has enabled at least one nutrition sensor.
-
-        Nutrition sensors are disabled by default and this coordinator polls
-        unconditionally regardless of that, so most installs never touch the
-        feature at all. An empty response is only worth surfacing if the user
-        has actually opted in by enabling a nutrition sensor.
-        """
-        registry = er.async_get(self.hass)
-        prefix = f"{self.config_entry.entry_id}_nutrition"
-        return any(
-            entry.unique_id.startswith(prefix) and entry.disabled_by is None
-            for entry in er.async_entries_for_config_entry(registry, self.config_entry.entry_id)
-        )
-
     async def _async_update_data(self) -> dict[str, Any]:
         """Fetch nutrition data and track empty days for the Connect+ repair issue."""
         data = await super()._async_update_data()
@@ -441,12 +438,6 @@ class NutritionCoordinator(BaseGarminCoordinator):
             ir.async_delete_issue(self.hass, DOMAIN, self._connect_plus_issue_id)
         elif self._ever_had_data:
             pass  # A later gap just means no food was logged, not a missing subscription.
-        elif not self._has_enabled_nutrition_entity():
-            # Feature not opted into - never nag, and start a fresh debounce window
-            # if the user enables it later.
-            self._empty_days = 0
-            self._last_empty_date = None
-            ir.async_delete_issue(self.hass, DOMAIN, self._connect_plus_issue_id)
         else:
             today = dt_util.now().date()
             if today != self._last_empty_date:
