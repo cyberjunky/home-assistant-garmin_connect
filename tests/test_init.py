@@ -45,6 +45,7 @@ def _coord_mock() -> MagicMock:
     c = MagicMock()
     c.async_config_entry_first_refresh = AsyncMock()
     c.async_refresh = AsyncMock()
+    c.has_opt_in_listeners = False
     c.data = {}
     return c
 
@@ -255,6 +256,92 @@ async def test_optional_refresh_does_not_block_startup(
 
         release.set()
         await asyncio.wait_for(finished.wait(), timeout=1)
+
+
+def _coords_by_name(stack: ExitStack) -> dict[str, MagicMock]:
+    """Patch each coordinator constructor with its own mock, keyed by class name."""
+    coords = {}
+    for target in _COORD_TARGETS:
+        coord = _coord_mock()
+        coord.has_listeners = True
+        coord.has_opt_in_listeners = False
+        coord.async_contexts = MagicMock(return_value=iter(()))
+        coords[target.rsplit(".", 1)[1]] = coord
+        stack.enter_context(patch(target, return_value=coord))
+    return coords
+
+
+async def test_setup_skips_coordinators_without_listeners(
+    hass, mock_config_entry, mock_auth, mock_client
+):
+    """No enabled entity, no fetch: menstrual stays idle, its peers refresh."""
+    with ExitStack() as stack:
+        coords = _coords_by_name(stack)
+        coords["MenstrualCoordinator"].has_listeners = False
+        stack.enter_context(
+            patch.object(hass.config_entries, "async_forward_entry_setups", new=AsyncMock())
+        )
+        assert await async_setup_entry(hass, mock_config_entry)
+        await hass.async_block_till_done(wait_background_tasks=True)
+
+    coords["MenstrualCoordinator"].async_refresh.assert_not_awaited()
+    coords["TrainingCoordinator"].async_refresh.assert_awaited_once()
+    coords["CoreCoordinator"].async_refresh.assert_not_awaited()
+
+
+async def test_setup_refreshes_core_for_opt_in_sensors(
+    hass, mock_config_entry, mock_auth, mock_client
+):
+    """Core's first refresh ran without sensor contexts, so it is repeated once."""
+    with ExitStack() as stack:
+        coords = _coords_by_name(stack)
+        coords["CoreCoordinator"].has_opt_in_listeners = True
+        stack.enter_context(
+            patch.object(hass.config_entries, "async_forward_entry_setups", new=AsyncMock())
+        )
+        assert await async_setup_entry(hass, mock_config_entry)
+        await hass.async_block_till_done(wait_background_tasks=True)
+
+    coords["CoreCoordinator"].async_config_entry_first_refresh.assert_awaited_once()
+    coords["CoreCoordinator"].async_refresh.assert_awaited_once()
+
+
+async def test_setup_clears_issues_of_unused_features(
+    hass, mock_config_entry, mock_auth, mock_client
+):
+    """Disabled nutrition/lifetime sensors are never polled, so setup drops their issues."""
+    with ExitStack() as stack:
+        coords = _coords_by_name(stack)
+        coords["NutritionCoordinator"].has_listeners = False
+        stack.enter_context(
+            patch.object(hass.config_entries, "async_forward_entry_setups", new=AsyncMock())
+        )
+        delete = stack.enter_context(
+            patch("custom_components.garmin_connect.ir.async_delete_issue")
+        )
+        assert await async_setup_entry(hass, mock_config_entry)
+
+    entry_id = mock_config_entry.entry_id
+    assert {c.args[2] for c in delete.call_args_list} == {
+        f"nutrition_connect_plus_required_{entry_id}",
+        f"lifetime_totals_hidden_{entry_id}",
+    }
+
+
+async def test_setup_keeps_issues_of_used_features(hass, mock_config_entry, mock_auth, mock_client):
+    """Polled coordinators manage their own issues."""
+    with ExitStack() as stack:
+        coords = _coords_by_name(stack)
+        coords["GoalsCoordinator"].async_contexts = MagicMock(return_value=iter(("lifetime",)))
+        stack.enter_context(
+            patch.object(hass.config_entries, "async_forward_entry_setups", new=AsyncMock())
+        )
+        delete = stack.enter_context(
+            patch("custom_components.garmin_connect.ir.async_delete_issue")
+        )
+        assert await async_setup_entry(hass, mock_config_entry)
+
+    delete.assert_not_called()
 
 
 # ── Options listener ──────────────────────────────────────────────────────────
