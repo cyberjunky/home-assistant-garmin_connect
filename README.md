@@ -773,14 +773,18 @@ If you find this integration useful, please consider supporting its development:
 [![Donate via PayPal](https://img.shields.io/badge/Donate-PayPal-blue.svg?style=for-the-badge&logo=paypal)](https://www.paypal.me/cyberjunkynl/)
 [![Sponsor on GitHub](https://img.shields.io/badge/Sponsor-GitHub-red.svg?style=for-the-badge&logo=github)](https://github.com/sponsors/cyberjunky)
 
+- Star this repository
+- [Report issues](https://github.com/cyberjunky/home-assistant-garmin_connect/issues)
+- Share with other Home Assistant users
+
+## Community
+
+Questions, ideas or just want to chat? Join The Junkyard on Discord:
+
 <a href="https://discord.gg/hUBQxRhJCU">
   <img src="https://raw.githubusercontent.com/cyberjunky/cyberjunky/main/assets/junkyard-discord.svg"
        alt="Join The Junkyard on Discord" width="600">
 </a>
-
-- Star this repository
-- [Report issues](https://github.com/cyberjunky/home-assistant-garmin_connect/issues)
-- Share with other Home Assistant users
 
 ## License
 
