@@ -7,6 +7,7 @@ from typing import Any
 
 from homeassistant.components.diagnostics import async_redact_data
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 from .coordinator import GarminConnectConfigEntry
 
@@ -37,6 +38,8 @@ async def async_get_config_entry_diagnostics(
     coordinator_info: dict[str, Any] = {}
     for field in fields(coordinators):
         coordinator = getattr(coordinators, field.name)
+        if not isinstance(coordinator, DataUpdateCoordinator):
+            continue
         data = coordinator.data or {}
         coordinator_info[field.name] = {
             "last_update_success": coordinator.last_update_success,

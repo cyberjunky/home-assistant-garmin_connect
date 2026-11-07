@@ -1,6 +1,8 @@
 """Tests for Garmin Connect diagnostics."""
 
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
+
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 from custom_components.garmin_connect.diagnostics import (
     TO_REDACT,
@@ -10,13 +12,12 @@ from custom_components.garmin_connect.diagnostics import (
 
 async def test_diagnostics_redacts_sensitive_data() -> None:
     """Test that diagnostics redacts tokens, names, and email."""
-    mock_coordinator = MagicMock()
+    mock_coordinator = MagicMock(spec=DataUpdateCoordinator)
     mock_coordinator.data = {"totalSteps": 10000, "restingHeartRate": 60}
     mock_coordinator.last_update_success = True
     mock_coordinator.update_interval.total_seconds.return_value = 300
 
     mock_coordinators = MagicMock()
-    # Make dataclasses.fields work by providing _fields on the spec
     mock_field = MagicMock()
     mock_field.name = "core"
 
@@ -33,9 +34,6 @@ async def test_diagnostics_redacts_sensitive_data() -> None:
     mock_entry.runtime_data.core = mock_coordinator
 
     mock_hass = MagicMock()
-
-    # Patch dataclass fields to return our mock field
-    from unittest.mock import patch
 
     with patch(
         "custom_components.garmin_connect.diagnostics.fields",
@@ -55,7 +53,7 @@ async def test_diagnostics_redacts_sensitive_data() -> None:
 
 async def test_diagnostics_coordinator_info() -> None:
     """Test that diagnostics includes coordinator info."""
-    mock_coordinator = MagicMock()
+    mock_coordinator = MagicMock(spec=DataUpdateCoordinator)
     mock_coordinator.data = {"key1": "val", "key2": "val"}
     mock_coordinator.last_update_success = True
     mock_coordinator.update_interval.total_seconds.return_value = 300
@@ -69,8 +67,6 @@ async def test_diagnostics_coordinator_info() -> None:
     mock_entry.runtime_data.core = mock_coordinator
 
     mock_hass = MagicMock()
-
-    from unittest.mock import patch
 
     with patch(
         "custom_components.garmin_connect.diagnostics.fields",
@@ -87,7 +83,7 @@ async def test_diagnostics_coordinator_info() -> None:
 
 async def test_diagnostics_handles_none_update_interval() -> None:
     """Test that diagnostics handles coordinator with no update interval."""
-    mock_coordinator = MagicMock()
+    mock_coordinator = MagicMock(spec=DataUpdateCoordinator)
     mock_coordinator.data = {}
     mock_coordinator.last_update_success = False
     mock_coordinator.update_interval = None
@@ -101,8 +97,6 @@ async def test_diagnostics_handles_none_update_interval() -> None:
     mock_entry.runtime_data.core = mock_coordinator
 
     mock_hass = MagicMock()
-
-    from unittest.mock import patch
 
     with patch(
         "custom_components.garmin_connect.diagnostics.fields",
@@ -134,7 +128,7 @@ def test_to_redact_contains_expected_keys() -> None:
 
 async def test_diagnostics_redacts_route_and_profile_inside_coordinator_data() -> None:
     """Coordinator payloads are included, minus the GPS track and profile identity."""
-    mock_coordinator = MagicMock()
+    mock_coordinator = MagicMock(spec=DataUpdateCoordinator)
     mock_coordinator.data = {
         "lastActivity": {"activityName": "Ride", "polyline": [{"lat": 1, "lon": 2}]},
         "displayName": "ron",
@@ -149,8 +143,6 @@ async def test_diagnostics_redacts_route_and_profile_inside_coordinator_data() -
     mock_entry.runtime_data = MagicMock()
     mock_entry.runtime_data.activity = mock_coordinator
 
-    from unittest.mock import patch
-
     with patch(
         "custom_components.garmin_connect.diagnostics.fields",
         return_value=[mock_field],
@@ -161,3 +153,32 @@ async def test_diagnostics_redacts_route_and_profile_inside_coordinator_data() -
     assert data["lastActivity"]["activityName"] == "Ride"
     assert data["lastActivity"]["polyline"] == "**REDACTED**"
     assert data["displayName"] == "**REDACTED**"
+
+
+async def test_diagnostics_skips_non_coordinator_fields() -> None:
+    """Test that non-DataUpdateCoordinator fields like is_cn are skipped."""
+    mock_coordinator = MagicMock(spec=DataUpdateCoordinator)
+    mock_coordinator.data = {"steps": 100}
+    mock_coordinator.last_update_success = True
+    mock_coordinator.update_interval = None
+
+    coord_field = MagicMock()
+    coord_field.name = "core"
+
+    bool_field = MagicMock()
+    bool_field.name = "is_cn"
+
+    mock_entry = MagicMock()
+    mock_entry.data = {}
+    mock_entry.runtime_data = MagicMock()
+    mock_entry.runtime_data.core = mock_coordinator
+    mock_entry.runtime_data.is_cn = False
+
+    with patch(
+        "custom_components.garmin_connect.diagnostics.fields",
+        return_value=[coord_field, bool_field],
+    ):
+        result = await async_get_config_entry_diagnostics(MagicMock(), mock_entry)
+
+    assert "core" in result["coordinators"]
+    assert "is_cn" not in result["coordinators"]
