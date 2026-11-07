@@ -161,7 +161,7 @@ All sensors are created under a single "Garmin Connect" device. Entity IDs follo
 | Sensor | Description |
 |--------|-------------|
 | Sleep Score | Overall sleep quality score; attributes carry the qualifier and the per-component qualifiers (duration, stress, awakenings, restlessness, REM/light/deep) plus Garmin's feedback keys |
-| Average Sleep Stress | Stress level averaged over the sleep window; attributes `qualifier`, `optimal_start`, `optimal_end` |
+| Average Sleep Stress | Stress level averaged over the sleep window; attributes `qualifier`, `optimal_start`, `optimal_end`, and `sleep_stress` (the overnight samples as `[{time, value}]`, not stored in history) |
 | Sleep Awakenings | Number of times you woke up during the night |
 | Sleep Restless Moments | Number of restless moments during the night |
 | Average Sleep Heart Rate | Heart rate averaged over the sleep window (bpm) |
@@ -175,6 +175,27 @@ All sensors are created under a single "Garmin Connect" device. Entity IDs follo
 | Optimal Bedtime / Optimal Wake Time | Recommended sleep timing timestamps |
 | Nap Time | Daytime nap duration |
 | Unmeasurable Sleep | Unclassified sleep time |
+
+To draw last night's stress curve, for example with [apexcharts-card](https://github.com/RomRider/apexcharts-card):
+
+```yaml
+type: custom:apexcharts-card
+header:
+  show: true
+  title: Sleep stress
+graph_span: 16h
+span:
+  end: day
+  offset: -12h
+series:
+  - entity: sensor.garmin_connect_average_sleep_stress
+    name: Stress
+    type: area
+    data_generator: |
+      return (entity.attributes.sleep_stress || []).map(
+        (p) => [new Date(p.time).getTime(), p.value]
+      );
+```
 
 ### Body Battery
 

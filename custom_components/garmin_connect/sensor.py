@@ -358,15 +358,18 @@ def _sleep_score_attributes(data: dict[str, Any]) -> dict[str, Any]:
 
 
 def _sleep_stress_attributes(data: dict[str, Any]) -> dict[str, Any]:
-    """Qualifier and optimal range Garmin scores the sleep stress against."""
+    """Qualifier and optimal range Garmin scores the sleep stress against, plus the samples."""
     stress = (data.get("sleepScores") or {}).get("stress") or {}
-    if not stress:
-        return {}
-    return {
-        "qualifier": _qualifier(stress),
-        "optimal_start": stress.get("optimalStart"),
-        "optimal_end": stress.get("optimalEnd"),
-    }
+    attributes: dict[str, Any] = {}
+    if stress:
+        attributes = {
+            "qualifier": _qualifier(stress),
+            "optimal_start": stress.get("optimalStart"),
+            "optimal_end": stress.get("optimalEnd"),
+        }
+    if samples := data.get("sleepStress"):
+        attributes["sleep_stress"] = samples
+    return attributes
 
 
 # Sleep Sensors — ha_garmin computes *Minutes from *Seconds
@@ -2358,8 +2361,9 @@ class GarminConnectSensor(CoordinatorEntity[BaseGarminCoordinator], RestoreSenso
     _attr_has_entity_name = True
     # The lastActivityRoute polyline is a full GPS track and blows past the recorder's
     # hard 16 KiB attribute cap, which makes it drop the entity's attributes wholesale.
-    # Keep it live-only for the map card and templates; the rest still records.
-    _unrecorded_attributes = frozenset({"polyline"})
+    # The overnight stress samples are smaller but would be copied into every recorded
+    # row. Keep both live-only for cards and templates; the rest still records.
+    _unrecorded_attributes = frozenset({"polyline", "sleep_stress"})
 
     def __init__(
         self,
