@@ -70,12 +70,10 @@
     "step": {
       "init": {
         "data": {
-          "scan_interval": "Interwał aktualizacji (sekundy)",
-          "is_cn": "Użyj Garmin Connect China (cn.garmin.com)"
+          "scan_interval": "Interwał aktualizacji (sekundy)"
         },
         "data_description": {
-          "scan_interval": "Jak często pobierać dane z Garmin Connect (60–3600 sekund)",
-          "is_cn": "Włącz dla kont zarejestrowanych na chińskiej platformie Garmin Connect"
+          "scan_interval": "Jak często pobierać dane z Garmin Connect (60–3600 sekund)"
         },
         "description": "Skonfiguruj ustawienia integracji Garmin Connect.",
         "title": "Opcje Garmin Connect"

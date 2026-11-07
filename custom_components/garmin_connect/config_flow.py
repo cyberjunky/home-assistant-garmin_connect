@@ -329,12 +329,15 @@ class GarminConnectOptionsFlow(OptionsFlow):
     async def async_step_init(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         """Manage the options."""
         if user_input is not None:
-            return self.async_create_entry(title="", data=user_input)
+            # The region is changed with a fresh login (reconfigure), since
+            # tokens are region-bound; keep it when saving the other options.
+            return self.async_create_entry(
+                title="", data={**self.config_entry.options, **user_input}
+            )
 
         current_scan_interval = self.config_entry.options.get(
             CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL
         )
-        current_is_cn = self.config_entry.options.get(CONF_IS_CN, False)
 
         return self.async_show_form(
             step_id="init",
@@ -347,7 +350,6 @@ class GarminConnectOptionsFlow(OptionsFlow):
                         vol.Coerce(int),
                         vol.Range(min=MIN_SCAN_INTERVAL, max=MAX_SCAN_INTERVAL),
                     ),
-                    vol.Optional(CONF_IS_CN, default=current_is_cn): bool,
                 }
             ),
         )
