@@ -319,6 +319,56 @@ STRESS_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
     ),
 )
 
+# Garmin's sleepScores breakdown: each component carries a qualifier
+# (EXCELLENT/GOOD/FAIR/POOR) and the range Garmin considers optimal.
+_SLEEP_SCORE_COMPONENTS: dict[str, str] = {
+    "totalDuration": "duration",
+    "stress": "stress",
+    "awakeCount": "awakenings",
+    "restlessness": "restlessness",
+    "remPercentage": "rem",
+    "lightPercentage": "light",
+    "deepPercentage": "deep",
+}
+
+
+def _qualifier(component: dict[str, Any]) -> str | None:
+    """Lower-cased qualifier of one sleep score component, or None."""
+    qualifier = component.get("qualifierKey")
+    return qualifier.lower() if isinstance(qualifier, str) else None
+
+
+def _sleep_score_attributes(data: dict[str, Any]) -> dict[str, Any]:
+    """Qualifiers for the sleep score and its components, plus Garmin's feedback keys."""
+    scores = data.get("sleepScores") or {}
+    if not scores:
+        return {}
+    attributes: dict[str, Any] = {
+        "qualifier": _qualifier(scores.get("overall") or {}),
+    }
+    for garmin_key, name in _SLEEP_SCORE_COMPONENTS.items():
+        component = scores.get(garmin_key) or {}
+        attributes[f"{name}_qualifier"] = _qualifier(component)
+        if (value := component.get("value")) is not None:
+            attributes[f"{name}_percentage"] = value
+    attributes["feedback"] = data.get("sleepScoreFeedback")
+    attributes["insight"] = data.get("sleepScoreInsight")
+    attributes["personalized_insight"] = data.get("sleepScorePersonalizedInsight")
+    return attributes
+
+
+def _sleep_stress_attributes(data: dict[str, Any]) -> dict[str, Any]:
+    """Qualifier and optimal range Garmin scores the sleep stress against."""
+    stress = (data.get("sleepScores") or {}).get("stress") or {}
+    if not stress:
+        return {}
+    return {
+        "qualifier": _qualifier(stress),
+        "optimal_start": stress.get("optimalStart"),
+        "optimal_end": stress.get("optimalEnd"),
+    }
+
+
 # Sleep Sensors — ha_garmin computes *Minutes from *Seconds
 SLEEP_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
     GarminConnectSensorEntityDescription(
@@ -389,6 +439,41 @@ SLEEP_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         key="sleepScore",
         translation_key="sleep_score",
         state_class=SensorStateClass.MEASUREMENT,
+        preserve_value=True,
+        attributes_fn=lambda data: _sleep_score_attributes(data),
+    ),
+    GarminConnectSensorEntityDescription(
+        key="avgSleepStress",
+        translation_key="avg_sleep_stress",
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement="level",
+        preserve_value=True,
+        attributes_fn=lambda data: _sleep_stress_attributes(data),
+    ),
+    GarminConnectSensorEntityDescription(
+        key="awakeCount",
+        translation_key="sleep_awakenings",
+        state_class=SensorStateClass.MEASUREMENT,
+        preserve_value=True,
+    ),
+    GarminConnectSensorEntityDescription(
+        key="restlessMomentsCount",
+        translation_key="sleep_restless_moments",
+        state_class=SensorStateClass.MEASUREMENT,
+        preserve_value=True,
+    ),
+    GarminConnectSensorEntityDescription(
+        key="avgSleepHeartRate",
+        translation_key="avg_sleep_heart_rate",
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement="bpm",
+        preserve_value=True,
+    ),
+    GarminConnectSensorEntityDescription(
+        key="sleepBodyBatteryChange",
+        translation_key="sleep_body_battery_change",
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=PERCENTAGE,
         preserve_value=True,
     ),
     GarminConnectSensorEntityDescription(

@@ -18,6 +18,7 @@ from custom_components.garmin_connect.sensor import (
     HEALTH_MONITORING_SENSORS,
     MENSTRUAL_CYCLE_SENSORS,
     NUTRITION_SENSORS,
+    SLEEP_SENSORS,
     TRAINING_SENSORS,
     CoordinatorType,
     GarminConnectGearSensor,
@@ -202,6 +203,80 @@ def test_skin_temp_change_sensor() -> None:
     assert description.device_class is SensorDeviceClass.TEMPERATURE_DELTA
     assert sensor.native_value == 0.2
     assert sensor.extra_state_attributes == {"calibration_days": 19}
+
+
+def test_sleep_score_attributes() -> None:
+    """Sleep score carries Garmin's per-component qualifiers and feedback keys."""
+    coordinator = MagicMock()
+    coordinator.data = {
+        "sleepScore": 85,
+        "sleepScores": {
+            "overall": {"value": 85, "qualifierKey": "GOOD"},
+            "totalDuration": {"qualifierKey": "EXCELLENT"},
+            "stress": {"qualifierKey": "FAIR", "optimalStart": 0.0, "optimalEnd": 15.0},
+            "remPercentage": {"value": 20, "qualifierKey": "FAIR"},
+        },
+        "sleepScoreFeedback": "POSITIVE_LONG_AND_DEEP",
+        "sleepScoreInsight": "NONE",
+        "sleepScorePersonalizedInsight": "RHYTHM_POS_GOOD_SLEEP",
+    }
+    description = next(d for d in SLEEP_SENSORS if d.key == "sleepScore")
+    sensor = GarminConnectSensor(coordinator, description, "test_entry_id")
+    assert sensor.native_value == 85
+    attributes = sensor.extra_state_attributes
+    assert attributes["qualifier"] == "good"
+    assert attributes["duration_qualifier"] == "excellent"
+    assert attributes["stress_qualifier"] == "fair"
+    assert attributes["rem_qualifier"] == "fair"
+    assert attributes["rem_percentage"] == 20
+    assert attributes["deep_qualifier"] is None
+    assert "deep_percentage" not in attributes
+    assert attributes["feedback"] == "POSITIVE_LONG_AND_DEEP"
+    assert attributes["personalized_insight"] == "RHYTHM_POS_GOOD_SLEEP"
+
+
+def test_sleep_score_attributes_empty_without_scores() -> None:
+    """No sleep yet (midnight) -> no attributes rather than a dict of Nones."""
+    coordinator = MagicMock()
+    coordinator.data = {"sleepScore": None, "sleepScores": None}
+    description = next(d for d in SLEEP_SENSORS if d.key == "sleepScore")
+    sensor = GarminConnectSensor(coordinator, description, "test_entry_id")
+    assert sensor.extra_state_attributes == {}
+
+
+def test_avg_sleep_stress_sensor() -> None:
+    """Average sleep stress exposes Garmin's qualifier and optimal range."""
+    coordinator = MagicMock()
+    coordinator.data = {
+        "avgSleepStress": 21.0,
+        "sleepScores": {
+            "stress": {"qualifierKey": "FAIR", "optimalStart": 0.0, "optimalEnd": 15.0}
+        },
+    }
+    description = next(d for d in SLEEP_SENSORS if d.key == "avgSleepStress")
+    sensor = GarminConnectSensor(coordinator, description, "test_entry_id")
+    assert sensor.native_value == 21.0
+    assert sensor.extra_state_attributes == {
+        "qualifier": "fair",
+        "optimal_start": 0.0,
+        "optimal_end": 15.0,
+    }
+
+
+def test_sleep_night_sensors() -> None:
+    """Awakenings, restless moments, sleep heart rate and overnight body battery change."""
+    coordinator = MagicMock()
+    coordinator.data = {
+        "awakeCount": 2,
+        "restlessMomentsCount": 50,
+        "avgSleepHeartRate": 58.0,
+        "sleepBodyBatteryChange": 48,
+    }
+    for key, expected in coordinator.data.items():
+        description = next(d for d in SLEEP_SENSORS if d.key == key)
+        sensor = GarminConnectSensor(coordinator, description, "test_entry_id")
+        assert sensor.native_value == expected
+        assert description.preserve_value
 
 
 def test_nutrition_sensors_unknown_when_feature_unavailable() -> None:

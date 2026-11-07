@@ -160,7 +160,12 @@ All sensors are created under a single "Garmin Connect" device. Entity IDs follo
 
 | Sensor | Description |
 |--------|-------------|
-| Sleep Score | Overall sleep quality score |
+| Sleep Score | Overall sleep quality score; attributes carry the qualifier and the per-component qualifiers (duration, stress, awakenings, restlessness, REM/light/deep) plus Garmin's feedback keys |
+| Average Sleep Stress | Stress level averaged over the sleep window; attributes `qualifier`, `optimal_start`, `optimal_end` |
+| Sleep Awakenings | Number of times you woke up during the night |
+| Sleep Restless Moments | Number of restless moments during the night |
+| Average Sleep Heart Rate | Heart rate averaged over the sleep window (bpm) |
+| Sleep Body Battery Change | Body battery gained (or lost) overnight |
 | Sleep Need | Target sleep need in minutes |
 | Sleep Duration | Total time asleep |
 | Total Sleep Duration | Total sleep window duration |
