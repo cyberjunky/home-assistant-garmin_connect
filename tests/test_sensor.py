@@ -263,6 +263,20 @@ def test_avg_sleep_stress_sensor() -> None:
     }
 
 
+def test_avg_sleep_stress_samples() -> None:
+    """The overnight stress samples ride along as an attribute, live-only."""
+    samples = [
+        {"time": datetime.datetime(2026, 4, 11, 22, 0, tzinfo=datetime.UTC), "value": 18.0},
+        {"time": datetime.datetime(2026, 4, 11, 22, 3, tzinfo=datetime.UTC), "value": 22.0},
+    ]
+    coordinator = MagicMock()
+    coordinator.data = {"avgSleepStress": 21.0, "sleepStress": samples}
+    description = next(d for d in SLEEP_SENSORS if d.key == "avgSleepStress")
+    sensor = GarminConnectSensor(coordinator, description, "test_entry_id")
+    assert sensor.extra_state_attributes == {"sleep_stress": samples}
+    assert "sleep_stress" in sensor._unrecorded_attributes
+
+
 def test_sleep_night_sensors() -> None:
     """Awakenings, restless moments, sleep heart rate and overnight body battery change."""
     coordinator = MagicMock()
