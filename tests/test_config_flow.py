@@ -5,6 +5,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from ha_garmin import GarminAuthError, GarminConnectError, GarminMFARequired, GarminRateLimitError
 
 from custom_components.garmin_connect.const import (
+    CONF_IS_CN,
     CONF_SCAN_INTERVAL,
     DEFAULT_SCAN_INTERVAL,
 )
@@ -224,6 +225,17 @@ async def test_options_flow_saves_new_interval() -> None:
 
     assert result["type"] == "create_entry"
     assert result["data"][CONF_SCAN_INTERVAL] == 120
+
+
+async def test_options_flow_hides_and_keeps_is_cn() -> None:
+    """The region is not an option; saving the form must keep the stored value."""
+    flow = _make_options_flow({CONF_SCAN_INTERVAL: DEFAULT_SCAN_INTERVAL, CONF_IS_CN: True})
+
+    form = await flow.async_step_init(None)
+    assert CONF_IS_CN not in form["data_schema"].schema
+
+    result = await flow.async_step_init({CONF_SCAN_INTERVAL: 120})
+    assert result["data"] == {CONF_SCAN_INTERVAL: 120, CONF_IS_CN: True}
 
 
 async def test_options_flow_uses_default_when_options_empty() -> None:

@@ -72,12 +72,10 @@
     "step": {
       "init": {
         "data": {
-          "scan_interval": "Update interval (seconds)",
-          "is_cn": "Use Garmin Connect China (cn.garmin.com)"
+          "scan_interval": "Update interval (seconds)"
         },
         "data_description": {
-          "scan_interval": "How often to fetch data from Garmin Connect (60–3600 seconds)",
-          "is_cn": "Enable for accounts registered on the Chinese Garmin Connect platform"
+          "scan_interval": "How often to fetch data from Garmin Connect (60–3600 seconds)"
         },
         "description": "Configure your Garmin Connect integration settings.",
         "title": "Garmin Connect Options"
