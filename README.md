@@ -60,7 +60,7 @@ Alternatively:
 1. Navigate to **Settings** → **Devices & Services**
 2. Click **+ Add Integration**
 3. Search for **"Garmin Connect"**
-4. Enter your Garmin Connect email and password
+4. Enter your Garmin Connect email and password (tick **Use Garmin Connect China** for .cn accounts)
 5. If MFA is enabled, enter the verification code when prompted
 
 ### Options
