@@ -332,7 +332,7 @@
     },
     "delete_workout": {
       "name": "Training löschen",
-      "description": "Ein Training aus der Garmin Connect-Bibliothek löschen, einschließlich seiner Kalendereinträge.",
+      "description": "Ein Training aus der Garmin Connect-Bibliothek löschen, einschliesslich seiner Kalendereinträge.",
       "fields": {
         "entity_id": { "name": "Garmin Connect-Entität", "description": "Optionale Garmin Connect-Entität, deren Konto das Training gehört." },
         "workout_id": { "name": "Trainings-ID", "description": "Garmin-Trainings-ID." }
