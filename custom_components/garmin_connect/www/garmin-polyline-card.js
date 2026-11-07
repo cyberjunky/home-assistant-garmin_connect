@@ -315,4 +315,25 @@ if (!customElements.get('garmin-polyline-card')) {
   });
 
   console.info('%c GARMIN-POLYLINE-CARD %c loaded ', 'background: #FF5722; color: white;', '');
+
+  // Frontends before 20261028.0 (core < 2026.11) could run this script before
+  // their scoped registry polyfill replaced window.customElements, leaving the
+  // card in a registry the dashboard no longer reads (#656). Define it again
+  // once the registry is swapped; on newer frontends it never is, so the
+  // check just stops after a minute.
+  const loadedIn = window.customElements;
+  const deadline = Date.now() + 60 * 1000;
+  const registryCheck = setInterval(() => {
+    const registry = window.customElements;
+    if (registry === loadedIn) {
+      if (Date.now() > deadline) clearInterval(registryCheck);
+      return;
+    }
+    clearInterval(registryCheck);
+    if (!registry.get('garmin-polyline-card')) {
+      // A fresh subclass, since the old registry already holds the original
+      // constructor and may not accept it twice.
+      registry.define('garmin-polyline-card', class extends GarminPolylineCard {});
+    }
+  }, 100);
 }
