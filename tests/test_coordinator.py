@@ -211,7 +211,7 @@ async def test_auth_error_maps_to_config_entry_auth_failed() -> None:
     client = AsyncMock()
     client.fetch_core_data = AsyncMock(side_effect=GarminAuthError("expired"))
     coordinator = _make_base(client)
-    with pytest.raises(ConfigEntryAuthFailed):
+    with pytest.raises(ConfigEntryAuthFailed, match="expired"):
         await coordinator._async_update_data()
 
 
