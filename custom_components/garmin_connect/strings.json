@@ -146,7 +146,10 @@
       "hrv_baseline": { "name": "HRV baseline" },
       "hrv_last_night_5min_high": { "name": "HRV last night 5-min high" },
       "hrv_last_night_avg": { "name": "HRV last night average" },
-      "hrv_status": { "name": "HRV status" },
+      "hrv_status": {
+        "name": "HRV status",
+        "state": { "balanced": "Balanced", "unbalanced": "Unbalanced", "low": "Low", "poor": "Poor" }
+      },
       "hrv_weekly_avg": { "name": "HRV weekly average" },
       "hydration": { "name": "Hydration" },
       "hydration_activity_intake": { "name": "Hydration activity intake" },
@@ -178,7 +181,10 @@
       "medium_stress_duration": { "name": "Medium stress duration" },
       "medium_stress_percentage": { "name": "Medium stress percentage" },
       "menstrual_cycle_day": { "name": "Menstrual cycle day" },
-      "menstrual_cycle_phase": { "name": "Menstrual cycle phase" },
+      "menstrual_cycle_phase": {
+        "name": "Menstrual cycle phase",
+        "state": { "menstruation": "Menstruation", "follicular": "Follicular", "ovulation": "Ovulation", "luteal": "Luteal" }
+      },
       "menstrual_cycle_start": { "name": "Menstrual cycle start" },
       "menstrual_cycle_type": { "name": "Menstrual cycle type" },
       "menstrual_days_until_next_phase": { "name": "Menstrual days until next phase" },
@@ -228,7 +234,10 @@
       "solar_intensity": { "name": "Solar intensity" },
       "solar_time_gained": { "name": "Solar time gained" },
       "stress_percentage": { "name": "Stress percentage" },
-      "stress_qualifier": { "name": "Stress qualifier" },
+      "stress_qualifier": {
+        "name": "Stress qualifier",
+        "state": { "calm": "Calm", "balanced": "Balanced", "stressful": "Stressful", "very_stressful": "Very stressful" }
+      },
       "today_scheduled_workout": { "name": "Today's scheduled workout" },
       "total_calories": { "name": "Calories" },
       "total_distance": { "name": "Distance" },
@@ -240,7 +249,10 @@
       "training_plan_goal_event": { "name": "Training plan goal event" },
       "upcoming_events": { "name": "Upcoming events" },
       "training_readiness": { "name": "Training readiness" },
-      "training_status": { "name": "Training status" },
+      "training_status": {
+        "name": "Training status",
+        "state": { "peaking": "Peaking", "productive": "Productive", "maintaining": "Maintaining", "recovery": "Recovery", "unproductive": "Unproductive", "detraining": "Detraining", "overreaching": "Overreaching", "strained": "Strained", "paused": "Paused", "no_status": "No status" }
+      },
       "uncategorized_stress_duration": { "name": "Uncategorized stress duration" },
       "uncategorized_stress_percentage": { "name": "Uncategorized stress percentage" },
       "unmeasurable_sleep": { "name": "Unmeasurable sleep" },
@@ -441,6 +453,10 @@
     }
   },
   "exceptions": {
+    "auth_failed": { "message": "Authentication with Garmin Connect failed: {error}" },
+    "reauth_required": { "message": "Garmin Connect credentials for {account} need to be re-authenticated" },
+    "update_failed": { "message": "Error fetching Garmin Connect {data} data: {error}" },
+    "update_timeout": { "message": "Garmin Connect {data} refresh exceeded {seconds} seconds" },
     "get_day_summary_failed": { "message": "Failed to fetch the day summary: {error}" },
     "add_blood_pressure_failed": { "message": "Failed to add blood pressure: {error}" },
     "add_hydration_failed": { "message": "Failed to log hydration: {error}" },

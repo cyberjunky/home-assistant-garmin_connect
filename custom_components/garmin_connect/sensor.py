@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import datetime
+import logging
+import re
 from collections.abc import Callable, Iterator
 from dataclasses import dataclass
 from datetime import date as dt_date
@@ -94,6 +96,52 @@ class GarminConnectSensorEntityDescription(SensorEntityDescription):
     would read any drop of more than 10% as a meter reset and add the whole new
     value to the long-term sum again.
     """
+
+
+_LOGGER = logging.getLogger(__name__)
+
+# Garmin's own words for "no value"; they map to an unknown state, not an option.
+_ENUM_NO_VALUE = frozenset({"none", "unknown", "no_value"})
+_reported_enum_values: set[tuple[str, str]] = set()
+
+
+def _enum_state(key: str, value: Any, options: tuple[str, ...]) -> str | None:
+    """Normalize a Garmin label to one of an ENUM sensor's options.
+
+    "No Status", "NO_STATUS" and "no status" all become "no_status". A label
+    that isn't a known option is logged once and reported as unknown, since
+    Home Assistant refuses an ENUM state outside its options.
+    """
+    if not isinstance(value, str) or not value.strip():
+        return None
+    state = re.sub(r"[^a-z0-9]+", "_", value.strip().lower()).strip("_")
+    if state in options:
+        return state
+    if state not in _ENUM_NO_VALUE and (key, state) not in _reported_enum_values:
+        _reported_enum_values.add((key, state))
+        _LOGGER.warning(
+            "Unknown %s value %r from Garmin Connect; please report it so it can be added",
+            key,
+            value,
+        )
+    return None
+
+
+HRV_STATUS_OPTIONS = ("balanced", "unbalanced", "low", "poor")
+STRESS_QUALIFIER_OPTIONS = ("calm", "balanced", "stressful", "very_stressful")
+TRAINING_STATUS_OPTIONS = (
+    "peaking",
+    "productive",
+    "maintaining",
+    "recovery",
+    "unproductive",
+    "detraining",
+    "overreaching",
+    "strained",
+    "paused",
+    "no_status",
+)
+MENSTRUAL_PHASE_OPTIONS = ("menstruation", "follicular", "ovulation", "luteal")
 
 
 # ── CORE coordinator sensors ─────────────────────────────────────────────────
@@ -283,6 +331,11 @@ STRESS_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
     GarminConnectSensorEntityDescription(
         key="stressQualifierText",
         translation_key="stress_qualifier",
+        device_class=SensorDeviceClass.ENUM,
+        options=list(STRESS_QUALIFIER_OPTIONS),
+        value_fn=lambda data: _enum_state(
+            "stress qualifier", data.get("stressQualifierText"), STRESS_QUALIFIER_OPTIONS
+        ),
     ),
     GarminConnectSensorEntityDescription(
         key="stressMinutes",
@@ -1156,7 +1209,11 @@ TRAINING_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         key="trainingStatus",
         translation_key="training_status",
         coordinator_type=CoordinatorType.TRAINING,
-        value_fn=lambda data: data.get("trainingStatusPhrase"),
+        device_class=SensorDeviceClass.ENUM,
+        options=list(TRAINING_STATUS_OPTIONS),
+        value_fn=lambda data: _enum_state(
+            "training status", data.get("trainingStatusPhrase"), TRAINING_STATUS_OPTIONS
+        ),
         attributes_fn=lambda data: data.get("trainingStatus") or {},
     ),
     GarminConnectSensorEntityDescription(
@@ -1197,6 +1254,11 @@ TRAINING_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         key="hrvStatusText",
         translation_key="hrv_status",
         coordinator_type=CoordinatorType.TRAINING,
+        device_class=SensorDeviceClass.ENUM,
+        options=list(HRV_STATUS_OPTIONS),
+        value_fn=lambda data: _enum_state(
+            "HRV status", data.get("hrvStatusText"), HRV_STATUS_OPTIONS
+        ),
         attributes_fn=lambda data: {
             k: v for k, v in (data.get("hrvStatus") or {}).items() if k != "status"
         },
@@ -1866,10 +1928,10 @@ BLOOD_PRESSURE_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
 # Data from ha_garmin.fetch_menstrual_data() — all disabled by default
 
 _MENSTRUAL_PHASE_MAP = {
-    1: "Menstruation",
-    2: "Follicular",
-    3: "Ovulation",
-    4: "Luteal",
+    1: "menstruation",
+    2: "follicular",
+    3: "ovulation",
+    4: "luteal",
 }
 
 
@@ -1984,8 +2046,10 @@ MENSTRUAL_CYCLE_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         translation_key="menstrual_cycle_phase",
         coordinator_type=CoordinatorType.MENSTRUAL,
         entity_registry_enabled_default=False,
+        device_class=SensorDeviceClass.ENUM,
+        options=list(MENSTRUAL_PHASE_OPTIONS),
         value_fn=lambda data: (
-            _MENSTRUAL_PHASE_MAP.get(int(_menstrual_day_summary(data)["currentPhase"]), "Unknown")
+            _MENSTRUAL_PHASE_MAP.get(int(_menstrual_day_summary(data)["currentPhase"]))
             if isinstance(_menstrual_day_summary(data).get("currentPhase"), int)
             else None
         ),

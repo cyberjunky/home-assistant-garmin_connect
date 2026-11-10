@@ -151,13 +151,26 @@ class BaseGarminCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 return await self._fetch()
         except TimeoutError as err:
             raise UpdateFailed(
-                f"Garmin {self.data_name} refresh exceeded {UPDATE_TIMEOUT} seconds"
+                translation_domain=DOMAIN,
+                translation_key="update_timeout",
+                translation_placeholders={
+                    "data": self.data_name,
+                    "seconds": str(UPDATE_TIMEOUT),
+                },
             ) from err
         except GarminAuthError as err:
-            raise ConfigEntryAuthFailed(f"Authentication failed: {err}") from err
+            raise ConfigEntryAuthFailed(
+                translation_domain=DOMAIN,
+                translation_key="auth_failed",
+                translation_placeholders={"error": str(err)},
+            ) from err
         except GarminConnectError as err:
             _LOGGER.debug("Error fetching %s data: %s", self.data_name, err)
-            raise UpdateFailed(f"Error fetching {self.data_name} data: {err}") from err
+            raise UpdateFailed(
+                translation_domain=DOMAIN,
+                translation_key="update_failed",
+                translation_placeholders={"data": self.data_name, "error": str(err)},
+            ) from err
         finally:
             self._update_tokens_if_changed()
 

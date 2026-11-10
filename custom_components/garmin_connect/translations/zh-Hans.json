@@ -135,7 +135,10 @@
       "hrv_baseline": { "name": "HRV 基准线" },
       "hrv_last_night_5min_high": { "name": "昨晚 HRV 5 分钟最高值" },
       "hrv_last_night_avg": { "name": "昨晚 HRV 平均值" },
-      "hrv_status": { "name": "HRV 状态" },
+      "hrv_status": {
+        "name": "HRV 状态",
+        "state": { "balanced": "平衡", "unbalanced": "不平衡", "low": "低", "poor": "差" }
+      },
       "hrv_weekly_avg": { "name": "HRV 周平均值" },
       "hydration": { "name": "饮水量" },
       "hydration_activity_intake": { "name": "活动饮水量" },
@@ -173,7 +176,10 @@
       "medium_stress_duration": { "name": "中度压力时长" },
       "medium_stress_percentage": { "name": "中度压力百分比" },
       "menstrual_cycle_day": { "name": "月经周期日" },
-      "menstrual_cycle_phase": { "name": "月经周期阶段" },
+      "menstrual_cycle_phase": {
+        "name": "月经周期阶段",
+        "state": { "menstruation": "月经期", "follicular": "卵泡期", "ovulation": "排卵期", "luteal": "黄体期" }
+      },
       "menstrual_cycle_start": { "name": "本次月经开始日" },
       "menstrual_cycle_type": { "name": "月经周期类型" },
       "menstrual_days_until_next_phase": { "name": "距离下一阶段天数" },
@@ -208,7 +214,10 @@
       "sleeping_time": { "name": "睡眠时间" },
       "solar_intensity": { "name": "太阳能强度" },
       "stress_percentage": { "name": "压力百分比" },
-      "stress_qualifier": { "name": "压力级别" },
+      "stress_qualifier": {
+        "name": "压力级别",
+        "state": { "calm": "平静", "balanced": "平衡", "stressful": "有压力", "very_stressful": "压力很大" }
+      },
       "total_calories": { "name": "总卡路里" },
       "total_distance": { "name": "总距离" },
       "total_intensity_minutes": { "name": "强度分钟数" },
@@ -217,7 +226,10 @@
       "total_stress_duration": { "name": "压力总时长" },
       "recovery_time": { "name": "恢复时间" },
       "training_readiness": { "name": "训练准备情况" },
-      "training_status": { "name": "训练状态" },
+      "training_status": {
+        "name": "训练状态",
+        "state": { "peaking": "巅峰", "productive": "有效", "maintaining": "保持", "recovery": "恢复", "unproductive": "无效", "detraining": "退步", "overreaching": "过量", "strained": "疲劳", "paused": "暂停", "no_status": "无状态" }
+      },
       "uncategorized_stress_duration": { "name": "未分类压力时长" },
       "uncategorized_stress_percentage": { "name": "未分类压力百分比" },
       "unmeasurable_sleep": { "name": "无法测量的睡眠" },
@@ -380,6 +392,10 @@
     }
   },
   "exceptions": {
+    "auth_failed": { "message": "Garmin Connect 身份验证失败：{error}" },
+    "reauth_required": { "message": "{account} 的 Garmin Connect 凭据需要重新验证" },
+    "update_failed": { "message": "获取 Garmin Connect {data} 数据出错：{error}" },
+    "update_timeout": { "message": "Garmin Connect {data} 数据刷新超过 {seconds} 秒" },
     "add_blood_pressure_failed": { "message": "添加血压失败:{error}" },
     "add_hydration_failed": { "message": "记录饮水失败:{error}" },
     "add_body_composition_failed": { "message": "添加身体成分失败:{error}" },

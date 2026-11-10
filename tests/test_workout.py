@@ -94,10 +94,64 @@ from custom_components.garmin_connect.workout import step_summary, steps_summary
     ],
 )
 def test_step_summary(step: dict, expected: str):
+    """A step reads as its name, how it ends and its targets."""
+    assert step_summary(step) == expected
+
+
+@pytest.mark.parametrize(
+    ("target", "expected"),
+    [
+        (
+            {"targetType": "heart.rate.zone", "targetValueOne": 150.0},
+            "Interval 5:00 @ 150 bpm",
+        ),
+        (
+            {"targetType": "heart.rate.zone", "targetValueOne": 150.0, "targetValueTwo": 150.0},
+            "Interval 5:00 @ 150 bpm",
+        ),
+        (
+            {"targetType": "pace.zone", "targetValueTwo": 4.0},
+            "Interval 5:00 @ 4:10 /km",
+        ),
+        (
+            {"targetType": "speed.zone", "targetValueOne": 5.0, "targetValueTwo": 2.5},
+            "Interval 5:00 @ 9.0–18.0 km/h",
+        ),
+        (
+            {"targetType": "speed.zone", "targetValueOne": 0, "targetValueTwo": 0},
+            "Interval 5:00",
+        ),
+        (
+            {"targetType": "resistance.zone", "targetValueOne": 3, "targetValueTwo": 5},
+            "Interval 5:00",
+        ),
+    ],
+    ids=["single-bound", "equal-bounds", "single-pace", "speed", "empty-speed", "unknown-kind"],
+)
+def test_step_target(target: dict, expected: str):
+    """A one-value range shows one number, speed shows km/h, unknown targets are left out."""
+    step = {"stepType": "interval", "endCondition": "time", "endConditionValue": 300.0}
+    assert step_summary(step | target) == expected
+
+
+@pytest.mark.parametrize(
+    ("condition", "value", "expected"),
+    [
+        ("calories", 250.4, "Interval 250 kcal"),
+        ("reps", 10, "Interval"),
+        ("time", None, "Interval"),
+        ("time", True, "Interval"),
+    ],
+    ids=["calories", "unknown-condition", "no-value", "bool-value"],
+)
+def test_step_end_condition(condition: str, value: object, expected: str):
+    """Calories end a step in kcal; unknown conditions and non-numeric values are left out."""
+    step = {"stepType": "interval", "endCondition": condition, "endConditionValue": value}
     assert step_summary(step) == expected
 
 
 def test_repeat_group_lists_its_steps():
+    """A repeat group shows its iteration count and its steps in parentheses."""
     step = {
         "stepType": "repeat",
         "numberOfIterations": 4,
@@ -110,4 +164,5 @@ def test_repeat_group_lists_its_steps():
 
 
 def test_workout_without_steps_has_no_summary():
+    """A workout without workoutSteps has no summary lines."""
     assert steps_summary({"title": "Benchmark Run"}) == []

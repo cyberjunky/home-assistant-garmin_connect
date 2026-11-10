@@ -7,6 +7,7 @@ from custom_components.garmin_connect.calendar import (
     GarminScheduledWorkoutsCalendar,
     _event_from_goal,
     _event_from_workout,
+    async_setup_entry,
 )
 
 from .conftest import mock_activity_data
@@ -69,6 +70,44 @@ def test_event_from_goal_returns_none_without_event_name() -> None:
 
 def test_event_from_goal_returns_none_without_date() -> None:
     assert _event_from_goal({"eventName": "5K Plan"}) is None
+
+
+def test_event_from_goal_returns_none_on_bad_date() -> None:
+    """A goal event whose date isn't ISO is skipped rather than raising."""
+    assert _event_from_goal({"eventName": "5K Plan", "date": "21-11-2026"}) is None
+
+
+async def test_bad_goal_date_does_not_hide_other_events() -> None:
+    """One upcoming event with a malformed date is dropped; the rest still show."""
+    coord = MagicMock()
+    coord.data = {
+        "upcomingEvents": [
+            {"eventName": "Broken Race", "date": "soon"},
+            {"eventName": "Parkrun", "date": "2026-11-07"},
+        ]
+    }
+    calendar = GarminScheduledWorkoutsCalendar(coord, "entry_id")
+
+    events = await calendar.async_get_events(
+        None, datetime(2026, 11, 1, tzinfo=UTC), datetime(2026, 11, 30, tzinfo=UTC)
+    )
+
+    assert [event.summary for event in events] == ["Parkrun"]
+
+
+async def test_async_setup_entry_adds_calendar_for_activity_coordinator() -> None:
+    """Setup adds one calendar, fed by the activity coordinator, keyed on the entry."""
+    entry = MagicMock()
+    entry.entry_id = "test_entry_id"
+    added: list = []
+
+    await async_setup_entry(MagicMock(), entry, added.extend)
+
+    assert len(added) == 1
+    calendar = added[0]
+    assert isinstance(calendar, GarminScheduledWorkoutsCalendar)
+    assert calendar.coordinator is entry.runtime_data.activity
+    assert calendar.unique_id == "test_entry_id_scheduled_workouts_calendar"
 
 
 def test_calendar_unavailable_until_first_fetch() -> None:

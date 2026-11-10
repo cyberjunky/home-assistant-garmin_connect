@@ -239,13 +239,9 @@ class GarminConnectConfigFlow(ConfigFlow, domain=DOMAIN):
     def _async_show_step_login_form(self, errors: dict[str, str]) -> ConfigFlowResult:
         """Show the login form of the step this flow started from."""
         if self.source == SOURCE_REAUTH:
-            return self._async_show_login_form(
-                "reauth_confirm", self._get_reauth_entry(), errors
-            )
+            return self._async_show_login_form("reauth_confirm", self._get_reauth_entry(), errors)
         if self.source == SOURCE_RECONFIGURE:
-            return self._async_show_login_form(
-                "reconfigure", self._get_reconfigure_entry(), errors
-            )
+            return self._async_show_login_form("reconfigure", self._get_reconfigure_entry(), errors)
         return self.async_show_form(
             step_id="user",
             data_schema=self.add_suggested_values_to_schema(

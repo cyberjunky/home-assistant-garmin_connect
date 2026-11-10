@@ -193,7 +193,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: GarminConnectConfigEntry
         # Migration from v1 bumps version and starts reauth but setup still runs.
         # Without valid DI tokens there's nothing to set up — reauth will fix it.
         raise ConfigEntryAuthFailed(
-            f"Garmin Connect credentials for {entry.title} need to be re-authenticated"
+            translation_domain=DOMAIN,
+            translation_key="reauth_required",
+            translation_placeholders={"account": entry.title},
         )
 
     is_cn = entry.options.get(CONF_IS_CN, False)

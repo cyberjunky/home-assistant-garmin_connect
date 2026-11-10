@@ -165,9 +165,7 @@ async def test_user_flow_already_configured_legacy_email_entry(
     hass: HomeAssistant, mock_flow_auth: MagicMock, mock_flow_client: MagicMock
 ) -> None:
     """An entry still keyed by email (pre profile id) also blocks a duplicate."""
-    MockConfigEntry(domain=DOMAIN, unique_id="test@example.com", data=NEW_TOKENS).add_to_hass(
-        hass
-    )
+    MockConfigEntry(domain=DOMAIN, unique_id="test@example.com", data=NEW_TOKENS).add_to_hass(hass)
     flow_id = await _start_user_flow(hass)
 
     result = await hass.config_entries.flow.async_configure(flow_id, USER_INPUT)
