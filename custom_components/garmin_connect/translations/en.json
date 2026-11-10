@@ -7,6 +7,7 @@
       "reconfigure_successful": "Reconfiguration was successful"
     },
     "error": {
+      "cannot_connect": "Failed to connect to Garmin Connect. Check your network and try again.",
       "invalid_auth": "Invalid credentials",
       "invalid_mfa": "Invalid verification code",
       "profile_unavailable": "Could not verify which Garmin account these credentials belong to. Please try again.",
@@ -305,6 +306,7 @@
       "name": "Add hydration",
       "description": "Log a hydration intake to Garmin Connect.",
       "fields": {
+        "entity_id": { "name": "Garmin Connect entity", "description": "Optional Garmin Connect entity whose account should receive the entry." },
         "value_in_ml": { "name": "Amount (mL)", "description": "Hydration amount in millilitres. Negative values subtract from today's intake." },
         "timestamp": { "name": "Timestamp", "description": "Measurement time (ISO 8601, defaults to now)." }
       }
@@ -389,6 +391,7 @@
       "name": "Add blood pressure",
       "description": "Add a blood pressure measurement to Garmin Connect.",
       "fields": {
+        "entity_id": { "name": "Garmin Connect entity", "description": "Optional Garmin Connect entity whose account should receive the entry." },
         "systolic": { "name": "Systolic", "description": "Systolic blood pressure value." },
         "diastolic": { "name": "Diastolic", "description": "Diastolic blood pressure value." },
         "pulse": { "name": "Pulse", "description": "Pulse rate (optional)." },
@@ -400,6 +403,7 @@
       "name": "Create activity",
       "description": "Create a manual activity in Garmin Connect.",
       "fields": {
+        "entity_id": { "name": "Garmin Connect entity", "description": "Optional Garmin Connect entity whose account should receive the entry." },
         "activity_name": { "name": "Activity name", "description": "Name of the activity." },
         "activity_type": { "name": "Activity type", "description": "Type of activity (e.g. running, cycling)." },
         "start_datetime": { "name": "Start date and time", "description": "When the activity started (ISO format)." },
@@ -422,6 +426,7 @@
       "name": "Upload activity",
       "description": "Upload an activity file (FIT, GPX, TCX) to Garmin Connect.",
       "fields": {
+        "entity_id": { "name": "Garmin Connect entity", "description": "Optional Garmin Connect entity whose account should receive the entry." },
         "file_path": { "name": "File path", "description": "FIT, GPX or TCX file on the Home Assistant system, absolute or relative to the config directory. Paths outside the config directory must be in allowlist_external_dirs." }
       }
     },
@@ -450,6 +455,7 @@
     "add_gear_to_activity_failed": { "message": "Failed to add gear to activity: {error}" },
     "create_activity_failed": { "message": "Failed to create activity: {error}" },
     "download_activity_failed": { "message": "Failed to download activity: {error}" },
+    "download_activity_write_failed": { "message": "Could not save the activity file to {file_path}: {error}" },
     "path_not_allowed": { "message": "Path is not allowed: {file_path}. Add the directory to allowlist_external_dirs." },
     "entity_not_found": { "message": "Entity not found: {entity_id}" },
     "file_not_found": { "message": "File not found: {file_path}" },

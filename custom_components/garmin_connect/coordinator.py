@@ -7,11 +7,11 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from collections.abc import Iterator
 from dataclasses import dataclass
 from datetime import date, timedelta
 from typing import Any
 
-from aiohttp import ClientError
 from ha_garmin import GarminAuth, GarminClient
 from ha_garmin.exceptions import GarminAuthError, GarminConnectError
 from homeassistant.config_entries import ConfigEntry
@@ -58,7 +58,7 @@ class GarminConnectCoordinators:
     is_cn: bool = False
     """China region the client was built for; a change needs a reload."""
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[BaseGarminCoordinator]:
         """Iterate over the coordinators."""
         yield from (
             self.core,
@@ -155,7 +155,7 @@ class BaseGarminCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             ) from err
         except GarminAuthError as err:
             raise ConfigEntryAuthFailed(f"Authentication failed: {err}") from err
-        except (GarminConnectError, ClientError) as err:
+        except GarminConnectError as err:
             _LOGGER.debug("Error fetching %s data: %s", self.data_name, err)
             raise UpdateFailed(f"Error fetching {self.data_name} data: {err}") from err
         finally:
@@ -268,7 +268,7 @@ class CoreCoordinator(BaseGarminCoordinator):
             return data
         try:
             yesterday = await self._yesterday_summary(data.get("lastSyncTimestamp"))
-        except (GarminConnectError, ClientError) as err:
+        except GarminConnectError as err:
             _LOGGER.debug("Error fetching yesterday's summary: %s", err)
             yesterday = {}
         return {**data, **yesterday}

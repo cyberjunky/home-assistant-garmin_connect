@@ -7,6 +7,7 @@
       "reconfigure_successful": "重新配置成功"
     },
     "error": {
+      "cannot_connect": "无法连接到 Garmin Connect。请检查网络后重试。",
       "invalid_auth": "凭据无效",
       "invalid_mfa": "验证码无效",
       "rate_limit": "登录尝试次数过多 — Garmin 已限流。请几分钟后重试。",
@@ -292,6 +293,7 @@
       "name": "添加饮水记录",
       "description": "向 Garmin Connect 记录一次饮水。",
       "fields": {
+        "entity_id": { "name": "Garmin Connect 实体", "description": "可选的 Garmin Connect 实体,用于指定接收测量数据的账户。" },
         "value_in_ml": { "name": "饮水量(毫升)", "description": "饮水量(毫升)。负值会从今日饮水量中扣除。" },
         "timestamp": { "name": "时间戳", "description": "测量时间(ISO 8601,默认为当前时间)。" }
       }
@@ -320,6 +322,7 @@
       "name": "添加血压记录",
       "description": "向 Garmin Connect 添加一次血压测量。",
       "fields": {
+        "entity_id": { "name": "Garmin Connect 实体", "description": "可选的 Garmin Connect 实体,用于指定接收测量数据的账户。" },
         "systolic": { "name": "收缩压", "description": "收缩压数值。" },
         "diastolic": { "name": "舒张压", "description": "舒张压数值。" },
         "pulse": { "name": "脉率", "description": "脉搏速率。" },
@@ -331,6 +334,7 @@
       "name": "创建活动",
       "description": "在 Garmin Connect 中创建一项手动活动。",
       "fields": {
+        "entity_id": { "name": "Garmin Connect 实体", "description": "可选的 Garmin Connect 实体,用于指定接收测量数据的账户。" },
         "activity_name": { "name": "活动名称", "description": "活动的名称。" },
         "activity_type": { "name": "活动类型", "description": "活动类型(如 running、cycling)。" },
         "start_datetime": { "name": "开始时间", "description": "活动开始时间(ISO 格式)。" },
@@ -353,6 +357,7 @@
       "name": "上传活动",
       "description": "向 Garmin Connect 上传活动文件(FIT、GPX、TCX)。",
       "fields": {
+        "entity_id": { "name": "Garmin Connect 实体", "description": "可选的 Garmin Connect 实体,用于指定接收测量数据的账户。" },
         "file_path": { "name": "文件路径", "description": "Home Assistant 系统上活动文件的路径。" }
       }
     },
@@ -381,6 +386,7 @@
     "add_gear_to_activity_failed": { "message": "为活动添加装备失败:{error}" },
     "create_activity_failed": { "message": "创建活动失败:{error}" },
     "download_activity_failed": { "message": "下载活动失败：{error}" },
+    "download_activity_write_failed": { "message": "无法将活动文件保存到 {file_path}：{error}" },
     "path_not_allowed": { "message": "路径不允许：{file_path}。请将目录添加到 allowlist_external_dirs。" },
     "entity_not_found": { "message": "未找到实体:{entity_id}" },
     "file_not_found": { "message": "未找到文件:{file_path}" },

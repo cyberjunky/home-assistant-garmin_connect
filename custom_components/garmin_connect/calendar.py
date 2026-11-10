@@ -15,6 +15,9 @@ from .const import DOMAIN
 from .coordinator import ActivityCoordinator, GarminConnectConfigEntry
 from .workout import steps_summary
 
+# The activity coordinator does the polling; the calendar only reads its data.
+PARALLEL_UPDATES = 0
+
 
 def _event_from_workout(workout: dict[str, Any]) -> CalendarEvent | None:
     """Build a CalendarEvent from one scheduledWorkouts entry.

@@ -7,6 +7,7 @@
       "reconfigure_successful": "Rekonfiguracja powiodła się"
     },
     "error": {
+      "cannot_connect": "Nie udało się połączyć z Garmin Connect. Sprawdź sieć i spróbuj ponownie.",
       "invalid_auth": "Nieprawidłowe dane logowania",
       "invalid_mfa": "Nieprawidłowy kod weryfikacyjny",
       "rate_limit": "Zbyt wiele prób logowania — Garmin ogranicza żądania. Spróbuj ponownie za kilka minut.",
@@ -626,6 +627,10 @@
       "name": "Dodaj nawodnienie",
       "description": "Zapisz przyjęcie płynów w Garmin Connect.",
       "fields": {
+        "entity_id": {
+          "name": "Encja Garmin Connect",
+          "description": "Opcjonalna encja Garmin Connect wskazująca konto, na którym zapisać wpis."
+        },
         "value_in_ml": {
           "name": "Ilość (mL)",
           "description": "Ilość płynu w mililitrach. Wartości ujemne odejmują od dzisiejszego spożycia."
@@ -779,6 +784,10 @@
       "name": "Dodaj ciśnienie krwi",
       "description": "Dodaj pomiar ciśnienia krwi do Garmin Connect.",
       "fields": {
+        "entity_id": {
+          "name": "Encja Garmin Connect",
+          "description": "Opcjonalna encja Garmin Connect wskazująca konto, na którym zapisać wpis."
+        },
         "systolic": {
           "name": "Skurczowe",
           "description": "Wartość ciśnienia skurczowego."
@@ -805,6 +814,10 @@
       "name": "Utwórz aktywność",
       "description": "Utwórz ręczną aktywność w Garmin Connect.",
       "fields": {
+        "entity_id": {
+          "name": "Encja Garmin Connect",
+          "description": "Opcjonalna encja Garmin Connect wskazująca konto, na którym zapisać wpis."
+        },
         "activity_name": {
           "name": "Nazwa aktywności",
           "description": "Nazwa aktywności."
@@ -835,6 +848,10 @@
       "name": "Prześlij aktywność",
       "description": "Prześlij plik aktywności (FIT, GPX, TCX) do Garmin Connect.",
       "fields": {
+        "entity_id": {
+          "name": "Encja Garmin Connect",
+          "description": "Opcjonalna encja Garmin Connect wskazująca konto, na którym zapisać wpis."
+        },
         "file_path": {
           "name": "Ścieżka pliku",
           "description": "Ścieżka do pliku aktywności w systemie Home Assistant."

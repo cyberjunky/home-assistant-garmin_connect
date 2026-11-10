@@ -31,7 +31,9 @@ rules:
   log-when-unavailable: done
   parallel-updates: done
   reauthentication-flow: done
-  test-coverage: done
+  test-coverage:
+    status: todo
+    comment: sensor.py, services.py and workout.py are at 91%; the rule needs over 95% per module.
 
   # Gold
   devices: done
@@ -56,7 +58,9 @@ rules:
   entity-device-class: done
   entity-disabled-by-default: done
   entity-translations: done
-  exception-translations: done
+  exception-translations:
+    status: todo
+    comment: Coordinator UpdateFailed and ConfigEntryAuthFailed messages are plain text.
   icon-translations: done
   reconfiguration-flow: done
   repair-issues: done

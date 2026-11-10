@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import datetime
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
 from dataclasses import dataclass
 from datetime import date as dt_date
 from datetime import timedelta
@@ -47,8 +47,8 @@ from .coordinator import (
 )
 from .workout import steps_summary
 
-# Limit parallel updates to prevent API rate limiting
-PARALLEL_UPDATES = 1
+# Coordinators do the polling; entities only read their data.
+PARALLEL_UPDATES = 0
 
 
 class CoordinatorType(StrEnum):
@@ -86,6 +86,14 @@ class GarminConnectSensorEntityDescription(SensorEntityDescription):
 
     available_fn: Callable[[dict[str, Any]], bool] | None = None
     """Return False when the coordinator data can't provide this sensor."""
+
+    daily_total: bool = False
+    """A total for the current day that can also go down (e.g. a deleted meal).
+
+    Uses state class TOTAL with last_reset at local midnight: TOTAL_INCREASING
+    would read any drop of more than 10% as a meter reset and add the whole new
+    value to the long-term sum again.
+    """
 
 
 # ── CORE coordinator sensors ─────────────────────────────────────────────────
@@ -199,7 +207,8 @@ CALORIES_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
     GarminConnectSensorEntityDescription(
         key="consumedKilocalories",
         translation_key="consumed_calories",
-        state_class=SensorStateClass.TOTAL_INCREASING,
+        state_class=SensorStateClass.TOTAL,
+        daily_total=True,
         native_unit_of_measurement=UnitOfEnergy.KILO_CALORIE,
         suggested_display_precision=0,
     ),
@@ -1459,8 +1468,8 @@ FITNESS_AGE_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         key="visceralFat",
         translation_key="visceral_fat",
         coordinator_type=CoordinatorType.BODY,
+        # Garmin reports a visceral fat rating (1-59), not a percentage.
         state_class=SensorStateClass.MEASUREMENT,
-        native_unit_of_measurement=PERCENTAGE,
         preserve_value=True,
     ),
 )
@@ -1930,7 +1939,7 @@ def _menstrual_next_predicted_cycle_start(data: dict[str, Any]) -> dt_date | Non
     """Return the closest next predicted cycle startDate from calendar."""
     today = dt_util.now().date()
 
-    def valid_future_dates():
+    def valid_future_dates() -> Iterator[dt_date]:
         for cycle in _menstrual_calendar_summaries(data):
             if cycle.get("predictedCycle") is True and isinstance(cycle.get("startDate"), str):
                 try:
@@ -2066,7 +2075,8 @@ NUTRITION_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         key="nutritionConsumedCalories",
         translation_key="nutrition_consumed_calories",
         coordinator_type=CoordinatorType.NUTRITION,
-        state_class=SensorStateClass.TOTAL_INCREASING,
+        state_class=SensorStateClass.TOTAL,
+        daily_total=True,
         native_unit_of_measurement=UnitOfEnergy.KILO_CALORIE,
         suggested_display_precision=0,
         entity_registry_enabled_default=False,
@@ -2078,7 +2088,8 @@ NUTRITION_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         key="nutritionConsumedProtein",
         translation_key="nutrition_consumed_protein",
         coordinator_type=CoordinatorType.NUTRITION,
-        state_class=SensorStateClass.TOTAL_INCREASING,
+        state_class=SensorStateClass.TOTAL,
+        daily_total=True,
         native_unit_of_measurement=UnitOfMass.GRAMS,
         suggested_display_precision=1,
         entity_registry_enabled_default=False,
@@ -2087,7 +2098,8 @@ NUTRITION_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         key="nutritionConsumedFat",
         translation_key="nutrition_consumed_fat",
         coordinator_type=CoordinatorType.NUTRITION,
-        state_class=SensorStateClass.TOTAL_INCREASING,
+        state_class=SensorStateClass.TOTAL,
+        daily_total=True,
         native_unit_of_measurement=UnitOfMass.GRAMS,
         suggested_display_precision=1,
         entity_registry_enabled_default=False,
@@ -2096,7 +2108,8 @@ NUTRITION_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         key="nutritionConsumedCarbs",
         translation_key="nutrition_consumed_carbs",
         coordinator_type=CoordinatorType.NUTRITION,
-        state_class=SensorStateClass.TOTAL_INCREASING,
+        state_class=SensorStateClass.TOTAL,
+        daily_total=True,
         native_unit_of_measurement=UnitOfMass.GRAMS,
         suggested_display_precision=1,
         entity_registry_enabled_default=False,
@@ -2150,7 +2163,8 @@ NUTRITION_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         key="nutritionLoggedEntries",
         translation_key="nutrition_logged_entries",
         coordinator_type=CoordinatorType.NUTRITION,
-        state_class=SensorStateClass.TOTAL_INCREASING,
+        state_class=SensorStateClass.TOTAL,
+        daily_total=True,
         native_unit_of_measurement="entries",
         suggested_display_precision=0,
         entity_registry_enabled_default=False,
@@ -2234,6 +2248,17 @@ def _async_migrate_gear_unique_ids(
             registry.async_remove(entity_id)
 
 
+@callback
+def _registered_gear_uuids(ent_reg: er.EntityRegistry, entry_id: str) -> set[str]:
+    """Gear uuids of the entry's gear sensors in the entity registry."""
+    prefix = f"{entry_id}_gear_"
+    return {
+        reg_entry.unique_id.removeprefix(prefix)
+        for reg_entry in er.async_entries_for_config_entry(ent_reg, entry_id)
+        if reg_entry.domain == "sensor" and reg_entry.unique_id.startswith(prefix)
+    }
+
+
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: GarminConnectConfigEntry,
@@ -2263,11 +2288,12 @@ async def async_setup_entry(
     # Dynamic gear sensors: one per gear item, added as gear appears and
     # removed from the registry once Garmin no longer lists it.
     known_gear_uuids: set[str] = set()
+    gear_pruned_registry = False
 
     @callback
     def _async_sync_gear() -> list[GarminConnectGearSensor]:
         """Return sensors for gear not seen before; drop entities for gear that is gone."""
-        nonlocal gear_migrated
+        nonlocal gear_migrated, gear_pruned_registry
         gear_stats = (coordinators.gear.data or {}).get("gearStats") or []
         if not gear_migrated and gear_stats:
             _async_migrate_gear_unique_ids(ent_reg, entry.entry_id, coordinators.gear.data)
@@ -2294,7 +2320,13 @@ async def async_setup_entry(
         # Only prune against a non-empty list: an empty one is far more likely a
         # failed gear call than the user having deleted every item at once.
         if current:
-            for gear_uuid in known_gear_uuids - current.keys():
+            stale = known_gear_uuids - current.keys()
+            if not gear_pruned_registry:
+                # Gear deleted in Garmin while HA was stopped never shows up in
+                # known_gear_uuids; catch it once from the registry.
+                stale |= _registered_gear_uuids(ent_reg, entry.entry_id) - current.keys()
+                gear_pruned_registry = True
+            for gear_uuid in stale:
                 entity_id = ent_reg.async_get_entity_id(
                     "sensor", DOMAIN, f"{entry.entry_id}_gear_{gear_uuid}"
                 )
@@ -2429,6 +2461,13 @@ class GarminConnectSensor(CoordinatorEntity[BaseGarminCoordinator], RestoreSenso
             self._last_known_value = value
 
         return value
+
+    @property
+    def last_reset(self) -> datetime.datetime | None:
+        """Daily totals restart at local midnight."""
+        if self.entity_description.daily_total:
+            return dt_util.start_of_local_day()
+        return None
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
