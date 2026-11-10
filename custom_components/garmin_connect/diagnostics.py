@@ -26,6 +26,12 @@ TO_REDACT = {
     "notes",
     # A full GPS track is both huge and a location trace.
     "polyline",
+    # Activity start/end points are often the user's home.
+    "startLatitude",
+    "startLongitude",
+    "endLatitude",
+    "endLongitude",
+    "locationName",
 }
 
 

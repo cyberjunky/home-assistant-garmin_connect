@@ -336,7 +336,7 @@ def _yesterday_client(today: date, last_sync: str = "s1") -> AsyncMock:
         side_effect=lambda **_: {"totalSteps": 1, "lastSyncTimestamp": client.last_sync}
     )
     client.last_sync = last_sync
-    client._get_user_summary_raw = AsyncMock(return_value=dict(_RAW_DAY))
+    client.get_daily_summary = AsyncMock(return_value=dict(_RAW_DAY))
     return client
 
 
@@ -352,7 +352,7 @@ async def test_core_skips_yesterday_without_enabled_sensor():
 
     data = await coordinator._async_update_data()
     assert data == {"totalSteps": 1, "lastSyncTimestamp": "s1"}
-    client._get_user_summary_raw.assert_not_awaited()
+    client.get_daily_summary.assert_not_awaited()
 
 
 async def test_core_adds_yesterday_and_caches():
@@ -362,12 +362,12 @@ async def test_core_adds_yesterday_and_caches():
     data = await coordinator._async_update_data()
     assert data["totalSteps"] == 1
     assert data["yesterdayAverageStressLevel"] == 42
-    client._get_user_summary_raw.assert_awaited_once_with(date(2026, 10, 17))
+    client.get_daily_summary.assert_awaited_once_with(date(2026, 10, 17))
 
     # Same day, same sync: no second call, values kept.
     data = await coordinator._async_update_data()
     assert data["yesterdayAverageStressLevel"] == 42
-    assert client._get_user_summary_raw.await_count == 1
+    assert client.get_daily_summary.await_count == 1
 
 
 async def test_core_refetches_yesterday_on_new_day():
@@ -377,22 +377,22 @@ async def test_core_refetches_yesterday_on_new_day():
 
     client.today.return_value = date(2026, 10, 19)
     await coordinator._async_update_data()
-    client._get_user_summary_raw.assert_awaited_with(date(2026, 10, 18))
-    assert client._get_user_summary_raw.await_count == 2
+    client.get_daily_summary.assert_awaited_with(date(2026, 10, 18))
+    assert client.get_daily_summary.await_count == 2
 
 
 async def test_core_retries_yesterday_after_empty_summary():
     client = _yesterday_client(date(2026, 10, 18))
-    client._get_user_summary_raw.return_value = {}
+    client.get_daily_summary.return_value = {}
     coordinator = _with_yesterday_sensor(_make_base(client))
 
     data = await coordinator._async_update_data()
     assert "yesterdayAverageStressLevel" not in data
 
-    client._get_user_summary_raw.return_value = dict(_RAW_DAY)
+    client.get_daily_summary.return_value = dict(_RAW_DAY)
     data = await coordinator._async_update_data()
     assert data["yesterdayAverageStressLevel"] == 42
-    assert client._get_user_summary_raw.await_count == 2
+    assert client.get_daily_summary.await_count == 2
 
 
 async def test_core_drops_old_yesterday_when_new_day_fetch_fails():
@@ -402,15 +402,15 @@ async def test_core_drops_old_yesterday_when_new_day_fetch_fails():
     await coordinator._async_update_data()
 
     client.today.return_value = date(2026, 10, 19)
-    client._get_user_summary_raw.side_effect = GarminConnectError("503")
+    client.get_daily_summary.side_effect = GarminConnectError("503")
     data = await coordinator._async_update_data()
     assert "yesterdayAverageStressLevel" not in data
 
     # The next poll retries.
-    client._get_user_summary_raw.side_effect = None
+    client.get_daily_summary.side_effect = None
     data = await coordinator._async_update_data()
     assert data["yesterdayAverageStressLevel"] == 42
-    client._get_user_summary_raw.assert_awaited_with(date(2026, 10, 18))
+    client.get_daily_summary.assert_awaited_with(date(2026, 10, 18))
 
 
 async def test_core_refetches_yesterday_on_new_sync() -> None:
@@ -419,16 +419,16 @@ async def test_core_refetches_yesterday_on_new_sync() -> None:
     await coordinator._async_update_data()
 
     client.last_sync = "s2"  # the watch uploaded (e.g. at 2:25 am)
-    client._get_user_summary_raw.return_value = {**_RAW_DAY, "averageStressLevel": 44}
+    client.get_daily_summary.return_value = {**_RAW_DAY, "averageStressLevel": 44}
     data = await coordinator._async_update_data()
     assert data["yesterdayAverageStressLevel"] == 44
-    assert client._get_user_summary_raw.await_count == 2
-    client._get_user_summary_raw.assert_awaited_with(date(2026, 10, 17))
+    assert client.get_daily_summary.await_count == 2
+    client.get_daily_summary.assert_awaited_with(date(2026, 10, 17))
 
 
 async def test_core_survives_yesterday_failure() -> None:
     client = _yesterday_client(date(2026, 10, 18))
-    client._get_user_summary_raw = AsyncMock(side_effect=GarminConnectError("503"))
+    client.get_daily_summary = AsyncMock(side_effect=GarminConnectError("503"))
     coordinator = _with_yesterday_sensor(_make_base(client))
 
     data = await coordinator._async_update_data()
@@ -458,7 +458,7 @@ async def test_core_asks_for_latest_heart_rate_only_for_enabled_sensor():
     coordinator.async_contexts = lambda: iter([LATEST_HEART_RATE_CONTEXT])  # type: ignore[method-assign]
     await coordinator._async_update_data()
     client.fetch_core_data.assert_awaited_with(latest_heart_rate=True)
-    client._get_user_summary_raw.assert_not_awaited()
+    client.get_daily_summary.assert_not_awaited()
 
 
 # ── Lifetime totals ──────────────────────────────────────────────────────────

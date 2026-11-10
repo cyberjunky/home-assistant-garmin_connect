@@ -2362,8 +2362,12 @@ class GarminConnectSensor(CoordinatorEntity[BaseGarminCoordinator], RestoreSenso
     # The lastActivityRoute polyline is a full GPS track and blows past the recorder's
     # hard 16 KiB attribute cap, which makes it drop the entity's attributes wholesale.
     # The overnight stress samples are smaller but would be copied into every recorded
-    # row. Keep both live-only for cards and templates; the rest still records.
-    _unrecorded_attributes = frozenset({"polyline", "sleep_stress"})
+    # row. The workout lists (last 10 workouts, two months of scheduled ones) and a
+    # workout's full step tree can pass the cap the same way. Keep them live-only for
+    # cards and templates; the rest still records.
+    _unrecorded_attributes = frozenset(
+        {"polyline", "sleep_stress", "last_workouts", "upcoming", "workoutSteps"}
+    )
 
     def __init__(
         self,

@@ -122,6 +122,11 @@ def test_to_redact_contains_expected_keys() -> None:
         "profileImageUrlLarge",
         "notes",
         "polyline",
+        "startLatitude",
+        "startLongitude",
+        "endLatitude",
+        "endLongitude",
+        "locationName",
     }
     assert TO_REDACT == expected
 
@@ -130,7 +135,13 @@ async def test_diagnostics_redacts_route_and_profile_inside_coordinator_data() -
     """Coordinator payloads are included, minus the GPS track and profile identity."""
     mock_coordinator = MagicMock(spec=DataUpdateCoordinator)
     mock_coordinator.data = {
-        "lastActivity": {"activityName": "Ride", "polyline": [{"lat": 1, "lon": 2}]},
+        "lastActivity": {
+            "activityName": "Ride",
+            "polyline": [{"lat": 1, "lon": 2}],
+            "startLatitude": 52.1,
+            "startLongitude": 5.1,
+            "locationName": "Home town",
+        },
         "displayName": "ron",
     }
     mock_coordinator.last_update_success = True
@@ -152,6 +163,8 @@ async def test_diagnostics_redacts_route_and_profile_inside_coordinator_data() -
     data = result["coordinators"]["activity"]["data"]
     assert data["lastActivity"]["activityName"] == "Ride"
     assert data["lastActivity"]["polyline"] == "**REDACTED**"
+    for key in ("startLatitude", "startLongitude", "locationName"):
+        assert data["lastActivity"][key] == "**REDACTED**"
     assert data["displayName"] == "**REDACTED**"
 
 
