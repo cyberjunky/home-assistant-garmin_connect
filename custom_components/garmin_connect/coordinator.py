@@ -154,7 +154,7 @@ class BaseGarminCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 f"Garmin {self.data_name} refresh exceeded {UPDATE_TIMEOUT} seconds"
             ) from err
         except GarminAuthError as err:
-            raise ConfigEntryAuthFailed("Authentication failed") from err
+            raise ConfigEntryAuthFailed(f"Authentication failed: {err}") from err
         except (GarminConnectError, ClientError) as err:
             _LOGGER.debug("Error fetching %s data: %s", self.data_name, err)
             raise UpdateFailed(f"Error fetching {self.data_name} data: {err}") from err
