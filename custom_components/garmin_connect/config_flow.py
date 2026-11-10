@@ -23,6 +23,8 @@ from homeassistant.config_entries import (
     OptionsFlow,
 )
 from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
+from homeassistant.core import callback
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .const import (
     CONF_CLIENT_ID,
@@ -85,30 +87,31 @@ class GarminConnectConfigFlow(ConfigFlow, domain=DOMAIN):
         }
 
     async def _async_login(self, username: str, password: str) -> None:
-        """Run Garmin login in the executor."""
+        """Log in to Garmin (async; the library keeps its own SSO session)."""
         if TYPE_CHECKING:
             assert self._auth is not None
-        await self.hass.async_add_executor_job(
-            self._auth.login,
-            username,
-            password,
-        )
+        await self._auth.login(username, password)
 
     async def _async_complete_mfa(self, mfa_code: str) -> None:
-        """Run Garmin MFA completion in the executor."""
+        """Complete the pending Garmin MFA login."""
         if TYPE_CHECKING:
             assert self._auth is not None
-        await self.hass.async_add_executor_job(
-            self._auth.complete_mfa,
-            mfa_code,
-        )
+        await self._auth.complete_mfa(mfa_code)
+
+    @callback
+    def async_remove(self) -> None:
+        """Release a pending MFA login session when the flow is abandoned."""
+        if self._auth is not None:
+            self.hass.async_create_task(self._auth.cancel_mfa(), eager_start=True)
 
     async def _async_profile_id(self, username: str) -> str | None:
         """Return the Garmin profile id of the logged-in account, or None if unavailable."""
         if TYPE_CHECKING:
             assert self._auth is not None
         try:
-            client = GarminClient(self._auth, is_cn=self._is_cn)
+            client = GarminClient(
+                self._auth, is_cn=self._is_cn, session=async_get_clientsession(self.hass)
+            )
             profile = await client.get_user_profile()
         except GarminConnectError as err:
             _LOGGER.warning("Could not fetch the Garmin profile: %s", err)
@@ -210,6 +213,9 @@ class GarminConnectConfigFlow(ConfigFlow, domain=DOMAIN):
         """
         self._username = user_input[CONF_USERNAME]
         self._is_cn = user_input.get(CONF_IS_CN, False)
+        if self._auth is not None:
+            # A retry after an earlier MFA prompt: close that pending session.
+            await self._auth.cancel_mfa()
         self._auth = GarminAuth(is_cn=self._is_cn)
         try:
             await self._async_login(self._username, user_input[CONF_PASSWORD])

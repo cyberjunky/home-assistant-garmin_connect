@@ -15,6 +15,7 @@ from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers import issue_registry as ir
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.typing import ConfigType
 from homeassistant.loader import async_get_integration
 
@@ -208,7 +209,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: GarminConnectConfigEntry
 
     # HA's zone is the fallback for Garmin's calendar day; the process zone
     # (often UTC in containers) must not decide when daily totals roll over.
-    client = GarminClient(auth, is_cn=is_cn, timezone=hass.config.time_zone)
+    # The data API runs on Home Assistant's shared aiohttp session; login and
+    # token refresh use the library's own TLS-impersonating sessions.
+    client = GarminClient(
+        auth,
+        is_cn=is_cn,
+        timezone=hass.config.time_zone,
+        session=async_get_clientsession(hass),
+    )
 
     coordinators = GarminConnectCoordinators(
         core=CoreCoordinator(hass, entry, client, auth),

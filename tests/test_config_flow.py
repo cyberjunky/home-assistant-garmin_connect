@@ -68,8 +68,9 @@ def mock_flow_auth() -> Generator[MagicMock]:
         auth.di_token = NEW_TOKENS[CONF_TOKEN]
         auth.di_refresh_token = NEW_TOKENS[CONF_REFRESH_TOKEN]
         auth.di_client_id = NEW_TOKENS[CONF_CLIENT_ID]
-        auth.login = MagicMock()
-        auth.complete_mfa = MagicMock()
+        auth.login = AsyncMock()
+        auth.complete_mfa = AsyncMock()
+        auth.cancel_mfa = AsyncMock()
         yield auth
 
 
@@ -106,7 +107,7 @@ async def test_user_flow_creates_entry(
     assert result["data"] == NEW_TOKENS
     assert result["options"] == {CONF_IS_CN: False}
     assert result["result"].unique_id == PROFILE_ID
-    mock_flow_auth.login.assert_called_once_with(
+    mock_flow_auth.login.assert_awaited_once_with(
         USER_INPUT[CONF_USERNAME], USER_INPUT[CONF_PASSWORD]
     )
 
@@ -192,7 +193,7 @@ async def test_user_flow_with_mfa(
 
     assert result["type"] is FlowResultType.CREATE_ENTRY
     assert result["result"].unique_id == PROFILE_ID
-    mock_flow_auth.complete_mfa.assert_called_once_with("123456")
+    mock_flow_auth.complete_mfa.assert_awaited_once_with("123456")
 
 
 @pytest.mark.parametrize(("exception", "error"), MFA_ERRORS)
@@ -473,3 +474,31 @@ async def test_options_flow_defaults_scan_interval(
 
     (key,) = result["data_schema"].schema
     assert key.default() == DEFAULT_SCAN_INTERVAL
+
+
+async def test_abandoned_mfa_flow_releases_the_login_session(
+    hass: HomeAssistant, mock_flow_auth: MagicMock, mock_flow_client: MagicMock
+) -> None:
+    """Closing a flow that waits for an MFA code cancels the pending login."""
+    flow_id = await _start_user_flow(hass)
+    mock_flow_auth.login.side_effect = GarminMFARequired("ticket")
+    result = await hass.config_entries.flow.async_configure(flow_id, USER_INPUT)
+    assert result["step_id"] == "mfa"
+
+    hass.config_entries.flow.async_abort(flow_id)
+    await hass.async_block_till_done()
+
+    mock_flow_auth.cancel_mfa.assert_awaited_once()
+
+
+async def test_profile_lookup_uses_the_shared_session(
+    hass: HomeAssistant, mock_flow_auth: MagicMock, mock_flow_client: MagicMock
+) -> None:
+    """The config flow's profile lookup runs on Home Assistant's aiohttp session."""
+    from homeassistant.helpers.aiohttp_client import async_get_clientsession
+
+    flow_id = await _start_user_flow(hass)
+    with patch("custom_components.garmin_connect.config_flow.GarminClient") as client_cls:
+        client_cls.return_value = mock_flow_client
+        await hass.config_entries.flow.async_configure(flow_id, USER_INPUT)
+    assert client_cls.call_args.kwargs["session"] is async_get_clientsession(hass)
