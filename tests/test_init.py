@@ -369,8 +369,8 @@ async def test_options_listener_updates_intervals() -> None:
         assert interval.total_seconds() == 120
 
 
-async def test_options_listener_reloads_when_region_changes() -> None:
-    """Switching the China region needs a new client, so the entry is reloaded."""
+async def test_options_listener_never_reloads() -> None:
+    """Region changes come from reauth/reconfigure, which reload on their own."""
     hass = MagicMock()
     hass.config_entries.async_reload = AsyncMock()
     entry = MagicMock()
@@ -380,9 +380,7 @@ async def test_options_listener_reloads_when_region_changes() -> None:
 
     await async_options_update_listener(hass, entry)
 
-    hass.config_entries.async_reload.assert_awaited_once_with("test_entry_id")
-    for coord in entry.runtime_data:
-        coord.set_update_interval.assert_not_called()
+    hass.config_entries.async_reload.assert_not_awaited()
 
 
 # ── Unload tests ──────────────────────────────────────────────────────────────

@@ -7,9 +7,8 @@ from zoneinfo import ZoneInfo
 
 import probatio as vol
 import pytest
-from aiohttp import ClientError
 from ha_garmin import GarminConnectError
-from homeassistant.exceptions import HomeAssistantError
+from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 
 from custom_components.garmin_connect.const import DOMAIN
 from custom_components.garmin_connect.services import (
@@ -264,8 +263,9 @@ async def test_set_active_gear_entity_not_found_raises(mock_hass: MagicMock) -> 
         "setting": "set as default",
     }
 
-    with pytest.raises(HomeAssistantError):
+    with pytest.raises(ServiceValidationError) as err:
         await handler(call)
+    assert err.value.translation_key == "entity_not_found"
 
 
 async def test_set_active_gear_entity_no_uuid_raises(mock_hass: MagicMock) -> None:
@@ -420,7 +420,7 @@ async def test_add_blood_pressure_wraps_exception(mock_hass: MagicMock) -> None:
     async_setup_services(mock_hass)
     handler = _get_handler(mock_hass, "add_blood_pressure")
     client = _get_client(mock_hass)
-    client.set_blood_pressure.side_effect = ClientError("network error")
+    client.set_blood_pressure.side_effect = GarminConnectError("network error")
 
     call = MagicMock()
     call.data = {"systolic": 120, "diastolic": 80, "pulse": 70}
@@ -570,8 +570,9 @@ async def test_download_activity_custom_path_not_allowed_raises(
         "file_path": "/not/allowed/run.gpx",
     }
 
-    with pytest.raises(HomeAssistantError):
+    with pytest.raises(ServiceValidationError) as err:
         await handler(call)
+    assert err.value.translation_key == "path_not_allowed"
 
 
 async def test_download_activity_client_error_raises(mock_hass: MagicMock) -> None:
@@ -579,7 +580,7 @@ async def test_download_activity_client_error_raises(mock_hass: MagicMock) -> No
     async_setup_services(mock_hass)
     handler = _get_handler(mock_hass, "download_activity")
     client = _get_client(mock_hass)
-    client.download_activity.side_effect = ClientError("boom")
+    client.download_activity.side_effect = GarminConnectError("boom")
 
     call = MagicMock()
     call.data = {"activity_id": 12345, "file_format": "fit"}
@@ -1138,3 +1139,25 @@ async def test_schedule_workout_without_id_fails(mock_hass: MagicMock):
     with pytest.raises(HomeAssistantError) as exc:
         await handler(call)
     assert exc.value.translation_key == "schedule_workout_failed"
+
+
+async def test_download_activity_write_failure_raises(
+    mock_hass: MagicMock, tmp_path: Path
+) -> None:
+    """A file that can't be written raises a translated error, not a raw OSError."""
+    async_setup_services(mock_hass)
+    handler = _get_handler(mock_hass, "download_activity")
+    client = _get_client(mock_hass)
+    client.download_activity.return_value = b"fake fit data"
+    # A regular file where the target directory should be makes mkdir fail.
+    (tmp_path / "garmin_activities").write_text("not a directory")
+    mock_hass.config.path.side_effect = lambda *parts: str(tmp_path.joinpath(*parts))
+    mock_hass.async_add_executor_job = AsyncMock(side_effect=lambda func, *args: func(*args))
+
+    call = MagicMock()
+    call.data = {"activity_id": 12345, "file_format": "fit"}
+
+    with pytest.raises(HomeAssistantError) as err:
+        await handler(call)
+    assert err.value.translation_key == "download_activity_write_failed"
+    assert not isinstance(err.value, ServiceValidationError)

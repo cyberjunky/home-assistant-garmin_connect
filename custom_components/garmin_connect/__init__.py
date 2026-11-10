@@ -9,9 +9,9 @@ from pathlib import Path
 from ha_garmin import GarminAuth, GarminClient
 from homeassistant.components.frontend import add_extra_js_url
 from homeassistant.components.http import StaticPathConfig
-from homeassistant.config_entries import ConfigEntryAuthFailed
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers import issue_registry as ir
@@ -256,18 +256,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: GarminConnectConfigEntry
 async def async_options_update_listener(
     hass: HomeAssistant, entry: GarminConnectConfigEntry
 ) -> None:
-    """Handle options update.
+    """Push a changed scan interval to the coordinators without a reload.
 
-    Update coordinator scan intervals directly when only the scan_interval
-    changed. Reload the config entry when the China region option changes,
-    since that affects the underlying API endpoints.
+    The China region is only changed by reauth/reconfigure, which log in again
+    and reload the entry themselves; reloading here as well would reload twice.
+    The listener also fires on every token rotation, where nothing changes.
     """
     coordinators = entry.runtime_data
-
-    if entry.options.get(CONF_IS_CN, False) != coordinators.is_cn:
-        await hass.config_entries.async_reload(entry.entry_id)
-        return
-
     scan_interval = entry.options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
     update_interval = timedelta(seconds=scan_interval)
     for coord in coordinators:

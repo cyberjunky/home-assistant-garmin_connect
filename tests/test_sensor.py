@@ -7,6 +7,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from homeassistant.components.sensor import SensorDeviceClass, SensorStateClass
+from homeassistant.util import dt as dt_util
 
 from custom_components.garmin_connect.sensor import (
     _COORDINATOR_SENSOR_MAP,
@@ -69,16 +70,31 @@ def test_all_sensor_descriptions_have_translation_keys() -> None:
 
 
 def test_no_sensor_uses_total_without_last_reset():
-    """No sensor may use TOTAL, since none of them sets last_reset.
+    """TOTAL is only used by daily totals, which supply last_reset.
 
     Without last_reset, Home Assistant subtracts each daily reset from the
     long-term sum, so daily statistics of Garmin's daily counters go negative.
     """
     for desc in _all_descriptions():
-        assert desc.state_class != SensorStateClass.TOTAL, (
-            f"{desc.key} uses TOTAL without last_reset; use TOTAL_INCREASING for "
-            "daily counters or MEASUREMENT for values that do not accumulate"
+        is_total = desc.state_class == SensorStateClass.TOTAL
+        assert is_total == desc.daily_total, (
+            f"{desc.key}: TOTAL needs daily_total=True (for last_reset), and "
+            "daily_total needs TOTAL; use TOTAL_INCREASING for counters that "
+            "never go down or MEASUREMENT for values that do not accumulate"
         )
+
+
+def test_daily_total_resets_at_local_midnight() -> None:
+    """Daily totals report local midnight as last_reset; other sensors none."""
+    coordinator = MagicMock()
+    coordinator.data = {"nutritionConsumedCalories": 1500}
+    daily = next(d for d in NUTRITION_SENSORS if d.key == "nutritionConsumedCalories")
+    goal = next(d for d in NUTRITION_SENSORS if d.key == "nutritionCalorieGoal")
+
+    sensor = GarminConnectSensor(coordinator, daily, "entry_id")
+    assert sensor.state_class == SensorStateClass.TOTAL
+    assert sensor.last_reset == dt_util.start_of_local_day()
+    assert GarminConnectSensor(coordinator, goal, "entry_id").last_reset is None
 
 
 def test_coordinator_type_on_non_core_sensor_groups() -> None:
@@ -1646,3 +1662,25 @@ def test_scheduled_workout_sensors_add_steps_summary():
 def test_scheduled_workout_without_steps_has_no_summary():
     desc = next(d for d in ACTIVITY_TRACKING_SENSORS if d.key == "todayScheduledWorkout")
     assert "steps_summary" not in desc.attributes_fn(mock_activity_data())
+
+
+def test_gear_removed_while_ha_was_stopped_is_dropped_from_registry() -> None:
+    """Gear sensors left in the registry for gear Garmin no longer has get removed."""
+    stale = MagicMock(domain="sensor", unique_id="entry_gear_old")
+    kept = MagicMock(domain="sensor", unique_id="entry_gear_g1")
+    other = MagicMock(domain="sensor", unique_id="entry_totalSteps")
+    with patch(
+        "custom_components.garmin_connect.sensor.er.async_entries_for_config_entry",
+        return_value=[stale, kept, other],
+    ):
+        _, coordinators, _, registry = _setup_platform([{"gearName": "Shoes", "uuid": "g1"}], [])
+
+    # The first lookup is the legacy name-slug migration; then the stale sweep.
+    registry.async_get_entity_id.assert_any_call("sensor", "garmin_connect", "entry_gear_old")
+    looked_up = {c.args[2] for c in registry.async_get_entity_id.call_args_list}
+    assert "entry_gear_g1" not in looked_up
+    registry.async_remove.assert_called_once()
+
+    # The registry sweep runs once; later polls only prune gear seen this run.
+    _listener(coordinators.gear)()
+    registry.async_remove.assert_called_once()

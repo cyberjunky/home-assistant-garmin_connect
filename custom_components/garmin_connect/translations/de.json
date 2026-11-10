@@ -7,6 +7,7 @@
       "reconfigure_successful": "Neukonfiguration war erfolgreich"
     },
     "error": {
+      "cannot_connect": "Verbindung zu Garmin Connect fehlgeschlagen. Überprüfe dein Netzwerk und versuche es erneut.",
       "invalid_auth": "Ungültige Zugangsdaten",
       "invalid_mfa": "Ungültiger Bestätigungscode",
       "rate_limit": "Zu viele Anmeldeversuche — Garmin drosselt die Zugriffe. Bitte versuche es in ein paar Minuten erneut.",
@@ -295,6 +296,7 @@
       "name": "Flüssigkeitszufuhr hinzufügen",
       "description": "Erfasst eine Flüssigkeitsaufnahme in Garmin Connect.",
       "fields": {
+        "entity_id": { "name": "Garmin-Connect-Entität", "description": "Optionale Garmin-Connect-Entität, deren Konto den Eintrag erhalten soll." },
         "value_in_ml": { "name": "Menge (ml)", "description": "Flüssigkeitsmenge in Millilitern. Negative Werte werden von der heutigen Aufnahme abgezogen." },
         "timestamp": { "name": "Zeitstempel", "description": "Zeitpunkt der Messung (ISO 8601, Standard ist jetzt)." }
       }
@@ -379,6 +381,7 @@
       "name": "Blutdruck hinzufügen",
       "description": "Fügt eine Blutdruckmessung in Garmin Connect hinzu.",
       "fields": {
+        "entity_id": { "name": "Garmin-Connect-Entität", "description": "Optionale Garmin-Connect-Entität, deren Konto den Eintrag erhalten soll." },
         "systolic": { "name": "Systolisch", "description": "Systolischer Blutdruckwert." },
         "diastolic": { "name": "Diastolisch", "description": "Diastolischer Blutdruckwert." },
         "pulse": { "name": "Puls", "description": "Pulsfrequenz." },
@@ -390,6 +393,7 @@
       "name": "Aktivität erstellen",
       "description": "Erstellt eine manuelle Aktivität in Garmin Connect.",
       "fields": {
+        "entity_id": { "name": "Garmin-Connect-Entität", "description": "Optionale Garmin-Connect-Entität, deren Konto den Eintrag erhalten soll." },
         "activity_name": { "name": "Name der Aktivität", "description": "Name der Aktivität." },
         "activity_type": { "name": "Aktivitätstyp", "description": "Art der Aktivität (z. B. Laufen, Radfahren)." },
         "start_datetime": { "name": "Startdatum und -zeit", "description": "Beginn der Aktivität (ISO-Format)." },
@@ -412,6 +416,7 @@
       "name": "Aktivität hochladen",
       "description": "Lädt eine Aktivitätsdatei (FIT, GPX, TCX) zu Garmin Connect hoch.",
       "fields": {
+        "entity_id": { "name": "Garmin-Connect-Entität", "description": "Optionale Garmin-Connect-Entität, deren Konto den Eintrag erhalten soll." },
         "file_path": { "name": "Dateipfad", "description": "Pfad zur Aktivitätsdatei auf dem Home-Assistant-System." }
       }
     },
@@ -447,6 +452,7 @@
     "add_gear_to_activity_failed": { "message": "Ausrüstung konnte nicht zur Aktivität hinzugefügt werden: {error}" },
     "create_activity_failed": { "message": "Aktivität konnte nicht erstellt werden: {error}" },
     "download_activity_failed": { "message": "Aktivität konnte nicht heruntergeladen werden: {error}" },
+    "download_activity_write_failed": { "message": "Aktivitätsdatei konnte nicht unter {file_path} gespeichert werden: {error}" },
     "path_not_allowed": { "message": "Pfad ist nicht zulässig: {file_path}. Füge das Verzeichnis zu allowlist_external_dirs hinzu." },
     "entity_not_found": { "message": "Entität nicht gefunden: {entity_id}" },
     "file_not_found": { "message": "Datei nicht gefunden: {file_path}" },

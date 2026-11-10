@@ -8,7 +8,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 from zoneinfo import ZoneInfo
 
-from aiohttp import ClientError
 from ha_garmin import GarminConnectError
 from homeassistant.core import (
     HomeAssistant,
@@ -17,7 +16,7 @@ from homeassistant.core import (
     SupportsResponse,
     callback,
 )
-from homeassistant.exceptions import HomeAssistantError
+from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import entity_registry as er
 from homeassistant.util import dt as dt_util
@@ -53,7 +52,7 @@ SERVICE_GET_DAY_SUMMARY = "get_day_summary"
 
 # Errors the library raises for bad input (unparsable timestamp, value out of
 # its own limits, unsupported file) on top of its API/network errors.
-_SERVICE_ERRORS = (GarminConnectError, ClientError, ValueError)
+_SERVICE_ERRORS = (GarminConnectError, ValueError)
 
 UPLOAD_ACTIVITY_FORMATS = {".fit", ".gpx", ".tcx"}
 
@@ -313,13 +312,13 @@ def _get_coordinators(
     """Get the coordinators of a targeted or fallback config entry."""
     entries = hass.config_entries.async_entries(DOMAIN)
     if not entries:
-        raise HomeAssistantError(
+        raise ServiceValidationError(
             translation_domain=DOMAIN,
             translation_key="no_integration_configured",
         )
 
     if len(entries) > 1 and not entity_id:
-        raise HomeAssistantError(
+        raise ServiceValidationError(
             translation_domain=DOMAIN,
             translation_key="ambiguous_account",
         )
@@ -329,7 +328,7 @@ def _get_coordinators(
     if entity_id:
         registry_entry = er.async_get(hass).async_get(entity_id)
         if registry_entry is None:
-            raise HomeAssistantError(
+            raise ServiceValidationError(
                 translation_domain=DOMAIN,
                 translation_key="entity_not_found",
                 translation_placeholders={"entity_id": entity_id},
@@ -344,7 +343,7 @@ def _get_coordinators(
             None,
         )
         if matched is None:
-            raise HomeAssistantError(
+            raise ServiceValidationError(
                 translation_domain=DOMAIN,
                 translation_key="entity_not_found",
                 translation_placeholders={"entity_id": entity_id},
@@ -352,7 +351,7 @@ def _get_coordinators(
         entry = matched
 
     if getattr(entry, "runtime_data", None) is None:
-        raise HomeAssistantError(
+        raise ServiceValidationError(
             translation_domain=DOMAIN,
             translation_key="integration_not_loaded",
         )
@@ -374,20 +373,20 @@ def async_setup_services(hass: HomeAssistant) -> None:
 
         if not gear_uuid:
             if not entity_id:
-                raise HomeAssistantError(
+                raise ServiceValidationError(
                     translation_domain=DOMAIN,
                     translation_key="no_gear_specified",
                 )
             state = hass.states.get(entity_id)
             if not state:
-                raise HomeAssistantError(
+                raise ServiceValidationError(
                     translation_domain=DOMAIN,
                     translation_key="entity_not_found",
                     translation_placeholders={"entity_id": entity_id},
                 )
             gear_uuid = state.attributes.get("gear_uuid")
             if not gear_uuid:
-                raise HomeAssistantError(
+                raise ServiceValidationError(
                     translation_domain=DOMAIN,
                     translation_key="gear_uuid_not_found",
                     translation_placeholders={"entity_id": entity_id},
@@ -489,13 +488,13 @@ def async_setup_services(hass: HomeAssistant) -> None:
         # Anything outside the config dir must be in allowlist_external_dirs,
         # or any readable file could be sent to Garmin.
         if not await hass.async_add_executor_job(_upload_path_allowed, hass, path):
-            raise HomeAssistantError(
+            raise ServiceValidationError(
                 translation_domain=DOMAIN,
                 translation_key="path_not_allowed",
                 translation_placeholders={"file_path": str(path)},
             )
         if path.suffix.lower() not in UPLOAD_ACTIVITY_FORMATS:
-            raise HomeAssistantError(
+            raise ServiceValidationError(
                 translation_domain=DOMAIN,
                 translation_key="unsupported_file_format",
                 translation_placeholders={
@@ -504,7 +503,7 @@ def async_setup_services(hass: HomeAssistant) -> None:
                 },
             )
         if not await hass.async_add_executor_job(path.is_file):
-            raise HomeAssistantError(
+            raise ServiceValidationError(
                 translation_domain=DOMAIN,
                 translation_key="file_not_found",
                 translation_placeholders={"file_path": str(path)},
@@ -536,7 +535,7 @@ def async_setup_services(hass: HomeAssistant) -> None:
             # User-supplied paths must be in allowlist_external_dirs;
             # the default location below is integration-controlled.
             if not await hass.async_add_executor_job(hass.config.is_allowed_path, str(path)):
-                raise HomeAssistantError(
+                raise ServiceValidationError(
                     translation_domain=DOMAIN,
                     translation_key="path_not_allowed",
                     translation_placeholders={"file_path": str(path)},
@@ -557,7 +556,14 @@ def async_setup_services(hass: HomeAssistant) -> None:
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_bytes(content)
 
-        await hass.async_add_executor_job(_write)
+        try:
+            await hass.async_add_executor_job(_write)
+        except OSError as err:
+            raise HomeAssistantError(
+                translation_domain=DOMAIN,
+                translation_key="download_activity_write_failed",
+                translation_placeholders={"file_path": str(path), "error": str(err)},
+            ) from err
 
         if call.return_response:
             return {
@@ -576,20 +582,20 @@ def async_setup_services(hass: HomeAssistant) -> None:
 
         if not gear_uuid:
             if not entity_id:
-                raise HomeAssistantError(
+                raise ServiceValidationError(
                     translation_domain=DOMAIN,
                     translation_key="no_gear_specified",
                 )
             state = hass.states.get(entity_id)
             if not state:
-                raise HomeAssistantError(
+                raise ServiceValidationError(
                     translation_domain=DOMAIN,
                     translation_key="entity_not_found",
                     translation_placeholders={"entity_id": entity_id},
                 )
             gear_uuid = state.attributes.get("gear_uuid")
             if not gear_uuid:
-                raise HomeAssistantError(
+                raise ServiceValidationError(
                     translation_domain=DOMAIN,
                     translation_key="gear_uuid_not_found",
                     translation_placeholders={"entity_id": entity_id},
