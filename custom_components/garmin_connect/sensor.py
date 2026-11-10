@@ -2427,6 +2427,7 @@ async def async_setup_entry(
     entities.extend(_async_sync_gear())
 
     # Dynamic power-to-weight sensors (one PTW + one FTP sensor per sport)
+    # Lower-cased, like the unique ids: a sport Garmin re-cases is the same sport.
     known_ptw_sports: set[str] = set()
     ptw_pruned_registry = False
 
@@ -2443,7 +2444,7 @@ async def async_setup_entry(
         # As with gear: only prune against a non-empty list, and sweep the
         # registry once for sports that vanished while HA was stopped.
         if current:
-            stale = {sport.lower() for sport in known_ptw_sports} - current.keys()
+            stale = known_ptw_sports - current.keys()
             if not ptw_pruned_registry:
                 stale |= _registered_ptw_sports(ent_reg, entry.entry_id) - current.keys()
                 ptw_pruned_registry = True
@@ -2454,12 +2455,12 @@ async def async_setup_entry(
                     )
                     if entity_id:
                         ent_reg.async_remove(entity_id)
-            known_ptw_sports.intersection_update(current.values())
+            known_ptw_sports.intersection_update(current)
         new_entities: list[GarminConnectPowerToWeightSensor] = []
-        for sport in current.values():
-            if sport in known_ptw_sports:
+        for key, sport in current.items():
+            if key in known_ptw_sports:
                 continue
-            known_ptw_sports.add(sport)
+            known_ptw_sports.add(key)
             new_entities.extend(
                 GarminConnectPowerToWeightSensor(
                     coordinators.training,
@@ -2649,26 +2650,23 @@ class GarminConnectGearSensor(CoordinatorEntity[GearCoordinator], SensorEntity):
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         """Return gear details as attributes."""
-        if not self.coordinator.data:
-            return {}
-        for gear_stat in self.coordinator.data.get("gearStats", []):
-            if (gear_stat.get("uuid") or gear_stat.get("gearUuid")) == self._gear_uuid:
-                return {
-                    "gear_uuid": self._gear_uuid,
-                    "total_activities": gear_stat.get("totalActivities"),
-                    "date_begin": gear_stat.get("dateBegin"),
-                    "date_end": gear_stat.get("dateEnd"),
-                    "gear_make_name": gear_stat.get("gearMakeName"),
-                    "gear_model_name": gear_stat.get("gearModelName"),
-                    "gear_status_name": gear_stat.get("gearStatusName"),
-                    "custom_make_model": gear_stat.get("customMakeModel"),
-                    "maximum_meters": gear_stat.get("maximumMeters"),
-                    "maximum_seconds": gear_stat.get("maximumSeconds"),
-                    "total_duration_seconds": gear_stat.get("totalDurationSeconds"),
-                    "days_used": gear_stat.get("daysUsed"),
-                    "notes": gear_stat.get("notes"),
-                    "default_for_activity": gear_stat.get("defaultForActivity", []),
-                }
+        if (gear_stat := self._gear_stat()) is not None:
+            return {
+                "gear_uuid": self._gear_uuid,
+                "total_activities": gear_stat.get("totalActivities"),
+                "date_begin": gear_stat.get("dateBegin"),
+                "date_end": gear_stat.get("dateEnd"),
+                "gear_make_name": gear_stat.get("gearMakeName"),
+                "gear_model_name": gear_stat.get("gearModelName"),
+                "gear_status_name": gear_stat.get("gearStatusName"),
+                "custom_make_model": gear_stat.get("customMakeModel"),
+                "maximum_meters": gear_stat.get("maximumMeters"),
+                "maximum_seconds": gear_stat.get("maximumSeconds"),
+                "total_duration_seconds": gear_stat.get("totalDurationSeconds"),
+                "days_used": gear_stat.get("daysUsed"),
+                "notes": gear_stat.get("notes"),
+                "default_for_activity": gear_stat.get("defaultForActivity", []),
+            }
         return {}
 
 
@@ -2729,8 +2727,9 @@ class GarminConnectPowerToWeightSensor(CoordinatorEntity[TrainingCoordinator], S
     def _get_entry(self) -> dict[str, Any] | None:
         """Return the powerToWeight entry for this sport, or None."""
         ptw_list: list[dict[str, Any]] = (self.coordinator.data or {}).get("powerToWeight") or []
+        sport = self._sport.lower()
         for entry in ptw_list:
-            if entry.get("sport") == self._sport:
+            if str(entry.get("sport") or "").lower() == sport:
                 return entry
         return None
 

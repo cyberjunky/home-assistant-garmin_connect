@@ -5,6 +5,7 @@ from datetime import UTC, datetime, timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from ha_garmin import GarminAuth, GarminClient
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.garmin_connect.const import (
@@ -31,17 +32,19 @@ def mock_config_entry() -> MockConfigEntry:
         options={},
         unique_id="123456789",
         entry_id="test_entry_id",
+        version=2,
     )
 
 
 @pytest.fixture
 def mock_auth() -> Generator[MagicMock]:
-    """Return a mock GarminAuth patched into the integration module."""
-    with patch(
-        "custom_components.garmin_connect.GarminAuth",
-        autospec=True,
-    ) as mock_cls:
-        auth = mock_cls.return_value
+    """Return a mock GarminAuth patched into the integration module.
+
+    ``spec=`` instead of ``autospec=True``: same attribute checking (async
+    methods become AsyncMock), without autospeccing the whole class per test.
+    """
+    with patch("custom_components.garmin_connect.GarminAuth") as mock_cls:
+        auth = mock_cls.return_value = MagicMock(spec=GarminAuth)
         auth.di_token = ENTRY_DATA[CONF_TOKEN]
         auth.di_refresh_token = ENTRY_DATA[CONF_REFRESH_TOKEN]
         auth.di_client_id = ENTRY_DATA[CONF_CLIENT_ID]
@@ -51,11 +54,8 @@ def mock_auth() -> Generator[MagicMock]:
 @pytest.fixture
 def mock_client() -> Generator[MagicMock]:
     """Return a mock GarminClient with all fetch methods stubbed."""
-    with patch(
-        "custom_components.garmin_connect.GarminClient",
-        autospec=True,
-    ) as mock_cls:
-        client = mock_cls.return_value
+    with patch("custom_components.garmin_connect.GarminClient") as mock_cls:
+        client = mock_cls.return_value = MagicMock(spec=GarminClient)
         client.fetch_core_data = AsyncMock(return_value=mock_core_data())
         client.fetch_activity_data = AsyncMock(return_value=mock_activity_data())
         client.fetch_training_data = AsyncMock(return_value=mock_training_data())
@@ -599,3 +599,40 @@ def mock_nutrition_data() -> dict:
             },
         ],
     }
+
+
+# ── Real Home Assistant setup ────────────────────────────────────────────────
+
+
+@pytest.fixture
+def ha_environment(hass, enable_custom_integrations) -> Generator[None]:
+    """Let the integration load in tests without the frontend/http stack.
+
+    The manifest depends on frontend and http (for the route-map card); the
+    test environment has no hass_frontend package. They are marked loaded and
+    the two calls the integration makes into them are stubbed.
+    """
+    del enable_custom_integrations  # requested only so the custom integration loads
+    hass.config.components.update({"frontend", "http"})
+    hass.http = MagicMock(async_register_static_paths=AsyncMock())
+    with patch("custom_components.garmin_connect.add_extra_js_url"):
+        yield
+
+
+@pytest.fixture
+async def init_integration(
+    hass,
+    ha_environment: None,
+    mock_config_entry: MockConfigEntry,
+    mock_auth: MagicMock,
+    mock_client: MagicMock,
+) -> MockConfigEntry:
+    """Set up the integration through Home Assistant with a mocked ha-garmin client."""
+    from datetime import date
+
+    mock_client.today.return_value = date(2026, 1, 15)
+    mock_client.get_daily_summary = AsyncMock(return_value={})
+    mock_config_entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(mock_config_entry.entry_id)
+    await hass.async_block_till_done(wait_background_tasks=True)
+    return mock_config_entry

@@ -189,9 +189,11 @@ def _migrate_entity_unique_ids(
 
 async def async_setup_entry(hass: HomeAssistant, entry: GarminConnectConfigEntry) -> bool:
     """Set up Garmin Connect from a config entry."""
-    if CONF_TOKEN not in entry.data:
+    if not all(entry.data.get(key) for key in (CONF_TOKEN, CONF_REFRESH_TOKEN, CONF_CLIENT_ID)):
         # Migration from v1 bumps version and starts reauth but setup still runs.
-        # Without valid DI tokens there's nothing to set up — reauth will fix it.
+        # v1 kept its garth session under "token" with no DI refresh token or
+        # client id, so all three are checked. Without them there's nothing to
+        # set up; reauth will fix it.
         raise ConfigEntryAuthFailed(
             translation_domain=DOMAIN,
             translation_key="reauth_required",

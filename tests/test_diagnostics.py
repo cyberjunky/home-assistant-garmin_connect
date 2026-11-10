@@ -1,197 +1,95 @@
 """Tests for Garmin Connect diagnostics."""
 
+from collections.abc import AsyncGenerator
+from datetime import UTC, datetime
 from unittest.mock import MagicMock, patch
 
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
+import pytest
+from homeassistant.core import HomeAssistant
+from homeassistant.setup import async_setup_component
+from pytest_homeassistant.common import MockConfigEntry
+from pytest_homeassistant.components.diagnostics import get_diagnostics_for_config_entry
+from pytest_homeassistant.typing import ClientSessionGenerator
+from syrupy.assertion import SnapshotAssertion
 
-from custom_components.garmin_connect.diagnostics import (
-    TO_REDACT,
-    async_get_config_entry_diagnostics,
-)
+from .conftest import mock_activity_data
+
+pytestmark = pytest.mark.usefixtures("enable_custom_integrations", "http_environment")
+
+# Every value below that diagnostics must hide.
+_PROFILE = {
+    "displayName": "ron",
+    "fullName": "Ron Runner",
+    "userName": "ron@example.com",
+    "email": "ron@example.com",
+    "profileImageUrlSmall": "https://example.com/s.png",
+    "profileImageUrlMedium": "https://example.com/m.png",
+    "profileImageUrlLarge": "https://example.com/l.png",
+}
+_ACTIVITY = {
+    "activityId": 12345,
+    "activityName": "Ride",
+    "startTime": datetime(2026, 1, 14, 7, 0, tzinfo=UTC),
+    "polyline": [{"lat": 52.1, "lon": 5.1}],
+    "startLatitude": 52.1,
+    "startLongitude": 5.1,
+    "endLatitude": 52.2,
+    "endLongitude": 5.2,
+    "locationName": "Home town",
+}
 
 
-async def test_diagnostics_redacts_sensitive_data() -> None:
-    """Test that diagnostics redacts tokens, names, and email."""
-    mock_coordinator = MagicMock(spec=DataUpdateCoordinator)
-    mock_coordinator.data = {"totalSteps": 10000, "restingHeartRate": 60}
-    mock_coordinator.last_update_success = True
-    mock_coordinator.update_interval.total_seconds.return_value = 300
+@pytest.fixture
+async def http_environment(hass: HomeAssistant) -> AsyncGenerator[None]:
+    """Load the real http component (the diagnostics API needs it); stub only frontend.
 
-    mock_coordinators = MagicMock()
-    mock_field = MagicMock()
-    mock_field.name = "core"
+    hass_frontend is not installed in the test environment, so frontend is
+    marked loaded and the one call the integration makes into it is stubbed.
+    """
+    hass.config.components.add("frontend")
+    assert await async_setup_component(hass, "http", {})
+    with patch("custom_components.garmin_connect.add_extra_js_url"):
+        yield
 
-    entry_data = {
-        "token": "secret_token",
-        "refresh_token": "secret_refresh",
-        "client_id": "secret_client_id",
-        "username": "test@example.com",
+
+@pytest.fixture
+async def diagnostics_entry(
+    hass: HomeAssistant,
+    mock_config_entry: MockConfigEntry,
+    mock_auth: MagicMock,
+    mock_client: MagicMock,
+) -> MockConfigEntry:
+    """Set up an entry whose data holds every kind of value diagnostics redacts."""
+    mock_client.fetch_core_data.return_value = {"totalSteps": 10000, **_PROFILE}
+    mock_client.fetch_activity_data.return_value = {
+        **mock_activity_data(),
+        "lastActivity": _ACTIVITY,
+        "lastActivities": [_ACTIVITY],
     }
-
-    mock_entry = MagicMock()
-    mock_entry.data = entry_data
-    mock_entry.runtime_data = mock_coordinators
-    mock_entry.runtime_data.core = mock_coordinator
-
-    mock_hass = MagicMock()
-
-    with patch(
-        "custom_components.garmin_connect.diagnostics.fields",
-        return_value=[mock_field],
-    ):
-        result = await async_get_config_entry_diagnostics(mock_hass, mock_entry)
-
-    assert "entry_data" in result
-    assert "coordinators" in result
-    # Redacted fields should be replaced
-    assert result["entry_data"]["token"] == "**REDACTED**"
-    assert result["entry_data"]["refresh_token"] == "**REDACTED**"
-    assert result["entry_data"]["client_id"] == "**REDACTED**"
-    # Non-redacted fields should remain
-    assert result["entry_data"]["username"] == "test@example.com"
+    mock_config_entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(mock_config_entry.entry_id)
+    await hass.async_block_till_done(wait_background_tasks=True)
+    return mock_config_entry
 
 
-async def test_diagnostics_coordinator_info() -> None:
-    """Test that diagnostics includes coordinator info."""
-    mock_coordinator = MagicMock(spec=DataUpdateCoordinator)
-    mock_coordinator.data = {"key1": "val", "key2": "val"}
-    mock_coordinator.last_update_success = True
-    mock_coordinator.update_interval.total_seconds.return_value = 300
-
-    mock_field = MagicMock()
-    mock_field.name = "core"
-
-    mock_entry = MagicMock()
-    mock_entry.data = {}
-    mock_entry.runtime_data = MagicMock()
-    mock_entry.runtime_data.core = mock_coordinator
-
-    mock_hass = MagicMock()
-
-    with patch(
-        "custom_components.garmin_connect.diagnostics.fields",
-        return_value=[mock_field],
-    ):
-        result = await async_get_config_entry_diagnostics(mock_hass, mock_entry)
-
-    core_info = result["coordinators"]["core"]
-    assert core_info["last_update_success"] is True
-    assert core_info["update_interval_seconds"] == 300
-    assert core_info["data_keys_count"] == 2
-    assert core_info["data"] == {"key1": "val", "key2": "val"}
+async def test_diagnostics(
+    hass: HomeAssistant,
+    hass_client: ClientSessionGenerator,
+    diagnostics_entry: MockConfigEntry,
+    snapshot: SnapshotAssertion,
+) -> None:
+    """Coordinator payloads are included, minus tokens, identity, notes and locations."""
+    assert await get_diagnostics_for_config_entry(hass, hass_client, diagnostics_entry) == snapshot
 
 
-async def test_diagnostics_handles_none_update_interval() -> None:
-    """Test that diagnostics handles coordinator with no update interval."""
-    mock_coordinator = MagicMock(spec=DataUpdateCoordinator)
-    mock_coordinator.data = {}
-    mock_coordinator.last_update_success = False
-    mock_coordinator.update_interval = None
+async def test_diagnostics_without_update_interval(
+    hass: HomeAssistant,
+    hass_client: ClientSessionGenerator,
+    diagnostics_entry: MockConfigEntry,
+) -> None:
+    """A coordinator that is not polled reports no update interval."""
+    diagnostics_entry.runtime_data.core.update_interval = None
 
-    mock_field = MagicMock()
-    mock_field.name = "core"
-
-    mock_entry = MagicMock()
-    mock_entry.data = {}
-    mock_entry.runtime_data = MagicMock()
-    mock_entry.runtime_data.core = mock_coordinator
-
-    mock_hass = MagicMock()
-
-    with patch(
-        "custom_components.garmin_connect.diagnostics.fields",
-        return_value=[mock_field],
-    ):
-        result = await async_get_config_entry_diagnostics(mock_hass, mock_entry)
+    result = await get_diagnostics_for_config_entry(hass, hass_client, diagnostics_entry)
 
     assert result["coordinators"]["core"]["update_interval_seconds"] is None
-
-
-def test_to_redact_contains_expected_keys() -> None:
-    """Test that the redaction set covers all sensitive fields."""
-    expected = {
-        "token",
-        "refresh_token",
-        "client_id",
-        "displayName",
-        "fullName",
-        "userName",
-        "email",
-        "profileImageUrlMedium",
-        "profileImageUrlSmall",
-        "profileImageUrlLarge",
-        "notes",
-        "polyline",
-        "startLatitude",
-        "startLongitude",
-        "endLatitude",
-        "endLongitude",
-        "locationName",
-    }
-    assert TO_REDACT == expected
-
-
-async def test_diagnostics_redacts_route_and_profile_inside_coordinator_data() -> None:
-    """Coordinator payloads are included, minus the GPS track and profile identity."""
-    mock_coordinator = MagicMock(spec=DataUpdateCoordinator)
-    mock_coordinator.data = {
-        "lastActivity": {
-            "activityName": "Ride",
-            "polyline": [{"lat": 1, "lon": 2}],
-            "startLatitude": 52.1,
-            "startLongitude": 5.1,
-            "locationName": "Home town",
-        },
-        "displayName": "ron",
-    }
-    mock_coordinator.last_update_success = True
-    mock_coordinator.update_interval.total_seconds.return_value = 300
-
-    mock_field = MagicMock()
-    mock_field.name = "activity"
-    mock_entry = MagicMock()
-    mock_entry.data = {}
-    mock_entry.runtime_data = MagicMock()
-    mock_entry.runtime_data.activity = mock_coordinator
-
-    with patch(
-        "custom_components.garmin_connect.diagnostics.fields",
-        return_value=[mock_field],
-    ):
-        result = await async_get_config_entry_diagnostics(MagicMock(), mock_entry)
-
-    data = result["coordinators"]["activity"]["data"]
-    assert data["lastActivity"]["activityName"] == "Ride"
-    assert data["lastActivity"]["polyline"] == "**REDACTED**"
-    for key in ("startLatitude", "startLongitude", "locationName"):
-        assert data["lastActivity"][key] == "**REDACTED**"
-    assert data["displayName"] == "**REDACTED**"
-
-
-async def test_diagnostics_skips_non_coordinator_fields() -> None:
-    """Test that non-DataUpdateCoordinator fields like is_cn are skipped."""
-    mock_coordinator = MagicMock(spec=DataUpdateCoordinator)
-    mock_coordinator.data = {"steps": 100}
-    mock_coordinator.last_update_success = True
-    mock_coordinator.update_interval = None
-
-    coord_field = MagicMock()
-    coord_field.name = "core"
-
-    bool_field = MagicMock()
-    bool_field.name = "is_cn"
-
-    mock_entry = MagicMock()
-    mock_entry.data = {}
-    mock_entry.runtime_data = MagicMock()
-    mock_entry.runtime_data.core = mock_coordinator
-    mock_entry.runtime_data.is_cn = False
-
-    with patch(
-        "custom_components.garmin_connect.diagnostics.fields",
-        return_value=[coord_field, bool_field],
-    ):
-        result = await async_get_config_entry_diagnostics(MagicMock(), mock_entry)
-
-    assert "core" in result["coordinators"]
-    assert "is_cn" not in result["coordinators"]

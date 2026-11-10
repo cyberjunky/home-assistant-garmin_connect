@@ -292,7 +292,8 @@ class GarminConnectConfigFlow(ConfigFlow, domain=DOMAIN):
         return self._async_show_step_login_form(errors)
 
     async def async_step_reauth(self, entry_data: Mapping[str, Any]) -> ConfigFlowResult:
-        """Handle re-authentication."""
+        """Handle re-authentication; the login form asks for fresh credentials."""
+        del entry_data  # the stored tokens are what failed; nothing to reuse
         return await self.async_step_reauth_confirm()
 
     async def async_step_reauth_confirm(
