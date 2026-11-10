@@ -57,8 +57,8 @@ _SERVICE_ERRORS = (GarminConnectError, ValueError)
 UPLOAD_ACTIVITY_FORMATS = {".fit", ".gpx", ".tcx"}
 
 
-def _upload_path_allowed(hass: HomeAssistant, path: Path) -> bool:
-    """Return whether a file may be uploaded from ``path``.
+def _path_allowed(hass: HomeAssistant, path: Path) -> bool:
+    """Return whether an activity file may be read from or written to ``path``.
 
     Anything inside the config directory is fine; the rest must be in
     allowlist_external_dirs (which does not include the config directory by
@@ -86,6 +86,25 @@ def _iso_timestamp(value: datetime | None) -> str | None:
     if value.tzinfo is None:
         value = value.replace(tzinfo=dt_util.get_default_time_zone())
     return value.isoformat()
+
+
+def _positive_id(value: Any) -> int:
+    """Validate a Garmin ID without int() silently changing it.
+
+    Accepts ints, whole floats (the UI number selector sends 42.0) and digit
+    strings; rejects bools, fractions like 1.9 and non-positive values.
+    """
+    if isinstance(value, bool):
+        raise vol.Invalid("ID must be a positive integer")
+    if isinstance(value, float):
+        if not value.is_integer():
+            raise vol.Invalid("ID must be a positive integer")
+        value = int(value)
+    elif isinstance(value, str) and value.strip().isascii() and value.strip().isdigit():
+        value = int(value.strip())
+    if not isinstance(value, int) or value < 1:
+        raise vol.Invalid("ID must be a positive integer")
+    return value
 
 
 # Service schemas. Ranges mirror the selectors in services.yaml so YAML and
@@ -169,7 +188,7 @@ DOWNLOAD_ACTIVITY_FORMATS = ["fit", "original", "tcx", "gpx", "kml", "csv"]
 DOWNLOAD_ACTIVITY_SCHEMA = vol.Schema(
     {
         vol.Optional("entity_id"): cv.entity_id,
-        vol.Required("activity_id"): vol.Coerce(int),
+        vol.Required("activity_id"): _positive_id,
         vol.Optional("file_format", default="fit"): vol.In(DOWNLOAD_ACTIVITY_FORMATS),
         vol.Optional("file_path"): cv.string,
     }
@@ -177,7 +196,7 @@ DOWNLOAD_ACTIVITY_SCHEMA = vol.Schema(
 
 ADD_GEAR_TO_ACTIVITY_SCHEMA = vol.Schema(
     {
-        vol.Required("activity_id"): vol.Coerce(int),
+        vol.Required("activity_id"): _positive_id,
         vol.Optional("gear_uuid"): cv.string,
         vol.Optional("entity_id"): cv.entity_id,
     }
@@ -214,25 +233,6 @@ def _workout_json(value: Any) -> dict[str, Any]:
             raise vol.Invalid(f"invalid workout JSON: {err}") from err
     if not isinstance(value, dict):
         raise vol.Invalid("workout must be a JSON object")
-    return value
-
-
-def _positive_id(value: Any) -> int:
-    """Validate a Garmin ID without int() silently changing it.
-
-    Accepts ints, whole floats (the UI number selector sends 42.0) and digit
-    strings; rejects bools, fractions like 1.9 and non-positive values.
-    """
-    if isinstance(value, bool):
-        raise vol.Invalid("ID must be a positive integer")
-    if isinstance(value, float):
-        if not value.is_integer():
-            raise vol.Invalid("ID must be a positive integer")
-        value = int(value)
-    elif isinstance(value, str) and value.strip().isascii() and value.strip().isdigit():
-        value = int(value.strip())
-    if not isinstance(value, int) or value < 1:
-        raise vol.Invalid("ID must be a positive integer")
     return value
 
 
@@ -487,7 +487,7 @@ def async_setup_services(hass: HomeAssistant) -> None:
             path = Path(hass.config.path(file_path))
         # Anything outside the config dir must be in allowlist_external_dirs,
         # or any readable file could be sent to Garmin.
-        if not await hass.async_add_executor_job(_upload_path_allowed, hass, path):
+        if not await hass.async_add_executor_job(_path_allowed, hass, path):
             raise ServiceValidationError(
                 translation_domain=DOMAIN,
                 translation_key="path_not_allowed",
@@ -532,9 +532,10 @@ def async_setup_services(hass: HomeAssistant) -> None:
                 path = Path(hass.config.path(file_path))
             if path.suffix == "":
                 path = path / default_name
-            # User-supplied paths must be in allowlist_external_dirs;
-            # the default location below is integration-controlled.
-            if not await hass.async_add_executor_job(hass.config.is_allowed_path, str(path)):
+            # User-supplied paths must be inside the config directory or in
+            # allowlist_external_dirs, as for uploads; the default location
+            # below is integration-controlled.
+            if not await hass.async_add_executor_job(_path_allowed, hass, path):
                 raise ServiceValidationError(
                     translation_domain=DOMAIN,
                     translation_key="path_not_allowed",

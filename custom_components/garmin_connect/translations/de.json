@@ -7,6 +7,7 @@
       "reconfigure_successful": "Neukonfiguration war erfolgreich"
     },
     "error": {
+      "profile_unavailable": "Es konnte nicht geprüft werden, zu welchem Garmin-Konto diese Zugangsdaten gehören. Bitte versuche es erneut.",
       "cannot_connect": "Verbindung zu Garmin Connect fehlgeschlagen. Überprüfe dein Netzwerk und versuche es erneut.",
       "invalid_auth": "Ungültige Zugangsdaten",
       "invalid_mfa": "Ungültiger Bestätigungscode",
@@ -53,6 +54,7 @@
         "title": "Integration neu konfigurieren"
       },
       "user": {
+        "title": "Garmin Connect",
         "data": {
           "password": "Passwort",
           "username": "E-Mail",
@@ -421,7 +423,7 @@
         "entity_id": { "name": "Garmin-Connect-Entität", "description": "Optionale Garmin-Connect-Entität, deren Konto die Aktivität besitzt." },
         "activity_id": { "name": "Aktivitäts-ID", "description": "Garmin-Aktivitäts-ID (siehe Attribute des Sensors last_activity)." },
         "file_format": { "name": "Dateiformat", "description": "fit (aus dem Original-ZIP extrahiert), original (rohes ZIP), tcx, gpx, kml oder csv." },
-        "file_path": { "name": "Dateipfad", "description": "Zieldatei oder -verzeichnis. Eigene Pfade müssen in allowlist_external_dirs eingetragen sein. Standard ist [config]/garmin_activities/." }
+        "file_path": { "name": "Dateipfad", "description": "Zieldatei oder -verzeichnis, im Konfigurationsverzeichnis oder in allowlist_external_dirs. Relative Pfade gelten ab dem Konfigurationsverzeichnis. Standard ist [config]/garmin_activities/." }
       }
     },
     "upload_activity": {

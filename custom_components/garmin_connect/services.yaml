@@ -65,7 +65,7 @@ add_body_composition:
       description: "Measurement time (ISO 8601, e.g. 2024-01-15T08:30:00). Defaults to now."
       example: "2024-01-15T08:30:00"
       selector:
-        text:
+        datetime:
     bmi:
       name: BMI
       selector:
@@ -195,7 +195,7 @@ add_blood_pressure:
       description: "Measurement time (ISO 8601). Defaults to now."
       example: "2024-01-15T08:30:00"
       selector:
-        text:
+        datetime:
     notes:
       name: Notes
       selector:
@@ -235,7 +235,7 @@ create_activity:
       description: "Start time (ISO 8601). Defaults to now."
       example: "2024-01-15T08:30:00"
       selector:
-        text:
+        datetime:
     duration_min:
       name: Duration (minutes)
       required: true
@@ -298,7 +298,7 @@ download_activity:
       selector:
         number:
           mode: box
-          min: 0
+          min: 1
           max: 999999999999
     file_format:
       name: File format
@@ -315,7 +315,7 @@ download_activity:
             - csv
     file_path:
       name: File path
-      description: Target file or directory. Must be in allowlist_external_dirs. Defaults to <config>/garmin_activities/activity_<id>.<format>.
+      description: Target file or directory, absolute or relative to the config directory. Paths outside the config directory must be in allowlist_external_dirs. Defaults to <config>/garmin_activities/activity_<id>.<format>.
       example: "/config/garmin_activities/run.fit"
       selector:
         text:
@@ -337,8 +337,8 @@ add_hydration:
       required: true
       selector:
         number:
-          min: -5000
-          max: 5000
+          min: -10000
+          max: 10000
           step: 1
           unit_of_measurement: mL
     timestamp:
@@ -346,7 +346,7 @@ add_hydration:
       description: "Measurement time (ISO 8601). Defaults to now."
       example: "2024-01-15T08:30:00"
       selector:
-        text:
+        datetime:
 
 add_gear_to_activity:
   name: Add gear to activity
@@ -430,7 +430,7 @@ add_nutrition_log:
       description: "Log time (ISO 8601). Defaults to now."
       example: "2024-01-15T12:30:00"
       selector:
-        text:
+        datetime:
 
 create_workout:
   name: Create workout
