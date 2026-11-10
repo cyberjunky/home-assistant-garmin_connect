@@ -7,6 +7,7 @@
       "reconfigure_successful": "重新配置成功"
     },
     "error": {
+      "profile_unavailable": "无法确认这些凭据属于哪个 Garmin 账户。请重试。",
       "cannot_connect": "无法连接到 Garmin Connect。请检查网络后重试。",
       "invalid_auth": "凭据无效",
       "invalid_mfa": "验证码无效",
@@ -53,6 +54,7 @@
         "title": "重新配置集成"
       },
       "user": {
+        "title": "Garmin Connect",
         "data": {
           "password": "密码",
           "username": "邮箱",
@@ -82,6 +84,9 @@
     }
   },
   "entity": {
+    "calendar": {
+      "scheduled_workouts": { "name": "计划训练" }
+    },
     "sensor": {
       "abnormal_hr_alerts": { "name": "异常心率警报" },
       "achievable_fitness_age": { "name": "可达健身年龄" },
@@ -291,6 +296,62 @@
     }
   },
   "services": {
+    "add_nutrition_log": {
+      "name": "添加营养记录",
+      "description": "向 Garmin Connect 记录一条快速添加的营养条目。需要 Connect+ 订阅，并已在 Garmin Connect 应用中完成营养初始设置。",
+      "fields": {
+        "entity_id": { "name": "Garmin Connect 实体", "description": "可选的 Garmin Connect 实体，用于指定接收该条目的账户。" },
+        "calories": { "name": "热量（千卡）", "description": "要记录的热量。" },
+        "carbs": { "name": "碳水化合物（克）", "description": "碳水化合物克数。" },
+        "protein": { "name": "蛋白质（克）", "description": "蛋白质克数。" },
+        "fat": { "name": "脂肪（克）", "description": "脂肪克数。" },
+        "name": { "name": "名称", "description": "记录条目的名称（默认为“Quick Add”）。" },
+        "timestamp": { "name": "时间戳", "description": "记录时间（ISO 8601）。默认为当前时间。" }
+      }
+    },
+    "create_workout": {
+      "name": "创建训练",
+      "description": "在 Garmin Connect 训练库中创建训练，可选择安排到某个日期。返回 workout_id（以及 schedule_id）。",
+      "fields": {
+        "entity_id": { "name": "Garmin Connect 实体", "description": "可选的 Garmin Connect 实体，用于指定训练所属的账户。" },
+        "workout": { "name": "训练", "description": "Garmin 训练 JSON（workoutName、sportType、workoutSegments），对象或 JSON 字符串均可。" },
+        "date": { "name": "日期", "description": "可选：将训练放入训练日历的日期。" }
+      }
+    },
+    "update_workout": {
+      "name": "更新训练",
+      "description": "原地替换现有训练。其 ID 和日历安排保持不变。",
+      "fields": {
+        "entity_id": { "name": "Garmin Connect 实体", "description": "可选的 Garmin Connect 实体，用于指定训练所属的账户。" },
+        "workout_id": { "name": "训练 ID", "description": "Garmin 训练 ID。" },
+        "workout": { "name": "训练", "description": "完整的 Garmin 训练 JSON，对象或 JSON 字符串均可。" }
+      }
+    },
+    "delete_workout": {
+      "name": "删除训练",
+      "description": "从 Garmin Connect 训练库中删除训练，包括其日历条目。",
+      "fields": {
+        "entity_id": { "name": "Garmin Connect 实体", "description": "可选的 Garmin Connect 实体，用于指定训练所属的账户。" },
+        "workout_id": { "name": "训练 ID", "description": "Garmin 训练 ID。" }
+      }
+    },
+    "schedule_workout": {
+      "name": "安排训练",
+      "description": "将训练库中的训练放入 Garmin 训练日历。返回 schedule_id。",
+      "fields": {
+        "entity_id": { "name": "Garmin Connect 实体", "description": "可选的 Garmin Connect 实体，用于指定训练所属的账户。" },
+        "workout_id": { "name": "训练 ID", "description": "Garmin 训练 ID。" },
+        "date": { "name": "日期", "description": "训练的日历日期。" }
+      }
+    },
+    "unschedule_workout": {
+      "name": "取消安排训练",
+      "description": "将训练从 Garmin 训练日历中移除，但不删除训练。",
+      "fields": {
+        "entity_id": { "name": "Garmin Connect 实体", "description": "可选的 Garmin Connect 实体，用于指定训练所属的账户。" },
+        "schedule_id": { "name": "安排 ID", "description": "日历条目 ID（schedule_workout 返回的 schedule_id，或计划训练的 id）。" }
+      }
+    },
     "set_active_gear": {
       "name": "设置默认装备",
       "description": "将装备设置为某活动类型的默认装备。",
@@ -362,7 +423,7 @@
         "entity_id": { "name": "Garmin Connect 实体", "description": "可选：拥有该活动的 Garmin Connect 实体。" },
         "activity_id": { "name": "活动 ID", "description": "Garmin 活动 ID（见 last_activity 传感器属性）。" },
         "file_format": { "name": "文件格式", "description": "fit（从原始 zip 提取）、original（原始 zip）、tcx、gpx、kml 或 csv。" },
-        "file_path": { "name": "文件路径", "description": "目标文件或目录。自定义路径必须在 allowlist_external_dirs 中。默认为 [config]/garmin_activities/。" }
+        "file_path": { "name": "文件路径", "description": "目标文件或目录，位于配置目录内或 allowlist_external_dirs 中。相对路径以配置目录为起点。默认为 [config]/garmin_activities/。" }
       }
     },
     "upload_activity": {
@@ -392,6 +453,13 @@
     }
   },
   "exceptions": {
+    "create_workout_failed": { "message": "创建训练失败：{error}" },
+    "create_workout_schedule_failed": { "message": "训练 {workout_id} 已创建，但无法安排：{error}" },
+    "update_workout_failed": { "message": "更新训练失败：{error}" },
+    "delete_workout_failed": { "message": "删除训练失败：{error}" },
+    "schedule_workout_failed": { "message": "安排训练失败：{error}" },
+    "unschedule_workout_failed": { "message": "取消安排训练失败：{error}" },
+    "ambiguous_account": { "message": "已配置多个 Garmin Connect 账户。请提供 entity_id 以选择要使用的账户。" },
     "auth_failed": { "message": "Garmin Connect 身份验证失败：{error}" },
     "reauth_required": { "message": "{account} 的 Garmin Connect 凭据需要重新验证" },
     "update_failed": { "message": "获取 Garmin Connect {data} 数据出错：{error}" },

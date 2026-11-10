@@ -7,6 +7,7 @@
       "reconfigure_successful": "Rekonfiguracja powiodła się"
     },
     "error": {
+      "profile_unavailable": "Nie udało się sprawdzić, do którego konta Garmin należą te dane logowania. Spróbuj ponownie.",
       "cannot_connect": "Nie udało się połączyć z Garmin Connect. Sprawdź sieć i spróbuj ponownie.",
       "invalid_auth": "Nieprawidłowe dane logowania",
       "invalid_mfa": "Nieprawidłowy kod weryfikacyjny",
@@ -53,6 +54,7 @@
         "title": "Zmiana konfiguracji integracji"
       },
       "user": {
+        "title": "Garmin Connect",
         "data": {
           "password": "Hasło",
           "username": "E-mail",
@@ -82,6 +84,11 @@
     }
   },
   "entity": {
+    "calendar": {
+      "scheduled_workouts": {
+        "name": "Zaplanowane treningi"
+      }
+    },
     "sensor": {
       "abnormal_hr_alerts": {
         "name": "Alerty nieprawidłowego tętna"
@@ -605,6 +612,28 @@
     }
   },
   "services": {
+    "download_activity": {
+      "name": "Pobierz aktywność",
+      "description": "Pobierz plik aktywności z Garmin Connect i zapisz go w systemie Home Assistant.",
+      "fields": {
+        "entity_id": {
+          "name": "Encja Garmin Connect",
+          "description": "Opcjonalna encja Garmin Connect wskazująca konto, do którego należy aktywność."
+        },
+        "activity_id": {
+          "name": "ID aktywności",
+          "description": "ID aktywności Garmin (zobacz atrybuty czujnika last_activity)."
+        },
+        "file_format": {
+          "name": "Format pliku",
+          "description": "fit (wyodrębniony z oryginalnego zip), original (surowy zip), tcx, gpx, kml lub csv."
+        },
+        "file_path": {
+          "name": "Ścieżka pliku",
+          "description": "Plik lub katalog docelowy, w katalogu konfiguracji lub w allowlist_external_dirs. Ścieżki względne liczone są od katalogu konfiguracji. Domyślnie [config]/garmin_activities/."
+        }
+      }
+    },
     "set_active_gear": {
       "name": "Ustaw aktywny sprzęt",
       "description": "Ustaw sprzęt jako aktywny/domyślny dla danego typu aktywności.",
@@ -890,6 +919,18 @@
     }
   },
   "exceptions": {
+    "download_activity_failed": {
+      "message": "Nie udało się pobrać aktywności: {error}"
+    },
+    "download_activity_write_failed": {
+      "message": "Nie udało się zapisać pliku aktywności w {file_path}: {error}"
+    },
+    "path_not_allowed": {
+      "message": "Ścieżka jest niedozwolona: {file_path}. Dodaj katalog do allowlist_external_dirs."
+    },
+    "ambiguous_account": {
+      "message": "Skonfigurowano kilka kont Garmin Connect. Podaj entity_id, aby wybrać konto."
+    },
     "auth_failed": {
       "message": "Uwierzytelnianie w Garmin Connect nie powiodło się: {error}"
     },

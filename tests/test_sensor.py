@@ -1898,3 +1898,115 @@ def test_power_sensor_unknown_without_entry_for_sport(sensor_type: str, data: di
     )
     assert sensor.native_value is None
     assert sensor.extra_state_attributes == {}
+
+
+# ── Review follow-ups ─────────────────────────────────────────────────────────
+
+
+def test_preserved_sensor_keeps_attributes_while_data_is_empty() -> None:
+    """A preserved sensor keeps its attributes along with its value when Garmin has no data."""
+    desc = next(d for d in _all_descriptions() if d.key == "lactateThresholdSpeed")
+    assert desc.preserve_value
+    coord = MagicMock()
+    coord.data = {"lactateThreshold": {"speed": 3.2, "hearRate": 162}}
+    sensor = GarminConnectSensor(coord, desc, "entry_id")
+    assert sensor.native_value == 3.2
+    attributes = sensor.extra_state_attributes
+    assert attributes == {"speed": 3.2, "hearRate": 162}
+
+    coord.data = {}
+    assert sensor.native_value == 3.2
+    assert sensor.extra_state_attributes == attributes
+
+
+def test_non_preserved_sensor_drops_attributes_while_data_is_empty() -> None:
+    """Sensors without preserve_value show no stale attributes."""
+    desc = next(d for d in _all_descriptions() if d.key == "trainingStatus")
+    coord = MagicMock()
+    coord.data = {"trainingStatus": {"x": 1}}
+    sensor = GarminConnectSensor(coord, desc, "entry_id")
+    assert sensor.extra_state_attributes == {"x": 1}
+    coord.data = {}
+    assert sensor.extra_state_attributes == {}
+
+
+@pytest.mark.parametrize(
+    ("key", "device_class", "state_class"),
+    [
+        ("lactateThresholdSpeed", SensorDeviceClass.SPEED, SensorStateClass.MEASUREMENT),
+        ("totalActivityTimeGainMinutes", SensorDeviceClass.DURATION, None),
+        ("trainingReadiness", None, SensorStateClass.MEASUREMENT),
+        ("morningTrainingReadiness", None, SensorStateClass.MEASUREMENT),
+        ("lactateThresholdHeartRate", None, SensorStateClass.MEASUREMENT),
+    ],
+)
+def test_sensor_classes(key: str, device_class, state_class) -> None:
+    """Device and state classes let HA convert units and keep statistics."""
+    desc = next(d for d in _all_descriptions() if d.key == key)
+    if device_class is not None:
+        assert desc.device_class == device_class
+    if state_class is not None:
+        assert desc.state_class == state_class
+
+
+def test_every_sensor_has_an_icon() -> None:
+    """Every sensor translation key has an icon in icons.json."""
+    icons = json.loads(
+        (Path(__file__).parent.parent / "custom_components/garmin_connect/icons.json").read_text()
+    )["entity"]["sensor"]
+    missing = {d.translation_key for d in _all_descriptions() if d.translation_key not in icons}
+    assert not missing
+
+
+def test_gear_sensor_name_follows_a_rename() -> None:
+    """A gear item renamed in Garmin shows its new name on the next poll."""
+    coord = MagicMock()
+    coord.data = {"gearStats": [{"uuid": "g1", "gearName": "Old shoes", "totalDistance": 10}]}
+    sensor = GarminConnectGearSensor(coord, gear_uuid="g1", gear_name="Old shoes", entry_id="e")
+    assert sensor.name == "Old shoes"
+
+    coord.data = {"gearStats": [{"uuid": "g1", "gearName": "Race shoes", "totalDistance": 12}]}
+    assert sensor.name == "Race shoes"
+    assert sensor.native_value == 12
+
+    # Without data the last known name stays.
+    coord.data = None
+    assert sensor.name == "Race shoes"
+
+
+def test_power_sensors_for_a_vanished_sport_are_removed() -> None:
+    """PTW/FTP sensors of a sport no longer reported are dropped from the registry."""
+    _, coordinators, _, registry = _setup_platform(
+        None, [{"sport": "cycling"}, {"sport": "running"}]
+    )
+    registry.async_get_entity_id.side_effect = lambda *args: f"sensor.{args[2]}"
+
+    coordinators.training.data = {"powerToWeight": [{"sport": "cycling"}]}
+    _listener(coordinators.training)()
+
+    removed = {c.args[0] for c in registry.async_remove.call_args_list}
+    assert removed == {"sensor.entry_ptw_running", "sensor.entry_ftp_running"}
+
+    # An empty list is more likely a failed call than every sport gone.
+    registry.async_remove.reset_mock()
+    coordinators.training.data = {"powerToWeight": []}
+    _listener(coordinators.training)()
+    registry.async_remove.assert_not_called()
+
+
+def test_power_sensors_removed_while_ha_was_stopped_are_swept_once() -> None:
+    """Registry PTW/FTP sensors for sports Garmin no longer reports are removed once."""
+    entries = [
+        MagicMock(domain="sensor", unique_id="entry_ptw_swimming"),
+        MagicMock(domain="sensor", unique_id="entry_ftp_swimming"),
+        MagicMock(domain="sensor", unique_id="entry_ptw_cycling"),
+    ]
+    with patch(
+        "custom_components.garmin_connect.sensor.er.async_entries_for_config_entry",
+        return_value=entries,
+    ):
+        _, coordinators, _, registry = _setup_platform(None, [{"sport": "cycling"}])
+
+    looked_up = {c.args[2] for c in registry.async_get_entity_id.call_args_list}
+    assert looked_up == {"entry_ptw_swimming", "entry_ftp_swimming"}
+    assert registry.async_remove.call_count == 2

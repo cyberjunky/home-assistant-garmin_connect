@@ -26,6 +26,7 @@ from homeassistant.const import (
     UnitOfLength,
     UnitOfMass,
     UnitOfPower,
+    UnitOfSpeed,
     UnitOfTemperature,
     UnitOfTime,
     UnitOfVolume,
@@ -1189,6 +1190,7 @@ TRAINING_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         key="trainingReadiness",
         translation_key="training_readiness",
         coordinator_type=CoordinatorType.TRAINING,
+        state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement=PERCENTAGE,
         value_fn=lambda data: (data.get("trainingReadiness") or {}).get("score"),
         attributes_fn=lambda data: data.get("trainingReadiness") or {},
@@ -1220,6 +1222,7 @@ TRAINING_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         key="morningTrainingReadiness",
         translation_key="morning_training_readiness",
         coordinator_type=CoordinatorType.TRAINING,
+        state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement=PERCENTAGE,
         value_fn=lambda data: (data.get("morningTrainingReadiness") or {}).get("score"),
         attributes_fn=lambda data: {
@@ -1234,6 +1237,7 @@ TRAINING_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         key="lactateThresholdHeartRate",
         translation_key="lactate_threshold_hr",
         coordinator_type=CoordinatorType.TRAINING,
+        state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement="bpm",
         # Garmin API returns "hearRate" (typo), ha_garmin merges the list into a flat dict
         value_fn=lambda data: (data.get("lactateThreshold") or {}).get("hearRate"),
@@ -1244,7 +1248,11 @@ TRAINING_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         key="lactateThresholdSpeed",
         translation_key="lactate_threshold_speed",
         coordinator_type=CoordinatorType.TRAINING,
-        native_unit_of_measurement="m/s",
+        device_class=SensorDeviceClass.SPEED,
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=UnitOfSpeed.METERS_PER_SECOND,
+        suggested_unit_of_measurement=UnitOfSpeed.KILOMETERS_PER_HOUR,
+        suggested_display_precision=1,
         value_fn=lambda data: (data.get("lactateThreshold") or {}).get("speed"),
         attributes_fn=lambda data: data.get("lactateThreshold") or {},
         preserve_value=True,
@@ -1808,6 +1816,7 @@ GEAR_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         key="totalActivityTimeGainMinutes",
         translation_key="solar_time_gained",
         coordinator_type=CoordinatorType.GEAR,
+        device_class=SensorDeviceClass.DURATION,
         native_unit_of_measurement=UnitOfTime.MINUTES,
         state_class=SensorStateClass.TOTAL_INCREASING,
         value_fn=lambda data: next(
@@ -2313,6 +2322,20 @@ def _async_migrate_gear_unique_ids(
 
 
 @callback
+def _registered_ptw_sports(ent_reg: er.EntityRegistry, entry_id: str) -> set[str]:
+    """Sports (lower case) of the entry's power-to-weight and FTP sensors in the registry."""
+    sports: set[str] = set()
+    for reg_entry in er.async_entries_for_config_entry(ent_reg, entry_id):
+        if reg_entry.domain != "sensor":
+            continue
+        for sensor_type in ("ptw", "ftp"):
+            prefix = f"{entry_id}_{sensor_type}_"
+            if reg_entry.unique_id.startswith(prefix):
+                sports.add(reg_entry.unique_id.removeprefix(prefix))
+    return sports
+
+
+@callback
 def _registered_gear_uuids(ent_reg: er.EntityRegistry, entry_id: str) -> set[str]:
     """Gear uuids of the entry's gear sensors in the entity registry."""
     prefix = f"{entry_id}_gear_"
@@ -2405,15 +2428,36 @@ async def async_setup_entry(
 
     # Dynamic power-to-weight sensors (one PTW + one FTP sensor per sport)
     known_ptw_sports: set[str] = set()
+    ptw_pruned_registry = False
 
     @callback
     def _async_new_ptw() -> list[GarminConnectPowerToWeightSensor]:
-        """Return PTW/FTP sensors for sports not seen before."""
+        """Return PTW/FTP sensors for sports not seen before; drop sports that are gone."""
+        nonlocal ptw_pruned_registry
         ptw_list = (coordinators.training.data or {}).get("powerToWeight") or []
+        current = {
+            ptw_entry["sport"].lower(): ptw_entry["sport"]
+            for ptw_entry in ptw_list
+            if isinstance(ptw_entry.get("sport"), str) and ptw_entry["sport"]
+        }
+        # As with gear: only prune against a non-empty list, and sweep the
+        # registry once for sports that vanished while HA was stopped.
+        if current:
+            stale = {sport.lower() for sport in known_ptw_sports} - current.keys()
+            if not ptw_pruned_registry:
+                stale |= _registered_ptw_sports(ent_reg, entry.entry_id) - current.keys()
+                ptw_pruned_registry = True
+            for sport in stale:
+                for sensor_type in ("ptw", "ftp"):
+                    entity_id = ent_reg.async_get_entity_id(
+                        "sensor", DOMAIN, f"{entry.entry_id}_{sensor_type}_{sport}"
+                    )
+                    if entity_id:
+                        ent_reg.async_remove(entity_id)
+            known_ptw_sports.intersection_update(current.values())
         new_entities: list[GarminConnectPowerToWeightSensor] = []
-        for ptw_entry in ptw_list:
-            sport = ptw_entry.get("sport")
-            if not sport or sport in known_ptw_sports:
+        for sport in current.values():
+            if sport in known_ptw_sports:
                 continue
             known_ptw_sports.add(sport)
             new_entities.extend(
@@ -2482,6 +2526,7 @@ class GarminConnectSensor(CoordinatorEntity[BaseGarminCoordinator], RestoreSenso
             entry_type=DeviceEntryType.SERVICE,
         )
         self._last_known_value: str | int | float | datetime.datetime | None = None
+        self._last_known_attributes: dict[str, Any] = {}
 
     async def async_added_to_hass(self) -> None:
         """Restore the last known value for sensors that preserve it."""
@@ -2535,10 +2580,19 @@ class GarminConnectSensor(CoordinatorEntity[BaseGarminCoordinator], RestoreSenso
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
-        """Return additional state attributes."""
-        if not self.coordinator.data or self.entity_description.attributes_fn is None:
+        """Return additional state attributes.
+
+        A sensor that keeps its last value while Garmin has no data keeps the
+        matching attributes too, e.g. weight keeps its measurement time.
+        """
+        if self.entity_description.attributes_fn is None:
             return {}
-        return self.entity_description.attributes_fn(self.coordinator.data)
+        if not self.coordinator.data:
+            return self._last_known_attributes if self.entity_description.preserve_value else {}
+        attributes = self.entity_description.attributes_fn(self.coordinator.data)
+        if self.entity_description.preserve_value and attributes:
+            self._last_known_attributes = attributes
+        return attributes
 
 
 class GarminConnectGearSensor(CoordinatorEntity[GearCoordinator], SensorEntity):
@@ -2569,24 +2623,28 @@ class GarminConnectGearSensor(CoordinatorEntity[GearCoordinator], SensorEntity):
             entry_type=DeviceEntryType.SERVICE,
         )
 
+    def _gear_stat(self) -> dict[str, Any] | None:
+        """This gear's entry in the coordinator data, if present."""
+        for gear_stat in (self.coordinator.data or {}).get("gearStats") or []:
+            if (gear_stat.get("uuid") or gear_stat.get("gearUuid")) == self._gear_uuid:
+                return cast(dict[str, Any], gear_stat)
+        return None
+
     @property
     def name(self) -> str:
-        """Return the name of the sensor."""
+        """Return the gear's current name; a rename in Garmin shows on the next poll."""
+        if (gear_stat := self._gear_stat()) is not None:
+            self._gear_name = (
+                gear_stat.get("gearName") or gear_stat.get("customMakeModel") or self._gear_name
+            )
         return self._gear_name
 
     @property
     def native_value(self) -> float | int | None:
         """Return total distance for this gear in meters."""
-        if not self.coordinator.data:
+        if (gear_stat := self._gear_stat()) is None:
             return None
-
-        gear_stats = self.coordinator.data.get("gearStats", [])
-        for gear_stat in gear_stats:
-            if (gear_stat.get("uuid") or gear_stat.get("gearUuid")) == self._gear_uuid:
-                raw = gear_stat.get("totalDistance")
-                return cast(float | int | None, raw)
-
-        return None
+        return cast(float | int | None, gear_stat.get("totalDistance"))
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:

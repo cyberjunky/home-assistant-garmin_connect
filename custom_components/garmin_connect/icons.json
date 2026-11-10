@@ -194,7 +194,23 @@
       "lifetime_distance": { "default": "mdi:map-marker-distance" },
       "lifetime_steps": { "default": "mdi:walk" },
       "upcoming_events": { "default": "mdi:calendar-star" },
-      "vo2_max_cycling": { "default": "mdi:bike" }
+      "vo2_max_cycling": { "default": "mdi:bike" },
+      "today_scheduled_workout": { "default": "mdi:calendar-today" },
+      "next_scheduled_workout": { "default": "mdi:calendar-arrow-right" },
+      "training_plan_goal_event": { "default": "mdi:flag-checkered" },
+      "bp_category": { "default": "mdi:heart-cog" },
+      "solar_intensity": { "default": "mdi:white-balance-sunny" },
+      "avg_solar_intensity": { "default": "mdi:solar-power" },
+      "solar_time_gained": { "default": "mdi:timer-plus" },
+      "connected_sensors": { "default": "mdi:access-point" },
+      "avg_sleep_respiration": { "default": "mdi:lungs" },
+      "sleep_need": { "default": "mdi:sleep" },
+      "bedtime": { "default": "mdi:bed-clock" },
+      "optimal_bedtime": { "default": "mdi:bed-clock" },
+      "wake_time": { "default": "mdi:alarm" },
+      "optimal_wake_time": { "default": "mdi:alarm-check" },
+      "recovery_time": { "default": "mdi:timer-sand" },
+      "vo2_max": { "default": "mdi:run-fast" }
     }
   }
 }

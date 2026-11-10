@@ -7,6 +7,7 @@ from zoneinfo import ZoneInfo
 
 import probatio as vol
 import pytest
+import yaml
 from ha_garmin import GarminConnectError
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 
@@ -14,11 +15,13 @@ from custom_components.garmin_connect.const import DOMAIN
 from custom_components.garmin_connect.services import (
     ADD_BLOOD_PRESSURE_SCHEMA,
     ADD_BODY_COMPOSITION_SCHEMA,
+    ADD_GEAR_TO_ACTIVITY_SCHEMA,
     ADD_HYDRATION_SCHEMA,
     ADD_NUTRITION_SCHEMA,
     CREATE_ACTIVITY_SCHEMA,
     CREATE_WORKOUT_SCHEMA,
     DELETE_WORKOUT_SCHEMA,
+    DOWNLOAD_ACTIVITY_SCHEMA,
     async_setup_services,
 )
 
@@ -1397,3 +1400,67 @@ async def test_get_day_summary_error_wrapped(mock_hass: MagicMock, error: Except
         await handler(call)
     assert err.value.translation_key == "get_day_summary_failed"
     assert not isinstance(err.value, ServiceValidationError)
+
+
+@pytest.mark.parametrize("schema", [DOWNLOAD_ACTIVITY_SCHEMA, ADD_GEAR_TO_ACTIVITY_SCHEMA])
+@pytest.mark.parametrize("activity_id", [1.9, 0, -3, True, "12a"])
+def test_activity_id_rejects_values_int_would_change(schema, activity_id) -> None:
+    """activity_id is not truncated (1.9 -> 1) and must be positive."""
+    with pytest.raises(vol.Invalid):
+        schema({"activity_id": activity_id})
+
+
+@pytest.mark.parametrize("schema", [DOWNLOAD_ACTIVITY_SCHEMA, ADD_GEAR_TO_ACTIVITY_SCHEMA])
+def test_activity_id_accepts_whole_numbers(schema) -> None:
+    """The UI number selector sends 42.0; digit strings come from templates."""
+    assert schema({"activity_id": 42.0})["activity_id"] == 42
+    assert schema({"activity_id": "42"})["activity_id"] == 42
+
+
+async def test_download_activity_into_config_dir_needs_no_allowlist(
+    mock_hass: MagicMock, tmp_path: Path
+) -> None:
+    """A relative path inside the config directory is allowed, as for uploads."""
+    async_setup_services(mock_hass)
+    handler = _get_handler(mock_hass, "download_activity")
+    client = _get_client(mock_hass)
+    client.download_activity.return_value = b"<gpx/>"
+    mock_hass.config.config_dir = str(tmp_path)
+    mock_hass.config.path.side_effect = lambda *parts: str(tmp_path.joinpath(*parts))
+    mock_hass.config.is_allowed_path.return_value = False
+
+    call = MagicMock()
+    call.data = {"activity_id": 7, "file_format": "gpx", "file_path": "exports/run.gpx"}
+    call.return_response = False
+
+    await handler(call)
+
+    assert (tmp_path / "exports" / "run.gpx").read_bytes() == b"<gpx/>"
+    mock_hass.config.is_allowed_path.assert_not_called()
+
+
+def test_hydration_selector_matches_schema_range() -> None:
+    """The UI selector allows the same range as the schema (±10 L)."""
+    services = yaml.safe_load(
+        (
+            Path(__file__).parent.parent / "custom_components/garmin_connect/services.yaml"
+        ).read_text()
+    )
+    number = services["add_hydration"]["fields"]["value_in_ml"]["selector"]["number"]
+    assert (number["min"], number["max"]) == (-10000, 10000)
+    ADD_HYDRATION_SCHEMA({"value_in_ml": 10000})
+    with pytest.raises(vol.Invalid):
+        ADD_HYDRATION_SCHEMA({"value_in_ml": 10001})
+
+
+def test_timestamp_fields_use_datetime_selectors() -> None:
+    """Every timestamp field is validated by cv.datetime, so the UI offers a picker."""
+    services = yaml.safe_load(
+        (
+            Path(__file__).parent.parent / "custom_components/garmin_connect/services.yaml"
+        ).read_text()
+    )
+    for service in services.values():
+        for name, field in (service.get("fields") or {}).items():
+            if name in ("timestamp", "start_datetime"):
+                assert "datetime" in field["selector"], name
