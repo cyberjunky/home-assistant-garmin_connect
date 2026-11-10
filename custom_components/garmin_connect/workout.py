@@ -73,7 +73,7 @@ def _target(target_type: Any, low: Any, high: Any, zone: Any) -> str | None:
 
 
 def _end(condition: Any, value: Any) -> str | None:
-    """Describe how a step ends, e.g. "1.00 km", "10:00" or "until lap press"."""
+    """Describe how a step ends, e.g. "1.00 km", "10:00", "10 reps" or "until lap press"."""
     value = _number(value)
     if condition == "lap.button":
         return "until lap press"
@@ -85,6 +85,8 @@ def _end(condition: Any, value: Any) -> str | None:
         return _clock(value)
     if condition == "calories":
         return f"{value:.0f} kcal"
+    if condition == "reps":
+        return f"{value:.0f} reps"
     return None
 
 

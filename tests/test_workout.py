@@ -138,11 +138,12 @@ def test_step_target(target: dict, expected: str):
     ("condition", "value", "expected"),
     [
         ("calories", 250.4, "Interval 250 kcal"),
-        ("reps", 10, "Interval"),
+        ("reps", 10, "Interval 10 reps"),
+        ("heart.rate", 150, "Interval"),
         ("time", None, "Interval"),
         ("time", True, "Interval"),
     ],
-    ids=["calories", "unknown-condition", "no-value", "bool-value"],
+    ids=["calories", "reps", "unknown-condition", "no-value", "bool-value"],
 )
 def test_step_end_condition(condition: str, value: object, expected: str):
     """Calories end a step in kcal; unknown conditions and non-numeric values are left out."""
