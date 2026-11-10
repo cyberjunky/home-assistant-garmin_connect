@@ -237,7 +237,8 @@
         "name": "HRV — średnia zeszłej nocy"
       },
       "hrv_status": {
-        "name": "Status HRV"
+        "name": "Status HRV",
+        "state": { "balanced": "Zrównoważony", "unbalanced": "Niezrównoważony", "low": "Niski", "poor": "Słaby" }
       },
       "hrv_weekly_avg": {
         "name": "HRV — średnia tygodniowa"
@@ -330,7 +331,8 @@
         "name": "Dzień cyklu menstruacyjnego"
       },
       "menstrual_cycle_phase": {
-        "name": "Faza cyklu menstruacyjnego"
+        "name": "Faza cyklu menstruacyjnego",
+        "state": { "menstruation": "Menstruacja", "follicular": "Faza folikularna", "ovulation": "Owulacja", "luteal": "Faza lutealna" }
       },
       "menstrual_cycle_start": {
         "name": "Początek cyklu menstruacyjnego"
@@ -463,7 +465,8 @@
         "name": "Procent stresu"
       },
       "stress_qualifier": {
-        "name": "Kwalifikator stresu"
+        "name": "Kwalifikator stresu",
+        "state": { "calm": "Spokój", "balanced": "Zrównoważony", "stressful": "Stresujący", "very_stressful": "Bardzo stresujący" }
       },
       "total_calories": {
         "name": "Kalorie"
@@ -490,7 +493,8 @@
         "name": "Training Readiness"
       },
       "training_status": {
-        "name": "Status treningu"
+        "name": "Status treningu",
+        "state": { "peaking": "Szczyt formy", "productive": "Produktywny", "maintaining": "Utrzymanie", "recovery": "Regeneracja", "unproductive": "Nieproduktywny", "detraining": "Roztrenowanie", "overreaching": "Przetrenowanie", "strained": "Przeciążenie", "paused": "Wstrzymany", "no_status": "Brak statusu" }
       },
       "uncategorized_stress_duration": {
         "name": "Czas niezaklasyfikowanego stresu"
@@ -886,6 +890,18 @@
     }
   },
   "exceptions": {
+    "auth_failed": {
+      "message": "Uwierzytelnianie w Garmin Connect nie powiodło się: {error}"
+    },
+    "reauth_required": {
+      "message": "Dane logowania Garmin Connect dla {account} wymagają ponownego uwierzytelnienia"
+    },
+    "update_failed": {
+      "message": "Błąd pobierania danych Garmin Connect ({data}): {error}"
+    },
+    "update_timeout": {
+      "message": "Pobieranie danych Garmin Connect ({data}) przekroczyło {seconds} s"
+    },
     "add_blood_pressure_failed": {
       "message": "Nie udało się dodać ciśnienia krwi: {error}"
     },

@@ -52,7 +52,8 @@ async def test_refresh_timeout_preserves_data_and_recovers(hass, mock_config_ent
         await asyncio.wait_for(coordinator.async_refresh(), timeout=1)
     assert cancelled.is_set()
     assert coordinator.last_update_success is False
-    assert "body refresh exceeded" in str(coordinator.last_exception)
+    assert coordinator.last_exception.translation_key == "update_timeout"
+    assert coordinator.last_exception.translation_placeholders["data"] == "body"
     assert coordinator.data == {"weight": 75}
 
     client.fetch_body_data.side_effect = None
@@ -211,8 +212,10 @@ async def test_auth_error_maps_to_config_entry_auth_failed() -> None:
     client = AsyncMock()
     client.fetch_core_data = AsyncMock(side_effect=GarminAuthError("expired"))
     coordinator = _make_base(client)
-    with pytest.raises(ConfigEntryAuthFailed, match="expired"):
+    with pytest.raises(ConfigEntryAuthFailed) as err:
         await coordinator._async_update_data()
+    assert err.value.translation_key == "auth_failed"
+    assert err.value.translation_placeholders == {"error": "expired"}
 
 
 async def test_connect_error_maps_to_update_failed() -> None:
@@ -518,3 +521,29 @@ async def test_goals_repair_issue_cleared_when_lifetime_totals_shown():
     ir.async_create_issue.assert_not_called()
     ir.async_delete_issue.assert_called_once()
     assert ir.async_delete_issue.call_args.args[2] == "lifetime_totals_hidden_test_entry_id"
+
+
+@pytest.mark.usefixtures("enable_custom_integrations")
+async def test_translated_errors_render_their_cause(hass) -> None:
+    """With the integration's translations loaded, the logged text names the cause."""
+    from homeassistant.helpers.translation import async_load_integrations
+
+    from custom_components.garmin_connect.const import DOMAIN
+
+    # Messages are looked up for loaded components only, as at runtime.
+    hass.config.components.add(DOMAIN)
+    await async_load_integrations(hass, {DOMAIN})
+    auth = ConfigEntryAuthFailed(
+        translation_domain=DOMAIN,
+        translation_key="auth_failed",
+        translation_placeholders={"error": "DI token refresh failed: HTTP 400"},
+    )
+    assert str(auth) == (
+        "Authentication with Garmin Connect failed: DI token refresh failed: HTTP 400"
+    )
+    failed = UpdateFailed(
+        translation_domain=DOMAIN,
+        translation_key="update_failed",
+        translation_placeholders={"data": "core", "error": "503"},
+    )
+    assert str(failed) == "Error fetching Garmin Connect core data: 503"

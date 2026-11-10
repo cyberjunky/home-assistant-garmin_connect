@@ -148,7 +148,10 @@
       "hrv_baseline": { "name": "HRV-Basiswert" },
       "hrv_last_night_5min_high": { "name": "HRV letzte Nacht 5-Min-Höchstwert" },
       "hrv_last_night_avg": { "name": "HRV letzte Nacht Durchschnitt" },
-      "hrv_status": { "name": "HRV-Status" },
+      "hrv_status": {
+        "name": "HRV-Status",
+        "state": { "balanced": "Ausgeglichen", "unbalanced": "Unausgeglichen", "low": "Niedrig", "poor": "Schlecht" }
+      },
       "hrv_weekly_avg": { "name": "HRV Wochendurchschnitt" },
       "hydration": { "name": "Flüssigkeitszufuhr" },
       "hydration_activity_intake": { "name": "Flüssigkeitszufuhr bei Aktivität" },
@@ -180,7 +183,10 @@
       "medium_stress_duration": { "name": "Dauer mittlerer Stress" },
       "medium_stress_percentage": { "name": "Anteil mittlerer Stress" },
       "menstrual_cycle_day": { "name": "Zyklustag" },
-      "menstrual_cycle_phase": { "name": "Zyklusphase" },
+      "menstrual_cycle_phase": {
+        "name": "Zyklusphase",
+        "state": { "menstruation": "Menstruation", "follicular": "Follikelphase", "ovulation": "Eisprung", "luteal": "Lutealphase" }
+      },
       "menstrual_cycle_start": { "name": "Zyklusbeginn" },
       "menstrual_cycle_type": { "name": "Zyklustyp" },
       "menstrual_days_until_next_phase": { "name": "Tage bis zur nächsten Zyklusphase" },
@@ -229,7 +235,10 @@
       "solar_intensity": { "name": "Solarintensität" },
       "solar_time_gained": { "name": "Durch Solar gewonnene Zeit" },
       "stress_percentage": { "name": "Stressanteil" },
-      "stress_qualifier": { "name": "Stressbewertung" },
+      "stress_qualifier": {
+        "name": "Stressbewertung",
+        "state": { "calm": "Ruhig", "balanced": "Ausgeglichen", "stressful": "Stressig", "very_stressful": "Sehr stressig" }
+      },
       "today_scheduled_workout": { "name": "Heutiges geplantes Training" },
       "total_calories": { "name": "Kalorien" },
       "total_distance": { "name": "Distanz" },
@@ -241,7 +250,10 @@
       "training_plan_goal_event": { "name": "Zielwettkampf des Trainingsplans" },
       "upcoming_events": { "name": "Anstehende Events" },
       "training_readiness": { "name": "Trainingsbereitschaft" },
-      "training_status": { "name": "Trainingsstatus" },
+      "training_status": {
+        "name": "Trainingsstatus",
+        "state": { "peaking": "Leistungshoch", "productive": "Produktiv", "maintaining": "Erhaltend", "recovery": "Erholung", "unproductive": "Unproduktiv", "detraining": "Leistungsverlust", "overreaching": "Überlastung", "strained": "Belastet", "paused": "Pausiert", "no_status": "Kein Status" }
+      },
       "uncategorized_stress_duration": { "name": "Dauer nicht kategorisierter Stress" },
       "uncategorized_stress_percentage": { "name": "Anteil nicht kategorisierter Stress" },
       "unmeasurable_sleep": { "name": "Nicht messbarer Schlaf" },
@@ -439,6 +451,10 @@
     }
   },
   "exceptions": {
+    "auth_failed": { "message": "Anmeldung bei Garmin Connect fehlgeschlagen: {error}" },
+    "reauth_required": { "message": "Die Garmin-Connect-Zugangsdaten für {account} müssen erneut bestätigt werden" },
+    "update_failed": { "message": "Fehler beim Abrufen der Garmin-Connect-Daten ({data}): {error}" },
+    "update_timeout": { "message": "Abruf der Garmin-Connect-Daten ({data}) dauerte länger als {seconds} Sekunden" },
     "add_blood_pressure_failed": { "message": "Blutdruck konnte nicht hinzugefügt werden: {error}" },
     "add_hydration_failed": { "message": "Flüssigkeitszufuhr konnte nicht erfasst werden: {error}" },
     "add_nutrition_failed": { "message": "Ernährungseintrag konnte nicht erfasst werden: {error}" },

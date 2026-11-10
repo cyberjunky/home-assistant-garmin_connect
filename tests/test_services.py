@@ -1141,9 +1141,7 @@ async def test_schedule_workout_without_id_fails(mock_hass: MagicMock):
     assert exc.value.translation_key == "schedule_workout_failed"
 
 
-async def test_download_activity_write_failure_raises(
-    mock_hass: MagicMock, tmp_path: Path
-) -> None:
+async def test_download_activity_write_failure_raises(mock_hass: MagicMock, tmp_path: Path) -> None:
     """A file that can't be written raises a translated error, not a raw OSError."""
     async_setup_services(mock_hass)
     handler = _get_handler(mock_hass, "download_activity")
@@ -1160,4 +1158,242 @@ async def test_download_activity_write_failure_raises(
     with pytest.raises(HomeAssistantError) as err:
         await handler(call)
     assert err.value.translation_key == "download_activity_write_failed"
+    assert not isinstance(err.value, ServiceValidationError)
+
+
+# ── Error paths and response-less calls ──────────────────────────────────────
+
+
+@pytest.mark.parametrize("error", [OSError("unreadable"), RuntimeError("symlink loop")])
+async def test_upload_activity_unresolvable_path_not_allowed(
+    mock_hass: MagicMock, tmp_path: Path, error: Exception
+) -> None:
+    """A path that cannot be resolved is refused rather than uploaded."""
+    async_setup_services(mock_hass)
+    handler = _get_handler(mock_hass, "upload_activity")
+    client = _get_client(mock_hass)
+
+    fit_file = tmp_path / "activity.fit"
+    fit_file.write_bytes(b"fake fit data")
+    call = MagicMock()
+    call.data = {"file_path": str(fit_file)}
+
+    with (
+        patch.object(Path, "resolve", side_effect=error),
+        pytest.raises(ServiceValidationError) as err,
+    ):
+        await handler(call)
+    assert err.value.translation_key == "path_not_allowed"
+    client.upload_activity.assert_not_awaited()
+    mock_hass.config.is_allowed_path.assert_not_called()
+
+
+async def test_entity_of_another_integration_raises(mock_hass: MagicMock) -> None:
+    """An entity owned by a non-Garmin config entry must not fall back to an account."""
+    async_setup_services(mock_hass)
+    handler = _get_handler(mock_hass, "add_body_composition")
+    client = _get_client(mock_hass)
+
+    registry_entry = MagicMock()
+    registry_entry.config_entry_id = "other_integration_entry"
+
+    call = MagicMock()
+    call.data = {"entity_id": "sensor.other_weight", "weight": 80.0}
+
+    with patch("custom_components.garmin_connect.services.er.async_get") as async_get:
+        async_get.return_value.async_get.return_value = registry_entry
+        with pytest.raises(ServiceValidationError) as err:
+            await handler(call)
+    assert err.value.translation_key == "entity_not_found"
+    client.add_body_composition.assert_not_awaited()
+
+
+@pytest.mark.parametrize(
+    ("service", "method", "data", "translation_key"),
+    [
+        (
+            "set_active_gear",
+            "set_active_gear",
+            {"gear_uuid": "abc", "activity_type": "running", "setting": "set as default"},
+            "set_active_gear_failed",
+        ),
+        (
+            "create_activity",
+            "create_activity",
+            {"activity_name": "Run", "activity_type": "running", "duration_min": 30},
+            "create_activity_failed",
+        ),
+        (
+            "add_gear_to_activity",
+            "add_gear_to_activity",
+            {"activity_id": 1, "gear_uuid": "abc"},
+            "add_gear_to_activity_failed",
+        ),
+    ],
+)
+@pytest.mark.parametrize("error", [GarminConnectError("boom"), ValueError("bad")])
+async def test_library_errors_wrapped(
+    mock_hass: MagicMock,
+    service: str,
+    method: str,
+    data: dict,
+    translation_key: str,
+    error: Exception,
+) -> None:
+    """Library failures surface as HomeAssistantError with the service's translation key."""
+    async_setup_services(mock_hass)
+    handler = _get_handler(mock_hass, service)
+    getattr(_get_client(mock_hass), method).side_effect = error
+
+    call = MagicMock()
+    call.data = data
+
+    with pytest.raises(HomeAssistantError) as err:
+        await handler(call)
+    assert err.value.translation_key == translation_key
+    assert not isinstance(err.value, ServiceValidationError)
+    assert err.value.__cause__ is error
+
+
+async def test_upload_activity_library_error_wrapped(mock_hass: MagicMock, tmp_path: Path) -> None:
+    """A failed upload of a valid file surfaces as upload_activity_failed."""
+    async_setup_services(mock_hass)
+    handler = _get_handler(mock_hass, "upload_activity")
+    _get_client(mock_hass).upload_activity.side_effect = GarminConnectError("boom")
+
+    fit_file = tmp_path / "activity.fit"
+    fit_file.write_bytes(b"fake fit data")
+    call = MagicMock()
+    call.data = {"file_path": str(fit_file)}
+
+    with pytest.raises(HomeAssistantError) as err:
+        await handler(call)
+    assert err.value.translation_key == "upload_activity_failed"
+    assert not isinstance(err.value, ServiceValidationError)
+
+
+async def test_download_activity_relative_directory_path(
+    mock_hass: MagicMock, tmp_path: Path
+) -> None:
+    """A relative path without suffix is a directory under config, holding the default name."""
+    async_setup_services(mock_hass)
+    handler = _get_handler(mock_hass, "download_activity")
+    client = _get_client(mock_hass)
+    client.download_activity.return_value = b"<gpx/>"
+    mock_hass.config.path.side_effect = lambda *parts: str(tmp_path.joinpath(*parts))
+
+    call = MagicMock()
+    call.data = {"activity_id": 7, "file_format": "gpx", "file_path": "exports"}
+    call.return_response = True
+
+    response = await handler(call)
+
+    expected = tmp_path / "exports" / "activity_7.gpx"
+    assert expected.read_bytes() == b"<gpx/>"
+    assert response["file_path"] == str(expected)
+    mock_hass.config.is_allowed_path.assert_called_once_with(str(expected))
+
+
+async def test_add_gear_to_activity_entity_not_found_raises(mock_hass: MagicMock) -> None:
+    """add_gear_to_activity must refuse an entity that has no state."""
+    async_setup_services(mock_hass)
+    handler = _get_handler(mock_hass, "add_gear_to_activity")
+    mock_hass.states.get.return_value = None
+
+    call = MagicMock()
+    call.data = {"activity_id": 1, "entity_id": "sensor.garmin_missing"}
+
+    with pytest.raises(ServiceValidationError) as err:
+        await handler(call)
+    assert err.value.translation_key == "entity_not_found"
+    _get_client(mock_hass).add_gear_to_activity.assert_not_awaited()
+
+
+async def test_add_gear_to_activity_entity_without_uuid_raises(mock_hass: MagicMock) -> None:
+    """add_gear_to_activity must refuse an entity that is not a gear sensor."""
+    async_setup_services(mock_hass)
+    handler = _get_handler(mock_hass, "add_gear_to_activity")
+    state = MagicMock()
+    state.attributes = {}
+    mock_hass.states.get.return_value = state
+
+    call = MagicMock()
+    call.data = {"activity_id": 1, "entity_id": "sensor.garmin_steps"}
+
+    with pytest.raises(ServiceValidationError) as err:
+        await handler(call)
+    assert err.value.translation_key == "gear_uuid_not_found"
+    _get_client(mock_hass).add_gear_to_activity.assert_not_awaited()
+
+
+async def test_create_workout_without_response_returns_none(mock_hass: MagicMock) -> None:
+    """create_workout still creates, schedules and refreshes when no response is asked."""
+    async_setup_services(mock_hass)
+    handler = _get_handler(mock_hass, "create_workout")
+    client = _get_client(mock_hass)
+    client.create_workout.return_value = {"workoutId": 42}
+    client.schedule_workout.return_value = {"workoutScheduleId": 7}
+
+    call = MagicMock()
+    call.data = {"workout": _WORKOUT, "date": date(2026, 10, 16)}
+    call.return_response = False
+
+    assert await handler(call) is None
+    client.schedule_workout.assert_awaited_once_with(42, date(2026, 10, 16))
+    _activity_refresh(mock_hass).assert_awaited_once()
+
+
+async def test_schedule_workout_without_response_returns_none(mock_hass: MagicMock) -> None:
+    """schedule_workout still schedules and refreshes when no response is asked."""
+    async_setup_services(mock_hass)
+    handler = _get_handler(mock_hass, "schedule_workout")
+    client = _get_client(mock_hass)
+    client.schedule_workout.return_value = {"workoutScheduleId": 7}
+
+    call = MagicMock()
+    call.data = {"workout_id": 42, "date": date(2026, 10, 16)}
+    call.return_response = False
+
+    assert await handler(call) is None
+    client.schedule_workout.assert_awaited_once_with(
+        workout_id=42, schedule_date=date(2026, 10, 16)
+    )
+    _activity_refresh(mock_hass).assert_awaited_once()
+
+
+# ── Day summary ──────────────────────────────────────────────────────────────
+
+
+def _core(mock_hass: MagicMock) -> MagicMock:
+    """Get the mock core coordinator from the hass fixture."""
+    return mock_hass.config_entries.async_entries.return_value[0].runtime_data.core
+
+
+async def test_get_day_summary_returns_date_and_summary(mock_hass: MagicMock) -> None:
+    """get_day_summary returns the requested date merged with the coordinator's data."""
+    async_setup_services(mock_hass)
+    handler = _get_handler(mock_hass, "get_day_summary")
+    core = _core(mock_hass)
+    core.async_get_day = AsyncMock(return_value={"totalSteps": 12000})
+
+    call = MagicMock()
+    call.data = {"date": date(2026, 10, 16)}
+
+    assert await handler(call) == {"date": "2026-10-16", "totalSteps": 12000}
+    core.async_get_day.assert_awaited_once_with(date(2026, 10, 16))
+
+
+@pytest.mark.parametrize("error", [GarminConnectError("boom"), ValueError("bad")])
+async def test_get_day_summary_error_wrapped(mock_hass: MagicMock, error: Exception) -> None:
+    """get_day_summary wraps library failures in get_day_summary_failed."""
+    async_setup_services(mock_hass)
+    handler = _get_handler(mock_hass, "get_day_summary")
+    _core(mock_hass).async_get_day = AsyncMock(side_effect=error)
+
+    call = MagicMock()
+    call.data = {"date": date(2026, 10, 16)}
+
+    with pytest.raises(HomeAssistantError) as err:
+        await handler(call)
+    assert err.value.translation_key == "get_day_summary_failed"
     assert not isinstance(err.value, ServiceValidationError)

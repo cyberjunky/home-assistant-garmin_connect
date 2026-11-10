@@ -2,6 +2,7 @@
 
 import datetime
 import json
+from pathlib import Path
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -533,12 +534,60 @@ def test_training_readiness_extracts_score() -> None:
 
 
 def test_hrv_status_text_sensor() -> None:
-    """hrvStatusText must return the plain-text status value."""
+    """hrvStatusText is an ENUM whose state is the normalized status."""
     desc = next(d for d in TRAINING_SENSORS if d.key == "hrvStatusText")
     coord = MagicMock()
     coord.data = mock_training_data()
     sensor = GarminConnectSensor(coord, desc, "entry_id")
-    assert sensor.native_value == "Balanced"
+    assert sensor.device_class == SensorDeviceClass.ENUM
+    assert sensor.native_value == "balanced"
+
+
+@pytest.mark.parametrize(
+    ("key", "field", "raw", "state"),
+    [
+        ("trainingStatus", "trainingStatusPhrase", "No Status", "no_status"),
+        ("trainingStatus", "trainingStatusPhrase", "Overreaching", "overreaching"),
+        ("stressQualifierText", "stressQualifierText", "Very_stressful", "very_stressful"),
+        ("stressQualifierText", "stressQualifierText", "Unknown", None),
+        ("hrvStatusText", "hrvStatusText", "Unbalanced", "unbalanced"),
+        ("hrvStatusText", "hrvStatusText", None, None),
+    ],
+)
+def test_enum_sensors_normalize_garmin_labels(
+    key: str, field: str, raw: str | None, state: str | None
+) -> None:
+    """Garmin labels map onto the ENUM options; no-value labels become unknown."""
+    desc = next(d for d in _all_descriptions() if d.key == key)
+    coord = MagicMock()
+    coord.data = {field: raw}
+    sensor = GarminConnectSensor(coord, desc, "entry_id")
+    assert sensor.native_value == state
+    assert state is None or state in desc.options
+
+
+def test_enum_sensor_unknown_label_is_logged_once(caplog: pytest.LogCaptureFixture) -> None:
+    """A label Garmin adds later is reported once and shown as unknown."""
+    desc = next(d for d in _all_descriptions() if d.key == "trainingStatus")
+    coord = MagicMock()
+    coord.data = {"trainingStatusPhrase": "Brand New Status"}
+    sensor = GarminConnectSensor(coord, desc, "entry_id")
+
+    assert sensor.native_value is None
+    assert sensor.native_value is None
+    assert caplog.text.count("Brand New Status") == 1
+
+
+def test_enum_options_have_state_translations() -> None:
+    """Every ENUM option has a translated state in strings.json."""
+    strings = json.loads(
+        (Path(__file__).parent.parent / "custom_components/garmin_connect/strings.json").read_text()
+    )["entity"]["sensor"]
+    for desc in _all_descriptions():
+        if desc.device_class != SensorDeviceClass.ENUM:
+            continue
+        states = strings[desc.translation_key].get("state", {})
+        assert set(desc.options) == set(states), desc.key
 
 
 def test_endurance_score_extracts_overall() -> None:
@@ -921,15 +970,6 @@ def test_menstrual_fertile_window_start_returns_none_when_fertile_window_start_i
     assert sensor.native_value is None
 
 
-def test_menstrual_fertile_window_start_returns_none_when_missing() -> None:
-    """Menstrual fertile window start sensor must return None when is absent."""
-    desc = next(d for d in MENSTRUAL_CYCLE_SENSORS if d.key == "menstrualFertileWindowStart")
-    coord = MagicMock()
-    coord.data = {}
-    sensor = GarminConnectSensor(coord, desc, "entry_id")
-    assert sensor.native_value is None
-
-
 def test_menstrual_fertile_window_start_returns_date_object_when_present() -> None:
     """Menstrual fertile window start sensor must return a parsed date object, not a string."""
     import datetime
@@ -939,15 +979,6 @@ def test_menstrual_fertile_window_start_returns_date_object_when_present() -> No
     coord.data = mock_menstrual_data()
     sensor = GarminConnectSensor(coord, desc, "entry_id")
     assert sensor.native_value == datetime.date.fromisoformat("2026-01-21")
-
-
-def test_menstrual_fertile_window_end_returns_none_when_missing() -> None:
-    """Menstrual fertile window end sensor must return None when is absent."""
-    desc = next(d for d in MENSTRUAL_CYCLE_SENSORS if d.key == "menstrualFertileWindowEnd")
-    coord = MagicMock()
-    coord.data = {}
-    sensor = GarminConnectSensor(coord, desc, "entry_id")
-    assert sensor.native_value is None
 
 
 def test_menstrual_fertile_window_end_returns_none_when_fertile_window_start_is_less_than_or_zero() -> (
@@ -1135,7 +1166,7 @@ def test_menstrual_cycle_phase_attributes_are_populated() -> None:
     coord = MagicMock()
     coord.data = mock_menstrual_data()
     sensor = GarminConnectSensor(coord, desc, "entry_id")
-    assert sensor.native_value == "Luteal"
+    assert sensor.native_value == "luteal"
     attrs = sensor.extra_state_attributes
     assert attrs["day_in_cycle"] == 18
     assert attrs["period_length"] == 4
@@ -1684,3 +1715,186 @@ def test_gear_removed_while_ha_was_stopped_is_dropped_from_registry() -> None:
     # The registry sweep runs once; later polls only prune gear seen this run.
     _listener(coordinators.gear)()
     registry.async_remove.assert_called_once()
+
+
+# ── Defensive parsing of malformed Garmin payloads ────────────────────────────
+
+
+def test_next_alarm_skips_unparsable_alarm_strings() -> None:
+    """An unparsable alarm string is skipped and the next valid one becomes the state."""
+    desc = next(d for d in GEAR_SENSORS if d.key == "nextAlarm")
+    coord = MagicMock()
+    coord.data = {"nextAlarm": ["not-a-timestamp", "2026-01-25T06:30:00+00:00"]}
+    sensor = GarminConnectSensor(coord, desc, "entry_id")
+    assert sensor.native_value == datetime.datetime.fromisoformat("2026-01-25T06:30:00+00:00")
+
+
+def test_next_alarm_none_when_every_alarm_is_unparsable() -> None:
+    """nextAlarm must be None, not raise, when no alarm string parses."""
+    desc = next(d for d in GEAR_SENSORS if d.key == "nextAlarm")
+    coord = MagicMock()
+    coord.data = {"nextAlarm": ["garbage"]}
+    sensor = GarminConnectSensor(coord, desc, "entry_id")
+    assert sensor.native_value is None
+
+
+@pytest.mark.parametrize(
+    "key",
+    ["menstrualCycleStart", "menstrualFertileWindowStart", "menstrualFertileWindowEnd"],
+)
+@pytest.mark.parametrize(
+    "start_date",
+    [None, "20-01-2026"],
+    ids=["no_start_date", "malformed_start_date"],
+)
+def test_menstrual_dates_none_without_a_usable_cycle_start(
+    key: str, start_date: str | None
+) -> None:
+    """Cycle start and fertile window dates are None when the cycle start is absent or malformed."""
+    desc = next(d for d in MENSTRUAL_CYCLE_SENSORS if d.key == key)
+    summary: dict[str, Any] = {"fertileWindowStart": 2, "lengthOfFertileWindow": 5}
+    if start_date is not None:
+        summary["startDate"] = start_date
+    coord = MagicMock()
+    coord.data = {"menstrualData": {"daySummary": summary}}
+    sensor = GarminConnectSensor(coord, desc, "entry_id")
+    assert sensor.native_value is None
+
+
+@patch("custom_components.garmin_connect.sensor.dt_util.now")
+def test_menstrual_next_predicted_cycle_start_skips_malformed_dates(mock_now) -> None:
+    """A predicted cycle with a malformed startDate is skipped, not fatal."""
+    mock_now.return_value.date.return_value = datetime.date(2026, 1, 1)
+    desc = next(d for d in MENSTRUAL_CYCLE_SENSORS if d.key == "menstrualNextPredictedCycleStart")
+    coord = MagicMock()
+    coord.data = {
+        "menstrualCalendar": {
+            "cycleSummaries": [
+                {"predictedCycle": True, "startDate": "14/02/2026"},
+                {"predictedCycle": True, "startDate": "2026-03-14"},
+            ]
+        }
+    }
+    sensor = GarminConnectSensor(coord, desc, "entry_id")
+    assert sensor.native_value == datetime.date(2026, 3, 14)
+
+
+# ── Sleep duration entity_id migration ────────────────────────────────────────
+
+
+def test_sleep_duration_migration_renames_legacy_entity_id() -> None:
+    """The legacy '_2' sleep duration entity is renamed to the plain entity_id."""
+    from custom_components.garmin_connect.sensor import _async_migrate_sleep_duration_entity_id
+
+    registry = MagicMock()
+    _async_migrate_sleep_duration_entity_id(registry)
+    registry.async_update_entity.assert_called_once_with(
+        "sensor.garmin_connect_sleep_duration_2",
+        new_entity_id="sensor.garmin_connect_sleep_duration",
+    )
+
+
+def test_sleep_duration_migration_skips_when_no_legacy_entity() -> None:
+    """Nothing is renamed when the legacy '_2' entity does not exist."""
+    from custom_components.garmin_connect.sensor import _async_migrate_sleep_duration_entity_id
+
+    registry = MagicMock()
+    registry.async_get.return_value = None
+    _async_migrate_sleep_duration_entity_id(registry)
+    registry.async_update_entity.assert_not_called()
+
+
+@pytest.mark.parametrize("error", [ValueError, KeyError])
+def test_sleep_duration_migration_tolerates_registry_rejection(error: type[Exception]) -> None:
+    """If the target entity_id is taken the rename is skipped instead of failing setup."""
+    from custom_components.garmin_connect.sensor import _async_migrate_sleep_duration_entity_id
+
+    registry = MagicMock()
+    registry.async_update_entity.side_effect = error("sensor.garmin_connect_sleep_duration")
+    _async_migrate_sleep_duration_entity_id(registry)
+    registry.async_update_entity.assert_called_once()
+
+
+def test_gear_migration_skips_gear_without_uuid() -> None:
+    """Gear without a UUID has no target unique_id, so it is left untouched."""
+    from custom_components.garmin_connect.sensor import _async_migrate_gear_unique_ids
+
+    registry = MagicMock()
+    _async_migrate_gear_unique_ids(registry, "entry", {"gearStats": [{"gearName": "Shoes"}]})
+    registry.async_get_entity_id.assert_not_called()
+    registry.async_update_entity.assert_not_called()
+
+
+# ── Gear sensor attributes edge cases ─────────────────────────────────────────
+
+
+@pytest.mark.parametrize(
+    "data",
+    [None, {"gearStats": [{"uuid": "other", "totalActivities": 3}]}],
+    ids=["no_data", "unknown_uuid"],
+)
+def test_gear_sensor_attributes_empty_without_matching_gear(data: dict | None) -> None:
+    """Gear attributes are empty when there is no data or the UUID is no longer listed."""
+    coord = MagicMock()
+    coord.data = data
+    sensor = GarminConnectGearSensor(
+        coord, gear_uuid="gear-uuid-1", gear_name="Running Shoes", entry_id="eid"
+    )
+    assert sensor.extra_state_attributes == {}
+
+
+# ── GarminConnectPowerToWeightSensor values ───────────────────────────────────
+
+
+_PTW_ENTRY = {
+    "sport": "cycling",
+    "powerToWeight": 3.85,
+    "functionalThresholdPower": 270,
+    "weight": 70.1,
+    "calendarDate": "2026-01-20",
+    "ftpCreateTime": "2026-01-10T08:00:00",
+    "weightCreateTime": "2026-01-19T07:00:00",
+    "isStale": False,
+}
+
+
+@pytest.mark.parametrize(
+    ("sensor_type", "value", "cross_key", "cross_value"),
+    [("ptw", 3.85, "ftp", 270), ("ftp", 270, "power_to_weight", 3.85)],
+)
+def test_power_sensor_value_and_attributes(
+    sensor_type: str, value: float, cross_key: str, cross_value: float
+) -> None:
+    """Each power sensor reports its own metric and exposes the other one as an attribute."""
+    coord = MagicMock()
+    coord.data = {"powerToWeight": [{"sport": "running", "powerToWeight": 1.0}, _PTW_ENTRY]}
+    sensor = GarminConnectPowerToWeightSensor(
+        coord, sport="cycling", sensor_type=sensor_type, entry_id="eid"
+    )
+    assert sensor.native_value == value
+    assert sensor.extra_state_attributes == {
+        "sport": "cycling",
+        "weight_kg": 70.1,
+        "calendar_date": "2026-01-20",
+        "ftp_created": "2026-01-10T08:00:00",
+        "weight_created": "2026-01-19T07:00:00",
+        "is_stale": False,
+        cross_key: cross_value,
+    }
+
+
+@pytest.mark.parametrize("sensor_type", ["ptw", "ftp"])
+@pytest.mark.parametrize(
+    "data",
+    [None, {"powerToWeight": None}, {"powerToWeight": [{"sport": "running"}]}],
+    ids=["no_data", "null_list", "sport_missing"],
+)
+def test_power_sensor_unknown_without_entry_for_sport(sensor_type: str, data: dict | None) -> None:
+    """A power sensor whose sport is absent reports None with no attributes."""
+    coord = MagicMock()
+    coord.data = data
+    sensor = GarminConnectPowerToWeightSensor(
+        coord, sport="cycling", sensor_type=sensor_type, entry_id="eid"
+    )
+    assert sensor.native_value is None
+    assert sensor.extra_state_attributes == {}
