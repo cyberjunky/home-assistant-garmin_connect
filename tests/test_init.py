@@ -11,6 +11,7 @@ from homeassistant.config_entries import SOURCE_REAUTH, ConfigEntryState
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers import issue_registry as ir
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.loader import async_get_integration
 from pytest_homeassistant.common import MockConfigEntry
 
@@ -164,6 +165,8 @@ async def test_setup_builds_client_from_entry(
     assert garmin_connect.GarminClient.call_args.kwargs == {
         "is_cn": is_cn,
         "timezone": "Europe/Istanbul",
+        # The data API runs on Home Assistant's shared aiohttp session.
+        "session": async_get_clientsession(hass),
     }
     # The region the client was built for is kept for reload detection.
     assert mock_config_entry.runtime_data.is_cn is is_cn
