@@ -281,7 +281,7 @@ class CoreCoordinator(BaseGarminCoordinator):
         """
         target = self.client.today() - timedelta(days=1)
         if target != self._yesterday_date or last_sync != self._yesterday_sync:
-            raw = await self.client._get_user_summary_raw(target)  # noqa: SLF001
+            raw = await self.client.get_daily_summary(target)
             if not raw:
                 return {}
             self._yesterday = summarize_day(raw, target)
@@ -291,7 +291,7 @@ class CoreCoordinator(BaseGarminCoordinator):
 
     async def async_get_day(self, day: date) -> dict[str, Any]:
         """Return the mapped and raw daily summary for any date."""
-        raw = await self.client._get_user_summary_raw(day)  # noqa: SLF001
+        raw = await self.client.get_daily_summary(day)
         fields = {
             key.removeprefix("yesterday")[:1].lower() + key.removeprefix("yesterday")[1:]: value
             for key, value in summarize_day(raw or {}, day).items()

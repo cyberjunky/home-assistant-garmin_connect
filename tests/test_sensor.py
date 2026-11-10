@@ -2,6 +2,7 @@
 
 import datetime
 import json
+from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -1304,6 +1305,48 @@ def test_route_recorded_attributes_stay_under_the_16kib_cap() -> None:
 
     assert recorded != b"{}"
     assert len(recorded) < 16384
+
+
+@pytest.mark.parametrize(
+    ("key", "data", "dropped"),
+    [
+        (
+            "lastWorkouts",
+            {"workouts": [{"workoutName": f"W{i}", "description": "x" * 2000} for i in range(10)]},
+            "last_workouts",
+        ),
+        (
+            "nextScheduledWorkout",
+            {
+                "nextScheduledWorkout": {
+                    "title": "Intervals",
+                    "workoutSteps": [{"stepOrder": i, "description": "x" * 500} for i in range(40)],
+                },
+                "scheduledWorkouts": [{"title": f"S{i}", "notes": "x" * 1000} for i in range(30)],
+            },
+            "upcoming",
+        ),
+    ],
+)
+def test_workout_lists_never_reach_the_recorder(
+    key: str, data: dict[str, Any], dropped: str
+) -> None:
+    """Large workout attributes stay live-only so the recorder keeps the rest."""
+    coord = MagicMock()
+    coord.data = data
+    description = next(d for d in ACTIVITY_TRACKING_SENSORS if d.key == key)
+    sensor = GarminConnectSensor(coord, description, "entry_id")
+    assert dropped in sensor.extra_state_attributes
+
+    recorded = _recorded_attributes(sensor)
+
+    assert len(recorded) < 16384
+    attrs = json.loads(recorded)
+    assert dropped not in attrs
+    assert "workoutSteps" not in attrs
+    # Smaller siblings still record; an over-cap row would have dropped them all.
+    expected = sensor.extra_state_attributes.keys() - {dropped, "workoutSteps"}
+    assert expected <= attrs.keys()
 
 
 def test_route_siblings_are_still_recorded() -> None:
