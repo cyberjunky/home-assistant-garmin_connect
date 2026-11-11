@@ -106,6 +106,13 @@ _ENUM_NO_VALUE = frozenset({"none", "unknown", "no_value"})
 _reported_enum_values: set[tuple[str, str]] = set()
 
 
+def _enum_slug(value: Any) -> str | None:
+    """Return a Garmin label as an option slug ("No Status" -> "no_status")."""
+    if not isinstance(value, str) or not value.strip():
+        return None
+    return re.sub(r"[^a-z0-9]+", "_", value.strip().lower()).strip("_") or None
+
+
 def _enum_state(key: str, value: Any, options: tuple[str, ...]) -> str | None:
     """Normalize a Garmin label to one of an ENUM sensor's options.
 
@@ -113,9 +120,9 @@ def _enum_state(key: str, value: Any, options: tuple[str, ...]) -> str | None:
     that isn't a known option is logged once and reported as unknown, since
     Home Assistant refuses an ENUM state outside its options.
     """
-    if not isinstance(value, str) or not value.strip():
+    state = _enum_slug(value)
+    if state is None:
         return None
-    state = re.sub(r"[^a-z0-9]+", "_", value.strip().lower()).strip("_")
     if state in options:
         return state
     if state not in _ENUM_NO_VALUE and (key, state) not in _reported_enum_values:
@@ -143,6 +150,18 @@ TRAINING_STATUS_OPTIONS = (
     "no_status",
 )
 MENSTRUAL_PHASE_OPTIONS = ("menstruation", "follicular", "ovulation", "luteal")
+
+
+def _stress_qualifier_state(value: Any) -> str | None:
+    """Map Garmin's stress qualifier to an option.
+
+    Garmin sends a *_AWAKE variant (e.g. STRESSFUL_AWAKE) for some days;
+    it is the same level, so it maps to the base option.
+    """
+    slug = _enum_slug(value)
+    if slug is not None:
+        slug = slug.removesuffix("_awake")
+    return _enum_state("stress qualifier", slug, STRESS_QUALIFIER_OPTIONS)
 
 
 # ── CORE coordinator sensors ─────────────────────────────────────────────────
@@ -334,9 +353,7 @@ STRESS_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         translation_key="stress_qualifier",
         device_class=SensorDeviceClass.ENUM,
         options=list(STRESS_QUALIFIER_OPTIONS),
-        value_fn=lambda data: _enum_state(
-            "stress qualifier", data.get("stressQualifierText"), STRESS_QUALIFIER_OPTIONS
-        ),
+        value_fn=lambda data: _stress_qualifier_state(data.get("stressQualifierText")),
     ),
     GarminConnectSensorEntityDescription(
         key="stressMinutes",
@@ -2535,10 +2552,17 @@ class GarminConnectSensor(CoordinatorEntity[BaseGarminCoordinator], RestoreSenso
         if not self.entity_description.preserve_value:
             return
         last = await self.async_get_last_sensor_data()
-        if last is not None and last.native_value is not None:
-            self._last_known_value = cast(
-                str | int | float | datetime.datetime | None, last.native_value
-            )
+        if last is None or last.native_value is None:
+            return
+        value = cast(str | int | float | datetime.datetime | None, last.native_value)
+        options = self.entity_description.options
+        if options is not None:
+            # A state saved before this sensor became an ENUM (e.g. "Balanced")
+            # must not be shown: HA rejects states outside the options.
+            value = _enum_slug(value)
+            if value not in options:
+                return
+        self._last_known_value = value
 
     @property
     def available(self) -> bool:
