@@ -64,6 +64,7 @@ from custom_components.garmin_connect.sensor import (
     TRAINING_SENSORS,
     CoordinatorType,
     GarminConnectSensorEntityDescription,
+    _humanize,
 )
 
 from .conftest import (
@@ -1063,6 +1064,15 @@ async def test_blood_pressure_sensors(hass: HomeAssistant, entry: MockConfigEntr
     assert systolic.attributes["diastolic"] == 80
     assert systolic.attributes["pulse"] == 70
     assert _state(hass, "bpCategoryName").state == "Normal"
+
+
+@pytest.mark.parametrize(
+    ("raw", "expected"),
+    [("NORMAL", "Normal"), ("STAGE_1_HIGH", "Stage 1 high"), ("Normal", "Normal"), (None, None)],
+)
+def test_humanize(raw: str | None, expected: str | None) -> None:
+    """Garmin's upper-case constants become sentence-case text."""
+    assert _humanize(raw) == expected
 
 
 # ── Gear coordinator: alarm, solar, devices ──────────────────────────────────

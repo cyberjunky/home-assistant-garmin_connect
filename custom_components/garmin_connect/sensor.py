@@ -145,6 +145,13 @@ TRAINING_STATUS_OPTIONS = (
 MENSTRUAL_PHASE_OPTIONS = ("menstruation", "follicular", "ovulation", "luteal")
 
 
+def _humanize(value: Any) -> Any:
+    """Turn a Garmin constant like "STAGE_1_HIGH" into "Stage 1 high"."""
+    if not isinstance(value, str) or not value.strip():
+        return value
+    return value.strip().replace("_", " ").capitalize()
+
+
 # ── CORE coordinator sensors ─────────────────────────────────────────────────
 # Keys match ha_garmin.fetch_core_data() output (incl. _add_computed_fields).
 
@@ -1919,6 +1926,7 @@ BLOOD_PRESSURE_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         translation_key="bp_category",
         coordinator_type=CoordinatorType.BLOOD_PRESSURE,
         preserve_value=True,
+        value_fn=lambda data: _humanize(data.get("bpCategoryName")),
         attributes_fn=lambda data: {
             k: v
             for k, v in {
