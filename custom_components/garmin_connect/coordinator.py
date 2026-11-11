@@ -105,10 +105,6 @@ class BaseGarminCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self.client = client
         self.auth = auth
 
-    def set_update_interval(self, update_interval: timedelta) -> None:
-        """Update the coordinator's polling interval."""
-        self.update_interval = update_interval
-
     @property
     def has_listeners(self) -> bool:
         """Return True if an enabled entity or other listener uses this data."""
