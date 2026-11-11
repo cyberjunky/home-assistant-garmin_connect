@@ -108,7 +108,7 @@
       'blood_pressure': dict({
         'data': dict({
           'bpCategory': 1,
-          'bpCategoryName': 'Normal',
+          'bpCategoryName': 'NORMAL',
           'bpDiastolic': 80,
           'bpMeasurementTime': '2026-01-24T08:00:00',
           'bpPulse': 70,
