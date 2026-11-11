@@ -474,7 +474,7 @@ def mock_blood_pressure_data() -> dict:
         "bpPulse": 70,
         "bpMeasurementTime": "2026-01-24T08:00:00",
         "bpCategory": 1,
-        "bpCategoryName": "Normal",
+        "bpCategoryName": "NORMAL",
     }
 
 
