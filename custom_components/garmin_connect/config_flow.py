@@ -341,9 +341,15 @@ class GarminConnectOptionsFlow(OptionsFlowWithReload):
         if user_input is not None:
             # The region is changed with a fresh login (reconfigure), since
             # tokens are region-bound; keep it when saving the other options.
-            return self.async_create_entry(
-                title="", data={**self.config_entry.options, **user_input}
-            )
+            options = {**self.config_entry.options, **user_input}
+            # A new entry stores no interval; saving the shown default must not
+            # add one, or the unchanged options would reload the entry.
+            if (
+                CONF_SCAN_INTERVAL not in self.config_entry.options
+                and options.get(CONF_SCAN_INTERVAL) == DEFAULT_SCAN_INTERVAL
+            ):
+                del options[CONF_SCAN_INTERVAL]
+            return self.async_create_entry(title="", data=options)
 
         current_scan_interval = self.config_entry.options.get(
             CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL

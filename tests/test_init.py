@@ -318,14 +318,14 @@ async def test_remove_entry_removes_its_repair_issues(
 # ── Options ───────────────────────────────────────────────────────────────────
 
 
-async def test_no_update_listener(init_integration: MockConfigEntry) -> None:
+async def test_no_update_listener(init_integration: MockConfigEntry):
     """No update listener, so reauth and reconfigure can schedule their own reload."""
     assert not init_integration.update_listeners
 
 
 async def test_options_change_reloads_with_new_interval(
     hass: HomeAssistant, init_integration: MockConfigEntry
-) -> None:
+):
     """Saving a new scan interval reloads the entry; every coordinator uses it."""
     old_coordinators = init_integration.runtime_data
 
@@ -339,13 +339,19 @@ async def test_options_change_reloads_with_new_interval(
         assert coord.update_interval == timedelta(seconds=120)
 
 
+@pytest.mark.parametrize(
+    "stored",
+    [
+        # A new entry stores no interval: saving the shown default adds none.
+        {},
+        {CONF_SCAN_INTERVAL: DEFAULT_SCAN_INTERVAL},
+    ],
+)
 async def test_unchanged_options_do_not_reload(
-    hass: HomeAssistant, init_integration: MockConfigEntry
-) -> None:
+    hass: HomeAssistant, init_integration: MockConfigEntry, stored: dict[str, Any]
+):
     """Saving the options form without a change keeps the entry as it is."""
-    hass.config_entries.async_update_entry(
-        init_integration, options={CONF_SCAN_INTERVAL: DEFAULT_SCAN_INTERVAL}
-    )
+    hass.config_entries.async_update_entry(init_integration, options=stored)
     await hass.async_block_till_done()
     coordinators = init_integration.runtime_data
 
@@ -356,6 +362,7 @@ async def test_unchanged_options_do_not_reload(
     await hass.async_block_till_done()
 
     assert init_integration.runtime_data is coordinators
+    assert dict(init_integration.options) == stored
 
 
 # ── Migration v1 -> v2 ────────────────────────────────────────────────────────
