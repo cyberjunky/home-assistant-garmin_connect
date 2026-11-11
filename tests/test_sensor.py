@@ -781,6 +781,16 @@ async def test_hrv_status_text_sensor(hass: HomeAssistant, entry: MockConfigEntr
             "very_stressful",
         ),
         ({"core": {"stressQualifierText": "Unknown"}}, "stressQualifierText", STATE_UNKNOWN),
+        (
+            {"core": {"stressQualifierText": "Stressful_awake"}},
+            "stressQualifierText",
+            "stressful",
+        ),
+        (
+            {"core": {"stressQualifierText": "Very_stressful_awake"}},
+            "stressQualifierText",
+            "very_stressful",
+        ),
         ({"training": {"hrvStatusText": "Unbalanced"}}, "hrvStatusText", "unbalanced"),
         ({"training": {"hrvStatusText": None}}, "hrvStatusText", STATE_UNKNOWN),
     ],
@@ -793,6 +803,42 @@ async def test_enum_sensors_normalize_garmin_labels(
     state = _state(hass, key)
     assert state.state == expected
     assert expected == STATE_UNKNOWN or expected in state.attributes[ATTR_OPTIONS]
+
+
+@pytest.mark.parametrize("garmin_data", [{"training": {}}], indirect=True)
+async def test_enum_restore_normalizes_state_saved_before_enum(
+    hass: HomeAssistant, prepared_entry: MockConfigEntry
+) -> None:
+    """Upgrading from a text sensor: the saved "Balanced" restores as an option (#676)."""
+    mock_restore_cache_with_extra_data(
+        hass,
+        [
+            (
+                State("sensor.garmin_connect_hrv_status", "Balanced"),
+                {"native_value": "Balanced", "native_unit_of_measurement": None},
+            )
+        ],
+    )
+    await _setup(hass, prepared_entry)
+    assert _state(hass, "hrvStatusText").state == "balanced"
+
+
+@pytest.mark.parametrize("garmin_data", [{"training": {}}], indirect=True)
+async def test_enum_restore_drops_state_outside_options(
+    hass: HomeAssistant, prepared_entry: MockConfigEntry
+) -> None:
+    """A saved state that matches no option is not restored at all."""
+    mock_restore_cache_with_extra_data(
+        hass,
+        [
+            (
+                State("sensor.garmin_connect_hrv_status", "Something Else"),
+                {"native_value": "Something Else", "native_unit_of_measurement": None},
+            )
+        ],
+    )
+    await _setup(hass, prepared_entry)
+    assert _state(hass, "hrvStatusText").state == STATE_UNKNOWN
 
 
 async def test_enum_sensor_unknown_label_is_logged_once(
