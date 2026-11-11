@@ -21,6 +21,7 @@ from homeassistant.config_entries import (
     ConfigFlow,
     ConfigFlowResult,
     OptionsFlow,
+    OptionsFlowWithReload,
 )
 from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
 from homeassistant.core import callback
@@ -327,17 +328,28 @@ class GarminConnectConfigFlow(ConfigFlow, domain=DOMAIN):
         return self._async_show_login_form("reconfigure", self._get_reconfigure_entry(), errors)
 
 
-class GarminConnectOptionsFlow(OptionsFlow):
-    """Handle options flow for Garmin Connect."""
+class GarminConnectOptionsFlow(OptionsFlowWithReload):
+    """Handle options flow for Garmin Connect.
+
+    Changed options reload the entry, so the coordinators pick up the new
+    scan interval; an update listener would keep reauth and reconfigure from
+    scheduling their own reload (breaks in Home Assistant 2026.12).
+    """
 
     async def async_step_init(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         """Manage the options."""
         if user_input is not None:
             # The region is changed with a fresh login (reconfigure), since
             # tokens are region-bound; keep it when saving the other options.
-            return self.async_create_entry(
-                title="", data={**self.config_entry.options, **user_input}
-            )
+            options = {**self.config_entry.options, **user_input}
+            # A new entry stores no interval; saving the shown default must not
+            # add one, or the unchanged options would reload the entry.
+            if (
+                CONF_SCAN_INTERVAL not in self.config_entry.options
+                and options.get(CONF_SCAN_INTERVAL) == DEFAULT_SCAN_INTERVAL
+            ):
+                del options[CONF_SCAN_INTERVAL]
+            return self.async_create_entry(title="", data=options)
 
         current_scan_interval = self.config_entry.options.get(
             CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL

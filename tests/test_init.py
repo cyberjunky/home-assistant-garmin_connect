@@ -315,38 +315,54 @@ async def test_remove_entry_removes_its_repair_issues(
     assert issues.async_get_issue(DOMAIN, _LIFETIME_ISSUE) is None
 
 
-# ── Options listener ──────────────────────────────────────────────────────────
+# ── Options ───────────────────────────────────────────────────────────────────
 
 
-@pytest.mark.parametrize(
-    ("options", "seconds"),
-    [
-        ({CONF_SCAN_INTERVAL: 120}, 120),
-        # Region changes come from reauth/reconfigure, which reload on their own.
-        ({CONF_IS_CN: True}, DEFAULT_SCAN_INTERVAL),
-    ],
-)
-async def test_options_update_without_reload(
-    hass: HomeAssistant,
-    init_integration: MockConfigEntry,
-    options: dict[str, Any],
-    seconds: int,
-) -> None:
-    """Changed options are pushed to every coordinator; the entry is never reloaded."""
-    coordinators = init_integration.runtime_data
-    for coord in coordinators:
-        coord.update_interval = timedelta(seconds=1)
+async def test_no_update_listener(init_integration: MockConfigEntry):
+    """No update listener, so reauth and reconfigure can schedule their own reload."""
+    assert not init_integration.update_listeners
 
-    hass.config_entries.async_update_entry(init_integration, options=options)
+
+async def test_options_change_reloads_with_new_interval(
+    hass: HomeAssistant, init_integration: MockConfigEntry
+):
+    """Saving a new scan interval reloads the entry; every coordinator uses it."""
+    old_coordinators = init_integration.runtime_data
+
+    result = await hass.config_entries.options.async_init(init_integration.entry_id)
+    await hass.config_entries.options.async_configure(result["flow_id"], {CONF_SCAN_INTERVAL: 120})
     await hass.async_block_till_done()
 
     assert init_integration.state is ConfigEntryState.LOADED
-    # A reload would have built new coordinators and a new GarminAuth.
+    assert init_integration.runtime_data is not old_coordinators
+    for coord in init_integration.runtime_data:
+        assert coord.update_interval == timedelta(seconds=120)
+
+
+@pytest.mark.parametrize(
+    "stored",
+    [
+        # A new entry stores no interval: saving the shown default adds none.
+        {},
+        {CONF_SCAN_INTERVAL: DEFAULT_SCAN_INTERVAL},
+    ],
+)
+async def test_unchanged_options_do_not_reload(
+    hass: HomeAssistant, init_integration: MockConfigEntry, stored: dict[str, Any]
+):
+    """Saving the options form without a change keeps the entry as it is."""
+    hass.config_entries.async_update_entry(init_integration, options=stored)
+    await hass.async_block_till_done()
+    coordinators = init_integration.runtime_data
+
+    result = await hass.config_entries.options.async_init(init_integration.entry_id)
+    await hass.config_entries.options.async_configure(
+        result["flow_id"], {CONF_SCAN_INTERVAL: DEFAULT_SCAN_INTERVAL}
+    )
+    await hass.async_block_till_done()
+
     assert init_integration.runtime_data is coordinators
-    assert coordinators.is_cn is False
-    garmin_connect.GarminAuth.assert_called_once()
-    for coord in coordinators:
-        assert coord.update_interval == timedelta(seconds=seconds)
+    assert dict(init_integration.options) == stored
 
 
 # ── Migration v1 -> v2 ────────────────────────────────────────────────────────

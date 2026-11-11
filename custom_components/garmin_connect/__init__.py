@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import logging
-from datetime import timedelta
 from pathlib import Path
 
 from ha_garmin import GarminAuth, GarminClient
@@ -23,9 +22,7 @@ from .const import (
     CONF_CLIENT_ID,
     CONF_IS_CN,
     CONF_REFRESH_TOKEN,
-    CONF_SCAN_INTERVAL,
     CONF_TOKEN,
-    DEFAULT_SCAN_INTERVAL,
     DOMAIN,
     FRONTEND_CARD_FILE,
     FRONTEND_URL_BASE,
@@ -239,8 +236,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: GarminConnectConfigEntry
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
-    entry.async_on_unload(entry.add_update_listener(async_options_update_listener))
-
     # Register entities and their listeners before data arrives. Entry-owned
     # background tasks do not hold HA startup open and are cancelled on unload.
     # A coordinator no enabled entity listens to is never fetched or polled.
@@ -263,22 +258,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: GarminConnectConfigEntry
         ir.async_delete_issue(hass, DOMAIN, lifetime_hidden_issue_id(entry.entry_id))
 
     return True
-
-
-async def async_options_update_listener(
-    hass: HomeAssistant, entry: GarminConnectConfigEntry
-) -> None:
-    """Push a changed scan interval to the coordinators without a reload.
-
-    The China region is only changed by reauth/reconfigure, which log in again
-    and reload the entry themselves; reloading here as well would reload twice.
-    The listener also fires on every token rotation, where nothing changes.
-    """
-    coordinators = entry.runtime_data
-    scan_interval = entry.options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
-    update_interval = timedelta(seconds=scan_interval)
-    for coord in coordinators:
-        coord.set_update_interval(update_interval)
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: GarminConnectConfigEntry) -> bool:

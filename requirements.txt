@@ -1,4 +1,4 @@
 homeassistant>=2026.10.0
-ha-garmin==0.2.0
+ha-garmin==0.2.1
 colorlog==6.12.0
 setuptools==84.2.1
