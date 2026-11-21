@@ -9,6 +9,8 @@
     "add_hydration": { "service": "mdi:cup-water" },
     "add_nutrition_log": { "service": "mdi:food-apple" },
     "add_gear_to_activity": { "service": "mdi:plus-box" },
+    "add_dog_to_activity": { "service": "mdi:dog" },
+    "remove_dog_from_activity": { "service": "mdi:dog-side-off" },
     "create_workout": { "service": "mdi:clipboard-plus-outline" },
     "update_workout": { "service": "mdi:clipboard-edit-outline" },
     "delete_workout": { "service": "mdi:clipboard-remove-outline" },

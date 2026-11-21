@@ -646,6 +646,23 @@ data:
   entity_id: sensor.garmin_connect_my_running_shoes
 ```
 
+### garmin_connect.add_dog_to_activity / garmin_connect.remove_dog_from_activity
+
+Add dogs to an activity or remove them. Adding keeps the dogs already on the activity. Garmin does not expose dog names, only IDs; the Dogs sensor lists them.
+
+| Parameter | Required | Description |
+|-----------|----------|-------------|
+| `activity_id` | Yes | Activity ID (from last_activity sensor attributes) |
+| `dog_id` | Yes | Garmin dog ID, or a list of IDs |
+| `entity_id` | No | Any Garmin Connect entity, to pick the account when more than one is configured |
+
+```yaml
+action: garmin_connect.add_dog_to_activity
+data:
+  activity_id: 12345678901
+  dog_id: [1001, 1002]
+```
+
 ### Workouts
 
 Create, change and schedule structured workouts so they show up on your watch. The actions take Garmin's own workout JSON (the same format as [python-garminconnect](https://github.com/cyberjunky/python-garminconnect)), as an object or a JSON string from a template. Workout IDs are in the `last_workouts` attributes of the Last workouts sensor; schedule IDs are the `id` of the entries in the `upcoming` attribute of the Next scheduled workout sensor.

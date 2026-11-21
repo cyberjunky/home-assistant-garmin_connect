@@ -372,6 +372,62 @@ add_gear_to_activity:
         entity:
           integration: garmin_connect
           domain: sensor
+add_dog_to_activity:
+  name: Add dog to activity
+  description: Add one or more dogs to an existing Garmin Connect activity. Dogs already on the activity are kept.
+  fields:
+    entity_id:
+      name: Garmin Connect entity
+      description: Optional Garmin Connect entity whose account owns the activity.
+      selector:
+        entity:
+          integration: garmin_connect
+          domain: sensor
+    activity_id:
+      name: Activity ID
+      description: Garmin activity ID (see last_activity sensor attributes).
+      required: true
+      example: 12345
+      selector:
+        number:
+          mode: box
+          min: 1
+          max: 999999999999
+    dog_id:
+      name: Dog ID
+      description: Garmin dog ID, or a list of IDs. Garmin does not expose dog names; see the Dogs sensor attributes.
+      required: true
+      example: 1001
+      selector:
+        object:
+remove_dog_from_activity:
+  name: Remove dog from activity
+  description: Remove one or more dogs from an existing Garmin Connect activity.
+  fields:
+    entity_id:
+      name: Garmin Connect entity
+      description: Optional Garmin Connect entity whose account owns the activity.
+      selector:
+        entity:
+          integration: garmin_connect
+          domain: sensor
+    activity_id:
+      name: Activity ID
+      description: Garmin activity ID (see last_activity sensor attributes).
+      required: true
+      example: 12345
+      selector:
+        number:
+          mode: box
+          min: 1
+          max: 999999999999
+    dog_id:
+      name: Dog ID
+      description: Garmin dog ID, or a list of IDs. Garmin does not expose dog names; see the Dogs sensor attributes.
+      required: true
+      example: 1001
+      selector:
+        object:
 add_nutrition_log:
   name: Add nutrition log
   description: >

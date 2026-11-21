@@ -909,6 +909,42 @@
         }
       }
     },
+    "add_dog_to_activity": {
+      "name": "Dodaj psa do aktywności",
+      "description": "Dodaje jednego lub więcej psów do aktywności. Psy już przypisane do aktywności zostają.",
+      "fields": {
+        "entity_id": {
+          "name": "Encja Garmin Connect",
+          "description": "Opcjonalna encja Garmin Connect, do której konta należy aktywność."
+        },
+        "activity_id": {
+          "name": "ID aktywności",
+          "description": "Identyfikator aktywności."
+        },
+        "dog_id": {
+          "name": "ID psa",
+          "description": "Identyfikator psa w Garmin lub lista identyfikatorów. Garmin nie udostępnia imion psów; zobacz sensor Psy."
+        }
+      }
+    },
+    "remove_dog_from_activity": {
+      "name": "Usuń psa z aktywności",
+      "description": "Usuwa jednego lub więcej psów z aktywności.",
+      "fields": {
+        "entity_id": {
+          "name": "Encja Garmin Connect",
+          "description": "Opcjonalna encja Garmin Connect, do której konta należy aktywność."
+        },
+        "activity_id": {
+          "name": "ID aktywności",
+          "description": "Identyfikator aktywności."
+        },
+        "dog_id": {
+          "name": "ID psa",
+          "description": "Identyfikator psa w Garmin lub lista identyfikatorów. Garmin nie udostępnia imion psów; zobacz sensor Psy."
+        }
+      }
+    },
     "get_day_summary": {
       "name": "Pobierz podsumowanie dnia",
       "description": "Pobiera z Garmin Connect podsumowanie dnia (kroki, stres, Body Battery, tętno spoczynkowe, minuty intensywności) dla dowolnej daty i je zwraca.",
@@ -963,6 +999,12 @@
     },
     "add_gear_to_activity_failed": {
       "message": "Nie udało się dodać sprzętu do aktywności: {error}"
+    },
+    "add_dog_to_activity_failed": {
+      "message": "Nie udało się dodać psa do aktywności: {error}"
+    },
+    "remove_dog_from_activity_failed": {
+      "message": "Nie udało się usunąć psa z aktywności: {error}"
     },
     "create_activity_failed": {
       "message": "Nie udało się utworzyć aktywności: {error}"

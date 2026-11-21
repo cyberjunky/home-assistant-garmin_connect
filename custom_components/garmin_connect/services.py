@@ -41,6 +41,8 @@ SERVICE_CREATE_ACTIVITY = "create_activity"
 SERVICE_UPLOAD_ACTIVITY = "upload_activity"
 SERVICE_DOWNLOAD_ACTIVITY = "download_activity"
 SERVICE_ADD_GEAR_TO_ACTIVITY = "add_gear_to_activity"
+SERVICE_ADD_DOG_TO_ACTIVITY = "add_dog_to_activity"
+SERVICE_REMOVE_DOG_FROM_ACTIVITY = "remove_dog_from_activity"
 SERVICE_ADD_HYDRATION = "add_hydration"
 SERVICE_ADD_NUTRITION = "add_nutrition_log"
 SERVICE_CREATE_WORKOUT = "create_workout"
@@ -105,6 +107,15 @@ def _positive_id(value: Any) -> int:
     if not isinstance(value, int) or value < 1:
         raise vol.Invalid("ID must be a positive integer")
     return value
+
+
+def _positive_id_list(value: Any) -> list[int]:
+    """Validate one Garmin ID or a non-empty list of them and return a list."""
+    if not isinstance(value, list):
+        return [_positive_id(value)]
+    if not value:
+        raise vol.Invalid("At least one ID is required")
+    return [_positive_id(item) for item in value]
 
 
 # Service schemas. Ranges mirror the selectors in services.yaml so YAML and
@@ -199,6 +210,22 @@ ADD_GEAR_TO_ACTIVITY_SCHEMA = vol.Schema(
         vol.Required("activity_id"): _positive_id,
         vol.Optional("gear_uuid"): cv.string,
         vol.Optional("entity_id"): cv.entity_id,
+    }
+)
+
+ADD_DOG_TO_ACTIVITY_SCHEMA = vol.Schema(
+    {
+        vol.Optional("entity_id"): cv.entity_id,
+        vol.Required("activity_id"): _positive_id,
+        vol.Required("dog_id"): _positive_id_list,
+    }
+)
+
+REMOVE_DOG_FROM_ACTIVITY_SCHEMA = vol.Schema(
+    {
+        vol.Optional("entity_id"): cv.entity_id,
+        vol.Required("activity_id"): _positive_id,
+        vol.Required("dog_id"): _positive_id_list,
     }
 )
 
@@ -615,6 +642,36 @@ def async_setup_services(hass: HomeAssistant) -> None:
                 translation_placeholders={"error": str(err)},
             ) from err
 
+    async def handle_add_dog_to_activity(call: ServiceCall) -> None:
+        """Handle add_dog_to_activity service call."""
+        client = _get_client(hass, entity_id=call.data.get("entity_id"))
+        try:
+            await client.add_dogs_to_activity(
+                activity_id=call.data["activity_id"],
+                dog_ids=call.data["dog_id"],
+            )
+        except _SERVICE_ERRORS as err:
+            raise HomeAssistantError(
+                translation_domain=DOMAIN,
+                translation_key="add_dog_to_activity_failed",
+                translation_placeholders={"error": str(err)},
+            ) from err
+
+    async def handle_remove_dog_from_activity(call: ServiceCall) -> None:
+        """Handle remove_dog_from_activity service call."""
+        client = _get_client(hass, entity_id=call.data.get("entity_id"))
+        try:
+            await client.remove_dogs_from_activity(
+                activity_id=call.data["activity_id"],
+                dog_ids=call.data["dog_id"],
+            )
+        except _SERVICE_ERRORS as err:
+            raise HomeAssistantError(
+                translation_domain=DOMAIN,
+                translation_key="remove_dog_from_activity_failed",
+                translation_placeholders={"error": str(err)},
+            ) from err
+
     async def handle_add_hydration(call: ServiceCall) -> None:
         """Handle add_hydration service call."""
         client = _get_client(hass, entity_id=call.data.get("entity_id"))
@@ -815,6 +872,18 @@ def async_setup_services(hass: HomeAssistant) -> None:
         SERVICE_ADD_GEAR_TO_ACTIVITY,
         handle_add_gear_to_activity,
         schema=ADD_GEAR_TO_ACTIVITY_SCHEMA,
+    )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_ADD_DOG_TO_ACTIVITY,
+        handle_add_dog_to_activity,
+        schema=ADD_DOG_TO_ACTIVITY_SCHEMA,
+    )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_REMOVE_DOG_FROM_ACTIVITY,
+        handle_remove_dog_from_activity,
+        schema=REMOVE_DOG_FROM_ACTIVITY_SCHEMA,
     )
     hass.services.async_register(
         DOMAIN,

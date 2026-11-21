@@ -443,6 +443,24 @@
         "entity_id": { "name": "装备传感器实体", "description": "gear_uuid 的替代项 — 选择一个装备传感器实体。" }
       }
     },
+    "add_dog_to_activity": {
+      "name": "为活动添加狗狗",
+      "description": "将一只或多只狗狗添加到活动。活动上已有的狗狗会保留。",
+      "fields": {
+        "entity_id": { "name": "Garmin Connect 实体", "description": "可选的 Garmin Connect 实体,其账户拥有该活动。" },
+        "activity_id": { "name": "活动 ID", "description": "活动的 ID。" },
+        "dog_id": { "name": "狗狗 ID", "description": "狗狗的 Garmin ID,或 ID 列表。Garmin 不提供狗狗名称,请参阅狗狗传感器。" }
+      }
+    },
+    "remove_dog_from_activity": {
+      "name": "从活动中移除狗狗",
+      "description": "从活动中移除一只或多只狗狗。",
+      "fields": {
+        "entity_id": { "name": "Garmin Connect 实体", "description": "可选的 Garmin Connect 实体,其账户拥有该活动。" },
+        "activity_id": { "name": "活动 ID", "description": "活动的 ID。" },
+        "dog_id": { "name": "狗狗 ID", "description": "狗狗的 Garmin ID,或 ID 列表。Garmin 不提供狗狗名称,请参阅狗狗传感器。" }
+      }
+    },
     "get_day_summary": {
       "name": "获取每日摘要",
       "description": "从 Garmin Connect 获取任意日期的每日摘要（步数、压力、身体电量、静息心率、强度分钟数）并返回。",
@@ -468,6 +486,8 @@
     "add_hydration_failed": { "message": "记录饮水失败:{error}" },
     "add_body_composition_failed": { "message": "添加身体成分失败:{error}" },
     "add_gear_to_activity_failed": { "message": "为活动添加装备失败:{error}" },
+    "add_dog_to_activity_failed": { "message": "为活动添加狗狗失败:{error}" },
+    "remove_dog_from_activity_failed": { "message": "从活动中移除狗狗失败:{error}" },
     "create_activity_failed": { "message": "创建活动失败:{error}" },
     "download_activity_failed": { "message": "下载活动失败：{error}" },
     "download_activity_write_failed": { "message": "无法将活动文件保存到 {file_path}：{error}" },
