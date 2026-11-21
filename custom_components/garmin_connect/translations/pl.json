@@ -277,6 +277,9 @@
       "last_7_days_avg_resting_heart_rate": {
         "name": "Średnie tętno spoczynkowe z 7 dni"
       },
+      "dogs": {
+        "name": "Psy"
+      },
       "last_activities": {
         "name": "Ostatnie aktywności"
       },

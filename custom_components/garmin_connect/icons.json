@@ -82,6 +82,7 @@
       "lactate_threshold_hr": { "default": "mdi:heart-pulse" },
       "lactate_threshold_speed": { "default": "mdi:speedometer" },
       "last_7_days_avg_resting_heart_rate": { "default": "mdi:heart-pulse" },
+      "dogs": { "default": "mdi:dog" },
       "last_activities": { "default": "mdi:numeric" },
       "last_activity": { "default": "mdi:walk" },
       "last_activity_route": { "default": "mdi:map-marker-path" },

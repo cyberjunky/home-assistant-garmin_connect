@@ -154,6 +154,7 @@
       "lactate_threshold_hr": { "name": "乳酸阈值心率" },
       "lactate_threshold_speed": { "name": "乳酸阈值配速" },
       "last_7_days_avg_resting_heart_rate": { "name": "过去 7 天平均静息心率" },
+      "dogs": { "name": "狗狗" },
       "last_activities": { "name": "最近活动" },
       "last_activity": { "name": "最近活动" },
       "last_activity_route": { "name": "最近活动路线" },

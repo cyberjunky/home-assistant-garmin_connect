@@ -164,6 +164,7 @@
       "lactate_threshold_hr": { "name": "Laktatschwellen-Herzfrequenz" },
       "lactate_threshold_speed": { "name": "Laktatschwellen-Geschwindigkeit" },
       "last_7_days_avg_resting_heart_rate": { "name": "Ruhepuls 7-Tage-Durchschnitt" },
+      "dogs": { "name": "Hunde" },
       "last_activities": { "name": "Letzte Aktivitäten" },
       "last_activity": { "name": "Letzte Aktivität" },
       "last_activity_route": { "name": "Route der letzten Aktivität" },

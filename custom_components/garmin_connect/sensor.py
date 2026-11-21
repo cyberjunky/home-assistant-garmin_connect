@@ -1107,6 +1107,14 @@ ACTIVITY_TRACKING_SENSORS: tuple[GarminConnectSensorEntityDescription, ...] = (
         },
     ),
     GarminConnectSensorEntityDescription(
+        key="dogs",
+        translation_key="dogs",
+        coordinator_type=CoordinatorType.ACTIVITY,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda data: len(data.get("dogs") or []),
+        attributes_fn=lambda data: {"dogs": data.get("dogs") or []},
+    ),
+    GarminConnectSensorEntityDescription(
         key="lastWorkout",
         translation_key="last_workout",
         coordinator_type=CoordinatorType.ACTIVITY,

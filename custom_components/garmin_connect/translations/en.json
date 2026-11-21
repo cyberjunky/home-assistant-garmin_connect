@@ -160,6 +160,7 @@
       "lactate_threshold_hr": { "name": "Lactate threshold heart rate" },
       "lactate_threshold_speed": { "name": "Lactate threshold speed" },
       "last_7_days_avg_resting_heart_rate": { "name": "7-day average resting heart rate" },
+      "dogs": { "name": "Dogs" },
       "last_activities": { "name": "Last activities" },
       "last_activity": { "name": "Last activity" },
       "last_activity_route": { "name": "Last activity route" },

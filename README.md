@@ -300,6 +300,7 @@ series:
 |--------|-------------|
 | Last Activity | Most recent activity with details |
 | Last Activities | Recent activities list (attributes) |
+| Dogs | Number of dogs on your account (diagnostic); their Garmin IDs are in the `dogs` attribute |
 | Last Workout / Workouts | Scheduled/planned training sessions |
 | Today's Scheduled Workout | Today's training-calendar session, e.g. from a Garmin Coach plan, with its steps and targets (see below) |
 | Next Scheduled Workout | The next upcoming training-calendar session (today or later), with its steps and targets (see below) |
