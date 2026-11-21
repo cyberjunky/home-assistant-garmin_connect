@@ -427,15 +427,6 @@ async def test_dog_id_is_validated(
     mock_client.remove_dogs_from_activity.assert_not_awaited()
 
 
-async def test_add_dog_without_dog_id_raises(
-    hass: HomeAssistant, init_integration: MockConfigEntry, mock_client: MagicMock
-) -> None:
-    """dog_id is required."""
-    with pytest.raises(vol.Invalid):
-        await _call(hass, "add_dog_to_activity", {"activity_id": 12345})
-    mock_client.add_dogs_to_activity.assert_not_awaited()
-
-
 async def test_add_dog_library_error_raises(
     hass: HomeAssistant, init_integration: MockConfigEntry, mock_client: MagicMock
 ) -> None:

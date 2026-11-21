@@ -914,7 +914,7 @@
     },
     "add_dog_to_activity": {
       "name": "Dodaj psa do aktywności",
-      "description": "Dodaje jednego lub więcej psów do aktywności. Psy już przypisane do aktywności zostają.",
+      "description": "Dodaje co najmniej jednego psa do aktywności. Psy już przypisane do aktywności pozostają.",
       "fields": {
         "entity_id": {
           "name": "Encja Garmin Connect",
@@ -926,7 +926,7 @@
         },
         "dog_id": {
           "name": "ID psa",
-          "description": "Identyfikator psa w Garmin lub lista identyfikatorów. Garmin nie udostępnia imion psów; zobacz sensor Psy."
+          "description": "Identyfikator psa w Garmin lub lista identyfikatorów. Garmin nie udostępnia imion psów; zobacz czujnik Psy."
         }
       }
     },
@@ -944,7 +944,7 @@
         },
         "dog_id": {
           "name": "ID psa",
-          "description": "Identyfikator psa w Garmin lub lista identyfikatorów. Garmin nie udostępnia imion psów; zobacz sensor Psy."
+          "description": "Identyfikator psa w Garmin lub lista identyfikatorów. Garmin nie udostępnia imion psów; zobacz czujnik Psy."
         }
       }
     },

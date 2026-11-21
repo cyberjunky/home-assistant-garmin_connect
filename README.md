@@ -651,6 +651,8 @@ data:
 
 Add dogs to an activity or remove them. Adding keeps the dogs already on the activity. Garmin does not expose dog names, only IDs; the Dogs sensor lists them.
 
+To find a dog's ID, tag one activity with the dog in the Garmin Connect app, then read `dogProfileIds` in the attributes of the Last activities sensor.
+
 | Parameter | Required | Description |
 |-----------|----------|-------------|
 | `activity_id` | Yes | Activity ID (from last_activity sensor attributes) |
