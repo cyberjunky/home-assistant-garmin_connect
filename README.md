@@ -216,7 +216,9 @@ series:
 | Muscle Mass / Bone Mass | Mass measurements in kg |
 | Visceral Fat | Visceral fat percentage |
 | Physique Rating | Body physique rating |
-| Metabolic Age | Estimated metabolic age |
+| Metabolic Age | Estimated metabolic age in years |
+
+> **Metabolic age shows a huge number in the Garmin Connect app?** For uploaded measurements (e.g. via `add_body_composition`) and some scale imports, Garmin stores metabolic age in milliseconds, so 52 years shows as 1640960152000 in the app. The sensor converts it back to years. The app's display is Garmin's and can't be fixed from here.
 
 ### Hydration
 
@@ -298,7 +300,7 @@ series:
 
 | Sensor | Description |
 |--------|-------------|
-| Last Activity | Most recent activity with details |
+| Last Activity | Most recent activity with details; rides include `averageBikeCadence` / `maxBikeCadence`, also for types like mountain biking where Garmin leaves cadence out of the list |
 | Last Activities | Recent activities list (attributes) |
 | Dogs | Number of dogs on your account (diagnostic); their Garmin IDs are in the `dogs` attribute |
 | Last Workout / Workouts | Scheduled/planned training sessions |
@@ -474,7 +476,7 @@ Record body composition metrics to Garmin Connect.
 | `basal_met` | No | Basal metabolic rate (kcal) |
 | `active_met` | No | Active metabolic rate (kcal) |
 | `physique_rating` | No | Physique rating (1–9) |
-| `metabolic_age` | No | Metabolic age (years) |
+| `metabolic_age` | No | Metabolic age in whole years (decimals are dropped) |
 | `visceral_fat_rating` | No | Visceral fat rating (1–59) |
 
 ```yaml
