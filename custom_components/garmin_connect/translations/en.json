@@ -160,6 +160,7 @@
       "lactate_threshold_hr": { "name": "Lactate threshold heart rate" },
       "lactate_threshold_speed": { "name": "Lactate threshold speed" },
       "last_7_days_avg_resting_heart_rate": { "name": "7-day average resting heart rate" },
+      "dogs": { "name": "Dogs" },
       "last_activities": { "name": "Last activities" },
       "last_activity": { "name": "Last activity" },
       "last_activity_route": { "name": "Last activity route" },
@@ -450,6 +451,24 @@
         "gear_uuid": { "name": "Gear UUID", "description": "The UUID of the gear to add." },
         "entity_id": { "name": "Gear sensor entity", "description": "Alternative to gear_uuid — select a gear sensor entity." }
       }
+    },
+    "add_dog_to_activity": {
+      "name": "Add dog to activity",
+      "description": "Add one or more dogs to an activity. Dogs already on the activity are kept.",
+      "fields": {
+        "entity_id": { "name": "Garmin Connect entity", "description": "Optional Garmin Connect entity whose account owns the activity." },
+        "activity_id": { "name": "Activity ID", "description": "The ID of the activity." },
+        "dog_id": { "name": "Dog ID", "description": "The Garmin ID of the dog, or a list of IDs. Garmin does not expose dog names; see the Dogs sensor." }
+      }
+    },
+    "remove_dog_from_activity": {
+      "name": "Remove dog from activity",
+      "description": "Remove one or more dogs from an activity.",
+      "fields": {
+        "entity_id": { "name": "Garmin Connect entity", "description": "Optional Garmin Connect entity whose account owns the activity." },
+        "activity_id": { "name": "Activity ID", "description": "The ID of the activity." },
+        "dog_id": { "name": "Dog ID", "description": "The Garmin ID of the dog, or a list of IDs. Garmin does not expose dog names; see the Dogs sensor." }
+      }
     }
   },
   "exceptions": {
@@ -469,6 +488,8 @@
     "unschedule_workout_failed": { "message": "Failed to unschedule workout: {error}" },
     "add_body_composition_failed": { "message": "Failed to add body composition: {error}" },
     "add_gear_to_activity_failed": { "message": "Failed to add gear to activity: {error}" },
+    "add_dog_to_activity_failed": { "message": "Failed to add dog to activity: {error}" },
+    "remove_dog_from_activity_failed": { "message": "Failed to remove dog from activity: {error}" },
     "create_activity_failed": { "message": "Failed to create activity: {error}" },
     "download_activity_failed": { "message": "Failed to download activity: {error}" },
     "download_activity_write_failed": { "message": "Could not save the activity file to {file_path}: {error}" },

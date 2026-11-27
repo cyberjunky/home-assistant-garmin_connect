@@ -35,6 +35,7 @@ from homeassistant.const import (
     EVENT_STATE_CHANGED,
     STATE_UNAVAILABLE,
     STATE_UNKNOWN,
+    EntityCategory,
     Platform,
 )
 from homeassistant.core import Event, HomeAssistant, State
@@ -998,6 +999,31 @@ async def test_last_activity_and_recent_activities(
     recent = _state(hass, "lastActivities")
     assert recent.state == "1"
     assert len(recent.attributes["last_activities"]) == 2
+
+
+_DOGS = [{"id": 1001, "exclude_physio": False}, {"id": 1002, "exclude_physio": True}]
+
+
+@pytest.mark.parametrize(
+    ("garmin_data", "count", "dogs"),
+    [
+        ({"activity": {**mock_activity_data(), "dogs": _DOGS}}, "2", _DOGS),
+        ({"activity": {**mock_activity_data(), "dogs": []}}, "0", []),
+        ({"activity": mock_activity_data()}, "0", []),
+    ],
+    indirect=["garmin_data"],
+)
+async def test_dogs_sensor(
+    hass: HomeAssistant, entry: MockConfigEntry, count: str, dogs: list[dict[str, Any]]
+) -> None:
+    """dogs: state = number of dogs, attribute = their IDs; no dogs is 0, not unavailable."""
+    state = _state(hass, "dogs")
+    assert state.state == count
+    assert state.attributes["dogs"] == dogs
+    entity = er.async_get(hass).async_get(state.entity_id)
+    assert entity is not None
+    assert entity.entity_category is EntityCategory.DIAGNOSTIC
+    assert entity.disabled_by is None
 
 
 async def test_training_plan_goal_event_countdown(

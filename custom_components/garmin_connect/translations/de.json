@@ -164,6 +164,7 @@
       "lactate_threshold_hr": { "name": "Laktatschwellen-Herzfrequenz" },
       "lactate_threshold_speed": { "name": "Laktatschwellen-Geschwindigkeit" },
       "last_7_days_avg_resting_heart_rate": { "name": "Ruhepuls 7-Tage-Durchschnitt" },
+      "dogs": { "name": "Hunde" },
       "last_activities": { "name": "Letzte Aktivitäten" },
       "last_activity": { "name": "Letzte Aktivität" },
       "last_activity_route": { "name": "Route der letzten Aktivität" },
@@ -443,6 +444,24 @@
         "entity_id": { "name": "Ausrüstungs-Sensor", "description": "Alternative zur Ausrüstungs-UUID — wähle eine Ausrüstungs-Sensor-Entität." }
       }
     },
+    "add_dog_to_activity": {
+      "name": "Hund zu Aktivität hinzufügen",
+      "description": "Fügt einer Aktivität einen oder mehrere Hunde hinzu. Bereits vorhandene Hunde bleiben erhalten.",
+      "fields": {
+        "entity_id": { "name": "Garmin-Connect-Entität", "description": "Optionale Garmin-Connect-Entität, deren Konto die Aktivität gehört." },
+        "activity_id": { "name": "Aktivitäts-ID", "description": "Die ID der Aktivität." },
+        "dog_id": { "name": "Hunde-ID", "description": "Die Garmin-ID des Hundes oder eine Liste von IDs. Garmin liefert keine Hundenamen; siehe den Hunde-Sensor." }
+      }
+    },
+    "remove_dog_from_activity": {
+      "name": "Hund aus Aktivität entfernen",
+      "description": "Entfernt einen oder mehrere Hunde aus einer Aktivität.",
+      "fields": {
+        "entity_id": { "name": "Garmin-Connect-Entität", "description": "Optionale Garmin-Connect-Entität, deren Konto die Aktivität gehört." },
+        "activity_id": { "name": "Aktivitäts-ID", "description": "Die ID der Aktivität." },
+        "dog_id": { "name": "Hunde-ID", "description": "Die Garmin-ID des Hundes oder eine Liste von IDs. Garmin liefert keine Hundenamen; siehe den Hunde-Sensor." }
+      }
+    },
     "get_day_summary": {
       "name": "Tageszusammenfassung abrufen",
       "description": "Ruft die Tageszusammenfassung (Schritte, Stress, Body Battery, Ruhepuls, Intensitätsminuten) für ein beliebiges Datum von Garmin Connect ab und gibt sie zurück.",
@@ -468,6 +487,8 @@
     "unschedule_workout_failed": { "message": "Training konnte nicht ausgeplant werden: {error}" },
     "add_body_composition_failed": { "message": "Körperzusammensetzung konnte nicht hinzugefügt werden: {error}" },
     "add_gear_to_activity_failed": { "message": "Ausrüstung konnte nicht zur Aktivität hinzugefügt werden: {error}" },
+    "add_dog_to_activity_failed": { "message": "Hund konnte nicht zur Aktivität hinzugefügt werden: {error}" },
+    "remove_dog_from_activity_failed": { "message": "Hund konnte nicht aus der Aktivität entfernt werden: {error}" },
     "create_activity_failed": { "message": "Aktivität konnte nicht erstellt werden: {error}" },
     "download_activity_failed": { "message": "Aktivität konnte nicht heruntergeladen werden: {error}" },
     "download_activity_write_failed": { "message": "Aktivitätsdatei konnte nicht unter {file_path} gespeichert werden: {error}" },

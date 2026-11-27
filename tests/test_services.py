@@ -122,7 +122,7 @@ async def second_account(
 async def test_setup_registers_all_services(
     hass: HomeAssistant, init_integration: MockConfigEntry
 ) -> None:
-    """Setting up the integration registers all 15 actions."""
+    """Setting up the integration registers all 17 actions."""
     assert set(hass.services.async_services_for_domain(DOMAIN)) == {
         "set_active_gear",
         "add_body_composition",
@@ -131,6 +131,8 @@ async def test_setup_registers_all_services(
         "upload_activity",
         "download_activity",
         "add_gear_to_activity",
+        "add_dog_to_activity",
+        "remove_dog_from_activity",
         "add_hydration",
         "add_nutrition_log",
         "create_workout",
@@ -369,6 +371,72 @@ async def test_gear_resolution_errors(
         await _call(hass, service, data)
     assert err.value.translation_key == translation_key
     getattr(mock_client, method).assert_not_awaited()
+
+
+# ── add_dog_to_activity / remove_dog_from_activity ──────────────────────────
+
+
+async def test_add_dog_to_activity_by_id(
+    hass: HomeAssistant, init_integration: MockConfigEntry, mock_client: MagicMock
+) -> None:
+    """add_dog_to_activity must call client with the activity and a one-item dog list."""
+    await _call(hass, "add_dog_to_activity", {"activity_id": 12345, "dog_id": 1001})
+
+    mock_client.add_dogs_to_activity.assert_awaited_once_with(activity_id=12345, dog_ids=[1001])
+
+
+async def test_add_dog_to_activity_with_list(
+    hass: HomeAssistant, init_integration: MockConfigEntry, mock_client: MagicMock
+) -> None:
+    """A list of dog IDs is passed through as given."""
+    await _call(hass, "add_dog_to_activity", {"activity_id": 12345, "dog_id": [1001, 1002]})
+
+    mock_client.add_dogs_to_activity.assert_awaited_once_with(
+        activity_id=12345, dog_ids=[1001, 1002]
+    )
+
+
+async def test_remove_dog_from_activity_by_id(
+    hass: HomeAssistant, init_integration: MockConfigEntry, mock_client: MagicMock
+) -> None:
+    """remove_dog_from_activity must call client with the activity and a one-item dog list."""
+    await _call(hass, "remove_dog_from_activity", {"activity_id": 12345, "dog_id": 1001})
+
+    mock_client.remove_dogs_from_activity.assert_awaited_once_with(
+        activity_id=12345, dog_ids=[1001]
+    )
+
+
+@pytest.mark.parametrize("service", ["add_dog_to_activity", "remove_dog_from_activity"])
+@pytest.mark.parametrize("dog_id", [None, 0, -1, 1.9, True, "abc", [], [1001, 0]])
+async def test_dog_id_is_validated(
+    hass: HomeAssistant,
+    init_integration: MockConfigEntry,
+    mock_client: MagicMock,
+    service: str,
+    dog_id: Any,
+) -> None:
+    """A missing, empty or non-positive dog_id never reaches the library."""
+    data: dict[str, Any] = {"activity_id": 12345}
+    if dog_id is not None:
+        data["dog_id"] = dog_id
+
+    with pytest.raises(vol.Invalid):
+        await _call(hass, service, data)
+    mock_client.add_dogs_to_activity.assert_not_awaited()
+    mock_client.remove_dogs_from_activity.assert_not_awaited()
+
+
+async def test_add_dog_library_error_raises(
+    hass: HomeAssistant, init_integration: MockConfigEntry, mock_client: MagicMock
+) -> None:
+    """Library errors surface as HomeAssistantError with the action's translation key."""
+    mock_client.add_dogs_to_activity.side_effect = ValueError("bad id")
+
+    with pytest.raises(HomeAssistantError) as err:
+        await _call(hass, "add_dog_to_activity", {"activity_id": 12345, "dog_id": 1001})
+    assert err.value.translation_key == "add_dog_to_activity_failed"
+    assert not isinstance(err.value, ServiceValidationError)
 
 
 # ── Body composition, blood pressure, hydration, nutrition ──────────────────
@@ -891,6 +959,18 @@ async def test_download_activity_write_failure_raises(
             "add_gear_to_activity",
             {"activity_id": 1, "gear_uuid": "abc"},
             "add_gear_to_activity_failed",
+        ),
+        (
+            "add_dog_to_activity",
+            "add_dogs_to_activity",
+            {"activity_id": 1, "dog_id": 1001},
+            "add_dog_to_activity_failed",
+        ),
+        (
+            "remove_dog_from_activity",
+            "remove_dogs_from_activity",
+            {"activity_id": 1, "dog_id": 1001},
+            "remove_dog_from_activity_failed",
         ),
         ("add_hydration", "set_hydration", {"value_in_ml": 100.0}, "add_hydration_failed"),
         ("add_nutrition_log", "add_nutrition_log", {"calories": 300.0}, "add_nutrition_failed"),

@@ -300,6 +300,7 @@ series:
 |--------|-------------|
 | Last Activity | Most recent activity with details |
 | Last Activities | Recent activities list (attributes) |
+| Dogs | Number of dogs on your account (diagnostic); their Garmin IDs are in the `dogs` attribute |
 | Last Workout / Workouts | Scheduled/planned training sessions |
 | Today's Scheduled Workout | Today's training-calendar session, e.g. from a Garmin Coach plan, with its steps and targets (see below) |
 | Next Scheduled Workout | The next upcoming training-calendar session (today or later), with its steps and targets (see below) |
@@ -644,6 +645,25 @@ action: garmin_connect.add_gear_to_activity
 data:
   activity_id: 12345678901
   entity_id: sensor.garmin_connect_my_running_shoes
+```
+
+### garmin_connect.add_dog_to_activity / garmin_connect.remove_dog_from_activity
+
+Add dogs to an activity or remove them. Adding keeps the dogs already on the activity. Garmin does not expose dog names, only IDs; the Dogs sensor lists them.
+
+To find a dog's ID, tag one activity with the dog in the Garmin Connect app, then read `dogProfileIds` in the attributes of the Last activities sensor.
+
+| Parameter | Required | Description |
+|-----------|----------|-------------|
+| `activity_id` | Yes | Activity ID (from last_activity sensor attributes) |
+| `dog_id` | Yes | Garmin dog ID, or a list of IDs |
+| `entity_id` | No | Any Garmin Connect entity, to pick the account when more than one is configured |
+
+```yaml
+action: garmin_connect.add_dog_to_activity
+data:
+  activity_id: 12345678901
+  dog_id: [1001, 1002]
 ```
 
 ### Workouts
