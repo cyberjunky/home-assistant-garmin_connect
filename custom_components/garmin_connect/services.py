@@ -19,6 +19,7 @@ from homeassistant.core import (
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers.service import async_register_admin_service
 from homeassistant.util import dt as dt_util
 
 from .const import DOMAIN
@@ -57,22 +58,24 @@ SERVICE_GET_DAY_SUMMARY = "get_day_summary"
 _SERVICE_ERRORS = (GarminConnectError, ValueError)
 
 UPLOAD_ACTIVITY_FORMATS = {".fit", ".gpx", ".tcx"}
+ACTIVITY_DIR = "garmin_activities"
 
 
 def _path_allowed(hass: HomeAssistant, path: Path) -> bool:
     """Return whether an activity file may be read from or written to ``path``.
 
-    Anything inside the config directory is fine; the rest must be in
-    allowlist_external_dirs (which does not include the config directory by
-    default). Symlinks are resolved first so a link in the config directory
-    cannot point outside it. Blocking: run in the executor.
+    Only <config>/garmin_activities/ and allowlist_external_dirs qualify. The
+    rest of the config directory holds configuration.yaml, secrets.yaml and
+    .storage, which must never be overwritten or sent to Garmin. Symlinks are
+    resolved first so a link cannot point elsewhere. Blocking: run in the
+    executor.
     """
     try:
         resolved = path.resolve()
-        config_dir = Path(hass.config.config_dir).resolve()
+        activity_dir = Path(hass.config.path(ACTIVITY_DIR)).resolve()
     except OSError, RuntimeError:
         return False
-    if resolved.is_relative_to(config_dir):
+    if resolved.is_relative_to(activity_dir):
         return True
     return hass.config.is_allowed_path(str(path))
 
@@ -202,6 +205,7 @@ DOWNLOAD_ACTIVITY_SCHEMA = vol.Schema(
         vol.Required("activity_id"): _positive_id,
         vol.Optional("file_format", default="fit"): vol.In(DOWNLOAD_ACTIVITY_FORMATS),
         vol.Optional("file_path"): cv.string,
+        vol.Optional("overwrite", default=False): cv.boolean,
     }
 )
 
@@ -512,8 +516,8 @@ def async_setup_services(hass: HomeAssistant) -> None:
         path = Path(file_path)
         if not path.is_absolute():
             path = Path(hass.config.path(file_path))
-        # Anything outside the config dir must be in allowlist_external_dirs,
-        # or any readable file could be sent to Garmin.
+        # Only garmin_activities/ and allowlist_external_dirs, or any readable
+        # activity file in the config dir could be sent to Garmin.
         if not await hass.async_add_executor_job(_path_allowed, hass, path):
             raise ServiceValidationError(
                 translation_domain=DOMAIN,
@@ -559,7 +563,16 @@ def async_setup_services(hass: HomeAssistant) -> None:
                 path = Path(hass.config.path(file_path))
             if path.suffix == "":
                 path = path / default_name
-            # User-supplied paths must be inside the config directory or in
+            elif path.suffix.lower() != f".{extension}":
+                raise ServiceValidationError(
+                    translation_domain=DOMAIN,
+                    translation_key="file_extension_mismatch",
+                    translation_placeholders={
+                        "file_path": str(path),
+                        "extension": f".{extension}",
+                    },
+                )
+            # User-supplied paths must be in garmin_activities/ or in
             # allowlist_external_dirs, as for uploads; the default location
             # below is integration-controlled.
             if not await hass.async_add_executor_job(_path_allowed, hass, path):
@@ -569,7 +582,15 @@ def async_setup_services(hass: HomeAssistant) -> None:
                     translation_placeholders={"file_path": str(path)},
                 )
         else:
-            path = Path(hass.config.path("garmin_activities")) / default_name
+            path = Path(hass.config.path(ACTIVITY_DIR)) / default_name
+
+        overwrite = call.data["overwrite"]
+        if not overwrite and await hass.async_add_executor_job(path.exists):
+            raise ServiceValidationError(
+                translation_domain=DOMAIN,
+                translation_key="file_exists",
+                translation_placeholders={"file_path": str(path)},
+            )
 
         try:
             content = await client.download_activity(activity_id, file_format)
@@ -580,18 +601,30 @@ def async_setup_services(hass: HomeAssistant) -> None:
                 translation_placeholders={"error": str(err)},
             ) from err
 
-        def _write() -> None:
+        def _write() -> bool:
+            """Write the file; return False if it appeared since the check above."""
             path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_bytes(content)
+            try:
+                with path.open("wb" if overwrite else "xb") as file:
+                    file.write(content)
+            except FileExistsError:
+                return False
+            return True
 
         try:
-            await hass.async_add_executor_job(_write)
+            written = await hass.async_add_executor_job(_write)
         except OSError as err:
             raise HomeAssistantError(
                 translation_domain=DOMAIN,
                 translation_key="download_activity_write_failed",
                 translation_placeholders={"file_path": str(path), "error": str(err)},
             ) from err
+        if not written:
+            raise ServiceValidationError(
+                translation_domain=DOMAIN,
+                translation_key="file_exists",
+                translation_placeholders={"file_path": str(path)},
+            )
 
         if call.return_response:
             return {
@@ -854,13 +887,17 @@ def async_setup_services(hass: HomeAssistant) -> None:
         handle_create_activity,
         schema=CREATE_ACTIVITY_SCHEMA,
     )
-    hass.services.async_register(
+    # These read and write files on the host, so admins only. Automations and
+    # scripts run without a user and are still allowed.
+    async_register_admin_service(
+        hass,
         DOMAIN,
         SERVICE_UPLOAD_ACTIVITY,
         handle_upload_activity,
         schema=UPLOAD_ACTIVITY_SCHEMA,
     )
-    hass.services.async_register(
+    async_register_admin_service(
+        hass,
         DOMAIN,
         SERVICE_DOWNLOAD_ACTIVITY,
         handle_download_activity,

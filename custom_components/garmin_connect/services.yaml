@@ -273,9 +273,9 @@ upload_activity:
           domain: sensor
     file_path:
       name: File path
-      description: FIT, GPX or TCX file on the HA host, absolute or relative to the config directory. Paths outside the config directory must be in allowlist_external_dirs.
+      description: FIT, GPX or TCX file in <config>/garmin_activities/ or in allowlist_external_dirs, absolute or relative to the config directory.
       required: true
-      example: "/config/activities/run.fit"
+      example: "garmin_activities/run.fit"
       selector:
         text:
 
@@ -315,10 +315,16 @@ download_activity:
             - csv
     file_path:
       name: File path
-      description: Target file or directory, absolute or relative to the config directory. Paths outside the config directory must be in allowlist_external_dirs. Defaults to <config>/garmin_activities/activity_<id>.<format>.
-      example: "/config/garmin_activities/run.fit"
+      description: Target file or directory in <config>/garmin_activities/ or in allowlist_external_dirs, absolute or relative to the config directory. A file name must end in the extension of the chosen format. Defaults to <config>/garmin_activities/activity_<id>.<format>.
+      example: "garmin_activities/run.fit"
       selector:
         text:
+    overwrite:
+      name: Overwrite
+      description: Replace the file if it already exists.
+      default: false
+      selector:
+        boolean:
 
 add_hydration:
   name: Add hydration

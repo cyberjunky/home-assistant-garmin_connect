@@ -633,7 +633,11 @@
         },
         "file_path": {
           "name": "Ścieżka pliku",
-          "description": "Plik lub katalog docelowy, w katalogu konfiguracji lub w allowlist_external_dirs. Ścieżki względne liczone są od katalogu konfiguracji. Domyślnie [config]/garmin_activities/."
+          "description": "Plik lub katalog docelowy, w [config]/garmin_activities/ lub w allowlist_external_dirs. Ścieżki względne liczone są od katalogu konfiguracji. Nazwa pliku musi mieć rozszerzenie wybranego formatu. Domyślnie [config]/garmin_activities/."
+        },
+        "overwrite": {
+          "name": "Nadpisz",
+          "description": "Zastąp plik, jeśli już istnieje. Domyślnie wyłączone."
         }
       }
     },
@@ -890,7 +894,7 @@
         },
         "file_path": {
           "name": "Ścieżka pliku",
-          "description": "Ścieżka do pliku aktywności w systemie Home Assistant."
+          "description": "Plik FIT, GPX lub TCX w [config]/garmin_activities/ lub w allowlist_external_dirs, ścieżka bezwzględna lub względna wobec katalogu konfiguracji."
         }
       }
     },
@@ -965,7 +969,13 @@
       "message": "Nie udało się zapisać pliku aktywności w {file_path}: {error}"
     },
     "path_not_allowed": {
-      "message": "Ścieżka jest niedozwolona: {file_path}. Dodaj katalog do allowlist_external_dirs."
+      "message": "Ścieżka jest niedozwolona: {file_path}. Użyj [config]/garmin_activities/ lub dodaj katalog do allowlist_external_dirs."
+    },
+    "file_exists": {
+      "message": "Plik już istnieje: {file_path}. Ustaw overwrite, aby go zastąpić."
+    },
+    "file_extension_mismatch": {
+      "message": "Nazwa pliku {file_path} nie pasuje do wybranego formatu; użyj rozszerzenia {extension}."
     },
     "ambiguous_account": {
       "message": "Skonfigurowano kilka kont Garmin Connect. Podaj entity_id, aby wybrać konto."

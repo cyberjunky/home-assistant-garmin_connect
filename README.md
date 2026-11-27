@@ -554,30 +554,31 @@ data:
 
 ### garmin_connect.upload_activity
 
-Upload an activity file (FIT, GPX, TCX) to Garmin Connect.
+Upload an activity file (FIT, GPX, TCX) to Garmin Connect. Admin users only; automations and scripts can always use it.
 
 | Parameter | Required | Description |
 |-----------|----------|-------------|
 | `entity_id` | No | Garmin Connect entity whose account should receive the upload |
-| `file_path` | Yes | `.fit`, `.gpx` or `.tcx` file, absolute or relative to the HA config directory. Paths outside the config directory must be in `allowlist_external_dirs` |
+| `file_path` | Yes | `.fit`, `.gpx` or `.tcx` file in `<config>/garmin_activities/` or in a directory listed in `allowlist_external_dirs`; absolute or relative to the HA config directory |
 
 ```yaml
 action: garmin_connect.upload_activity
 data:
   entity_id: sensor.garmin_connect_last_activity
-  file_path: "activities/morning_run.fit"
+  file_path: "garmin_activities/morning_run.fit"
 ```
 
 ### garmin_connect.download_activity
 
-Download an activity file from Garmin Connect and save it on the HA host. Supports response data with the saved path and size.
+Download an activity file from Garmin Connect and save it on the HA host. Supports response data with the saved path and size. Admin users only; automations and scripts can always use it.
 
 | Parameter | Required | Description |
 |-----------|----------|-------------|
 | `entity_id` | No | Garmin Connect entity whose account owns the activity |
 | `activity_id` | Yes | Garmin activity ID (see `last_activity` sensor attributes) |
 | `file_format` | No | `fit` (default, extracted from original zip), `original` (raw zip), `tcx`, `gpx`, `kml`, `csv` |
-| `file_path` | No | Target file or directory. Custom paths must be in `allowlist_external_dirs`. Defaults to `<config>/garmin_activities/activity_<id>.<format>` |
+| `file_path` | No | Target file or directory in `<config>/garmin_activities/` or in a directory listed in `allowlist_external_dirs`. A file name must end in the format's extension (`.zip` for `original`). Defaults to `<config>/garmin_activities/activity_<id>.<format>` |
+| `overwrite` | No | Replace the file if it already exists (default `false`; an existing file is an error) |
 
 ```yaml
 action: garmin_connect.download_activity
