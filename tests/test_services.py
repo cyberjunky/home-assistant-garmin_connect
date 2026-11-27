@@ -9,11 +9,11 @@ import probatio as vol
 import pytest
 import yaml
 from ha_garmin import GarminClient, GarminConnectError
-from homeassistant.core import HomeAssistant, ServiceResponse
-from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
+from homeassistant.core import Context, HomeAssistant, ServiceResponse
+from homeassistant.exceptions import HomeAssistantError, ServiceValidationError, Unauthorized
 from homeassistant.helpers import entity_registry as er
 from homeassistant.setup import async_setup_component
-from pytest_homeassistant.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry, MockUser
 
 from custom_components.garmin_connect.const import DOMAIN
 from custom_components.garmin_connect.services import (
@@ -80,6 +80,14 @@ async def config_dir(hass: HomeAssistant, tmp_path: Path) -> Path:
     hass.config.config_dir = str(config)
     hass.config.allowlist_external_dirs = set()
     return config
+
+
+@pytest.fixture
+async def activity_dir(config_dir: Path) -> Path:
+    """Create <config>/garmin_activities, where activity files may be read and written."""
+    path = config_dir / "garmin_activities"
+    path.mkdir()
+    return path
 
 
 @pytest.fixture
@@ -637,6 +645,57 @@ async def test_create_activity_defaults_to_now(
     assert kwargs["start_datetime"].endswith(".000")
 
 
+# ── File actions are admin-only ─────────────────────────────────────────────
+
+
+@pytest.mark.parametrize(
+    ("service", "data"),
+    [
+        ("upload_activity", {"file_path": "garmin_activities/activity.fit"}),
+        ("download_activity", {"activity_id": 12345}),
+    ],
+)
+async def test_file_actions_refuse_non_admin(
+    hass: HomeAssistant,
+    init_integration: MockConfigEntry,
+    mock_client: MagicMock,
+    activity_dir: Path,
+    hass_read_only_user: MockUser,
+    service: str,
+    data: dict[str, Any],
+) -> None:
+    """Non-admin users must not read or write files on the host through these actions."""
+    (activity_dir / "activity.fit").write_bytes(b"fake fit data")
+
+    with pytest.raises(Unauthorized):
+        await hass.services.async_call(
+            DOMAIN, service, data, blocking=True, context=Context(user_id=hass_read_only_user.id)
+        )
+    mock_client.upload_activity.assert_not_awaited()
+    mock_client.download_activity.assert_not_awaited()
+
+
+async def test_file_actions_allow_admin(
+    hass: HomeAssistant,
+    init_integration: MockConfigEntry,
+    mock_client: MagicMock,
+    activity_dir: Path,
+    hass_admin_user: MockUser,
+) -> None:
+    """Admin users can still download activities."""
+    mock_client.download_activity.return_value = b"fake fit data"
+
+    await hass.services.async_call(
+        DOMAIN,
+        "download_activity",
+        {"activity_id": 12345},
+        blocking=True,
+        context=Context(user_id=hass_admin_user.id),
+    )
+
+    assert (activity_dir / "activity_12345.fit").read_bytes() == b"fake fit data"
+
+
 # ── upload_activity ─────────────────────────────────────────────────────────
 
 
@@ -659,22 +718,37 @@ async def test_upload_activity_allowlisted_dir(
     mock_client.upload_activity.assert_awaited_once_with(str(fit_file))
 
 
-async def test_upload_activity_inside_config_dir_needs_no_allowlist(
+async def test_upload_activity_from_activity_dir_needs_no_allowlist(
+    hass: HomeAssistant,
+    init_integration: MockConfigEntry,
+    mock_client: MagicMock,
+    activity_dir: Path,
+) -> None:
+    """<config>/garmin_activities is not allowlisted by default, yet must stay uploadable."""
+    (activity_dir / "activity.fit").write_bytes(b"fake fit data")
+
+    with patch.object(
+        hass.config, "is_allowed_path", wraps=hass.config.is_allowed_path
+    ) as is_allowed:
+        await _call(hass, "upload_activity", {"file_path": "garmin_activities/activity.fit"})
+
+    mock_client.upload_activity.assert_awaited_once_with(str(activity_dir / "activity.fit"))
+    is_allowed.assert_not_called()
+
+
+async def test_upload_activity_elsewhere_in_config_dir_not_allowed(
     hass: HomeAssistant,
     init_integration: MockConfigEntry,
     mock_client: MagicMock,
     config_dir: Path,
 ) -> None:
-    """The config dir is not in allowlist_external_dirs by default, yet must stay uploadable."""
+    """Activity files elsewhere in the config dir must not be sent to Garmin."""
     (config_dir / "activity.fit").write_bytes(b"fake fit data")
 
-    with patch.object(
-        hass.config, "is_allowed_path", wraps=hass.config.is_allowed_path
-    ) as is_allowed:
+    with pytest.raises(ServiceValidationError) as err:
         await _call(hass, "upload_activity", {"file_path": "activity.fit"})
-
-    mock_client.upload_activity.assert_awaited_once_with(str(config_dir / "activity.fit"))
-    is_allowed.assert_not_called()
+    assert err.value.translation_key == "path_not_allowed"
+    mock_client.upload_activity.assert_not_awaited()
 
 
 async def test_upload_activity_path_not_allowed_raises(
@@ -701,13 +775,15 @@ async def test_upload_activity_symlink_out_of_config_dir_needs_allowlist(
     config_dir: Path,
     tmp_path: Path,
 ) -> None:
-    """A symlink inside the config dir must not bypass the allowlist for its target."""
+    """A symlink in garmin_activities must not bypass the allowlist for its target."""
     outside = tmp_path / "secret.fit"
     outside.write_bytes(b"fake fit data")
-    (config_dir / "link.fit").symlink_to(outside)
+    activity_dir = config_dir / "garmin_activities"
+    activity_dir.mkdir()
+    (activity_dir / "link.fit").symlink_to(outside)
 
     with pytest.raises(ServiceValidationError) as err:
-        await _call(hass, "upload_activity", {"file_path": str(config_dir / "link.fit")})
+        await _call(hass, "upload_activity", {"file_path": str(activity_dir / "link.fit")})
     assert err.value.translation_key == "path_not_allowed"
     mock_client.upload_activity.assert_not_awaited()
 
@@ -746,17 +822,17 @@ async def test_upload_activity_bad_file_raises(
     hass: HomeAssistant,
     init_integration: MockConfigEntry,
     mock_client: MagicMock,
-    config_dir: Path,
+    activity_dir: Path,
     file_name: str,
     create: bool,
     translation_key: str,
 ) -> None:
     """Only existing .fit/.gpx/.tcx files are uploaded."""
     if create:
-        (config_dir / file_name).write_text("hello")
+        (activity_dir / file_name).write_text("hello")
 
     with pytest.raises(ServiceValidationError) as err:
-        await _call(hass, "upload_activity", {"file_path": str(config_dir / file_name)})
+        await _call(hass, "upload_activity", {"file_path": str(activity_dir / file_name)})
     assert err.value.translation_key == translation_key
     mock_client.upload_activity.assert_not_awaited()
 
@@ -765,14 +841,14 @@ async def test_upload_activity_library_error_wrapped(
     hass: HomeAssistant,
     init_integration: MockConfigEntry,
     mock_client: MagicMock,
-    config_dir: Path,
+    activity_dir: Path,
 ) -> None:
     """A failed upload of a valid file surfaces as upload_activity_failed."""
     mock_client.upload_activity.side_effect = GarminConnectError("boom")
-    (config_dir / "activity.fit").write_bytes(b"fake fit data")
+    (activity_dir / "activity.fit").write_bytes(b"fake fit data")
 
     with pytest.raises(HomeAssistantError) as err:
-        await _call(hass, "upload_activity", {"file_path": "activity.fit"})
+        await _call(hass, "upload_activity", {"file_path": "garmin_activities/activity.fit"})
     assert err.value.translation_key == "upload_activity_failed"
     assert not isinstance(err.value, ServiceValidationError)
 
@@ -825,17 +901,17 @@ async def test_download_activity_relative_directory_path(
     mock_client: MagicMock,
     config_dir: Path,
 ) -> None:
-    """A relative path without suffix is a directory under config, holding the default name."""
+    """A relative path without suffix is a directory, holding the default name."""
     mock_client.download_activity.return_value = b"<gpx/>"
 
     response = await _call(
         hass,
         "download_activity",
-        {"activity_id": 7, "file_format": "gpx", "file_path": "exports"},
+        {"activity_id": 7, "file_format": "gpx", "file_path": "garmin_activities/exports"},
         return_response=True,
     )
 
-    expected = config_dir / "exports" / "activity_7.gpx"
+    expected = config_dir / "garmin_activities" / "exports" / "activity_7.gpx"
     assert expected.read_bytes() == b"<gpx/>"
     assert response["file_path"] == str(expected)
 
@@ -867,13 +943,13 @@ async def test_download_activity_allowlisted_directory_path(
     is_allowed.assert_called_once_with(str(expected))
 
 
-async def test_download_activity_into_config_dir_needs_no_allowlist(
+async def test_download_activity_into_activity_dir_needs_no_allowlist(
     hass: HomeAssistant,
     init_integration: MockConfigEntry,
     mock_client: MagicMock,
     config_dir: Path,
 ) -> None:
-    """A relative path inside the config directory is allowed, as for uploads."""
+    """A file under <config>/garmin_activities is allowed, as for uploads."""
     mock_client.download_activity.return_value = b"<gpx/>"
 
     with patch.object(
@@ -882,11 +958,136 @@ async def test_download_activity_into_config_dir_needs_no_allowlist(
         await _call(
             hass,
             "download_activity",
-            {"activity_id": 7, "file_format": "gpx", "file_path": "exports/run.gpx"},
+            {"activity_id": 7, "file_format": "gpx", "file_path": "garmin_activities/run.gpx"},
         )
 
-    assert (config_dir / "exports" / "run.gpx").read_bytes() == b"<gpx/>"
+    assert (config_dir / "garmin_activities" / "run.gpx").read_bytes() == b"<gpx/>"
     is_allowed.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    "file_path",
+    ["run.gpx", "exports/run.gpx", ".storage/run.gpx", "garmin_activities/../run.gpx"],
+)
+async def test_download_activity_elsewhere_in_config_dir_not_allowed(
+    hass: HomeAssistant,
+    init_integration: MockConfigEntry,
+    mock_client: MagicMock,
+    config_dir: Path,
+    file_path: str,
+) -> None:
+    """Files elsewhere in the config dir, which holds configuration and .storage, are refused."""
+    with pytest.raises(ServiceValidationError) as err:
+        await _call(
+            hass,
+            "download_activity",
+            {"activity_id": 7, "file_format": "gpx", "file_path": file_path},
+        )
+    assert err.value.translation_key == "path_not_allowed"
+    mock_client.download_activity.assert_not_awaited()
+    assert sorted(config_dir.iterdir()) == []
+
+
+@pytest.mark.parametrize(
+    ("file_format", "file_path"),
+    [
+        ("gpx", "configuration.yaml"),
+        ("gpx", "garmin_activities/run.fit"),
+        ("original", "garmin_activities/run.fit"),
+    ],
+)
+async def test_download_activity_extension_must_match_format(
+    hass: HomeAssistant,
+    init_integration: MockConfigEntry,
+    mock_client: MagicMock,
+    config_dir: Path,
+    file_format: str,
+    file_path: str,
+) -> None:
+    """A file name must carry the chosen format's extension, so it can't replace other files."""
+    (config_dir / "configuration.yaml").write_text("homeassistant:\n")
+
+    with pytest.raises(ServiceValidationError) as err:
+        await _call(
+            hass,
+            "download_activity",
+            {"activity_id": 7, "file_format": file_format, "file_path": file_path},
+        )
+    assert err.value.translation_key == "file_extension_mismatch"
+    mock_client.download_activity.assert_not_awaited()
+    assert (config_dir / "configuration.yaml").read_text() == "homeassistant:\n"
+
+
+async def test_download_activity_extension_check_ignores_case(
+    hass: HomeAssistant,
+    init_integration: MockConfigEntry,
+    mock_client: MagicMock,
+    config_dir: Path,
+) -> None:
+    """An upper-case extension of the right format is accepted."""
+    mock_client.download_activity.return_value = b"PK zip data"
+
+    await _call(
+        hass,
+        "download_activity",
+        {"activity_id": 7, "file_format": "original", "file_path": "garmin_activities/RUN.ZIP"},
+    )
+
+    assert (config_dir / "garmin_activities" / "RUN.ZIP").read_bytes() == b"PK zip data"
+
+
+async def test_download_activity_existing_file_not_overwritten(
+    hass: HomeAssistant,
+    init_integration: MockConfigEntry,
+    mock_client: MagicMock,
+    activity_dir: Path,
+) -> None:
+    """An existing file is kept unless overwrite is set."""
+    existing = activity_dir / "activity_12345.fit"
+    existing.write_bytes(b"old")
+
+    with pytest.raises(ServiceValidationError) as err:
+        await _call(hass, "download_activity", {"activity_id": 12345})
+    assert err.value.translation_key == "file_exists"
+    mock_client.download_activity.assert_not_awaited()
+    assert existing.read_bytes() == b"old"
+
+
+async def test_download_activity_file_created_during_download_not_overwritten(
+    hass: HomeAssistant,
+    init_integration: MockConfigEntry,
+    mock_client: MagicMock,
+    activity_dir: Path,
+) -> None:
+    """A file that appears while downloading is kept as well."""
+    existing = activity_dir / "activity_12345.fit"
+
+    async def _download(*_args: Any) -> bytes:
+        existing.write_bytes(b"old")
+        return b"new"
+
+    mock_client.download_activity.side_effect = _download
+
+    with pytest.raises(ServiceValidationError) as err:
+        await _call(hass, "download_activity", {"activity_id": 12345})
+    assert err.value.translation_key == "file_exists"
+    assert existing.read_bytes() == b"old"
+
+
+async def test_download_activity_overwrite_replaces_file(
+    hass: HomeAssistant,
+    init_integration: MockConfigEntry,
+    mock_client: MagicMock,
+    activity_dir: Path,
+) -> None:
+    """overwrite: true replaces an existing file."""
+    existing = activity_dir / "activity_12345.fit"
+    existing.write_bytes(b"old")
+    mock_client.download_activity.return_value = b"new"
+
+    await _call(hass, "download_activity", {"activity_id": 12345, "overwrite": True})
+
+    assert existing.read_bytes() == b"new"
 
 
 async def test_download_activity_custom_path_not_allowed_raises(

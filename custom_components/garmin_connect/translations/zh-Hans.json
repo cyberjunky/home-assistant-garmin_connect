@@ -424,7 +424,8 @@
         "entity_id": { "name": "Garmin Connect 实体", "description": "可选：拥有该活动的 Garmin Connect 实体。" },
         "activity_id": { "name": "活动 ID", "description": "Garmin 活动 ID（见 last_activity 传感器属性）。" },
         "file_format": { "name": "文件格式", "description": "fit（从原始 zip 提取）、original（原始 zip）、tcx、gpx、kml 或 csv。" },
-        "file_path": { "name": "文件路径", "description": "目标文件或目录，位于配置目录内或 allowlist_external_dirs 中。相对路径以配置目录为起点。默认为 [config]/garmin_activities/。" }
+        "file_path": { "name": "文件路径", "description": "目标文件或目录，位于 [config]/garmin_activities/ 或 allowlist_external_dirs 中。相对路径以配置目录为起点。文件名必须使用所选格式的扩展名。默认为 [config]/garmin_activities/。" },
+        "overwrite": { "name": "覆盖", "description": "文件已存在时替换它。默认关闭。" }
       }
     },
     "upload_activity": {
@@ -432,7 +433,7 @@
       "description": "向 Garmin Connect 上传活动文件(FIT、GPX、TCX)。",
       "fields": {
         "entity_id": { "name": "Garmin Connect 实体", "description": "可选的 Garmin Connect 实体,用于指定接收测量数据的账户。" },
-        "file_path": { "name": "文件路径", "description": "Home Assistant 系统上活动文件的路径。" }
+        "file_path": { "name": "文件路径", "description": "位于 [config]/garmin_activities/ 或 allowlist_external_dirs 中的 FIT、GPX 或 TCX 文件，可为绝对路径或相对于配置目录的路径。" }
       }
     },
     "add_gear_to_activity": {
@@ -492,7 +493,9 @@
     "create_activity_failed": { "message": "创建活动失败:{error}" },
     "download_activity_failed": { "message": "下载活动失败：{error}" },
     "download_activity_write_failed": { "message": "无法将活动文件保存到 {file_path}：{error}" },
-    "path_not_allowed": { "message": "路径不允许：{file_path}。请将目录添加到 allowlist_external_dirs。" },
+    "path_not_allowed": { "message": "路径不允许：{file_path}。请使用 [config]/garmin_activities/ 或将目录添加到 allowlist_external_dirs。" },
+    "file_exists": { "message": "文件已存在：{file_path}。设置 overwrite 以替换它。" },
+    "file_extension_mismatch": { "message": "文件名 {file_path} 与所选格式不符；请使用 {extension} 扩展名。" },
     "entity_not_found": { "message": "未找到实体:{entity_id}" },
     "file_not_found": { "message": "未找到文件:{file_path}" },
     "gear_uuid_not_found": { "message": "实体 {entity_id} 没有 gear_uuid 属性。" },

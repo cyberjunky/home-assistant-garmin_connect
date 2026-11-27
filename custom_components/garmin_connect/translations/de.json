@@ -424,7 +424,8 @@
         "entity_id": { "name": "Garmin-Connect-Entität", "description": "Optionale Garmin-Connect-Entität, deren Konto die Aktivität besitzt." },
         "activity_id": { "name": "Aktivitäts-ID", "description": "Garmin-Aktivitäts-ID (siehe Attribute des Sensors last_activity)." },
         "file_format": { "name": "Dateiformat", "description": "fit (aus dem Original-ZIP extrahiert), original (rohes ZIP), tcx, gpx, kml oder csv." },
-        "file_path": { "name": "Dateipfad", "description": "Zieldatei oder -verzeichnis, im Konfigurationsverzeichnis oder in allowlist_external_dirs. Relative Pfade gelten ab dem Konfigurationsverzeichnis. Standard ist [config]/garmin_activities/." }
+        "file_path": { "name": "Dateipfad", "description": "Zieldatei oder -verzeichnis, in [config]/garmin_activities/ oder in allowlist_external_dirs. Relative Pfade gelten ab dem Konfigurationsverzeichnis. Ein Dateiname muss die Endung des gewählten Formats haben. Standard ist [config]/garmin_activities/." },
+        "overwrite": { "name": "Überschreiben", "description": "Ersetzt die Datei, falls sie bereits existiert. Standardmäßig aus." }
       }
     },
     "upload_activity": {
@@ -432,7 +433,7 @@
       "description": "Lädt eine Aktivitätsdatei (FIT, GPX, TCX) zu Garmin Connect hoch.",
       "fields": {
         "entity_id": { "name": "Garmin-Connect-Entität", "description": "Optionale Garmin-Connect-Entität, deren Konto den Eintrag erhalten soll." },
-        "file_path": { "name": "Dateipfad", "description": "Pfad zur Aktivitätsdatei auf dem Home-Assistant-System." }
+        "file_path": { "name": "Dateipfad", "description": "FIT-, GPX- oder TCX-Datei in [config]/garmin_activities/ oder in allowlist_external_dirs, absolut oder relativ zum Konfigurationsverzeichnis." }
       }
     },
     "add_gear_to_activity": {
@@ -492,7 +493,9 @@
     "create_activity_failed": { "message": "Aktivität konnte nicht erstellt werden: {error}" },
     "download_activity_failed": { "message": "Aktivität konnte nicht heruntergeladen werden: {error}" },
     "download_activity_write_failed": { "message": "Aktivitätsdatei konnte nicht unter {file_path} gespeichert werden: {error}" },
-    "path_not_allowed": { "message": "Pfad ist nicht zulässig: {file_path}. Füge das Verzeichnis zu allowlist_external_dirs hinzu." },
+    "path_not_allowed": { "message": "Pfad ist nicht zulässig: {file_path}. Verwende [config]/garmin_activities/ oder füge das Verzeichnis zu allowlist_external_dirs hinzu." },
+    "file_exists": { "message": "Datei existiert bereits: {file_path}. Setze overwrite, um sie zu ersetzen." },
+    "file_extension_mismatch": { "message": "Dateiname {file_path} passt nicht zum gewählten Format; verwende die Endung {extension}." },
     "entity_not_found": { "message": "Entität nicht gefunden: {entity_id}" },
     "file_not_found": { "message": "Datei nicht gefunden: {file_path}" },
     "gear_uuid_not_found": { "message": "Entität {entity_id} hat kein Attribut gear_uuid." },
